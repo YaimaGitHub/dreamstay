@@ -7,13 +7,23 @@ import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Edit, Plus, Trash, Download, Upload } from "lucide-react"
+import { Edit, Plus, Trash, Download, Upload, Save } from "lucide-react"
 import { toast } from "sonner"
+import { useState, useEffect } from "react"
 
 const AdminDashboard = () => {
   const { isAuthenticated, logout } = useAdminAuth()
-  const { rooms, toggleRoomAvailability, deleteRoom } = useRoomStore()
+  const { rooms, toggleRoomAvailability, deleteRoom, exportData, importData, saveToFile, isAutoSaveEnabled } =
+    useRoomStore()
   const navigate = useNavigate()
+  const [lastSaved, setLastSaved] = useState<string | null>(null)
+
+  // Actualizar la hora del último guardado
+  useEffect(() => {
+    if (isAutoSaveEnabled) {
+      setLastSaved(new Date().toLocaleTimeString())
+    }
+  }, [rooms, isAutoSaveEnabled])
 
   // Redirect if not authenticated
   if (!isAuthenticated) {
@@ -45,25 +55,41 @@ const AdminDashboard = () => {
 
   // Función para exportar datos manualmente
   const handleExportData = () => {
-    // Esta función se implementa en RoomStoreContext
-    // Aquí solo disparamos el evento para que los botones dinámicos lo manejen
-    const exportButton = document.getElementById("export-data-button")
-    if (exportButton) {
-      exportButton.click()
+    if (exportData) {
+      exportData()
+      toast.success("Datos exportados correctamente a salva.json")
     } else {
       toast.error("No se pudo exportar los datos. Intente nuevamente.")
     }
   }
 
   // Función para importar datos manualmente
-  const handleImportData = () => {
-    // Esta función se implementa en RoomStoreContext
-    // Aquí solo disparamos el evento para que los botones dinámicos lo manejen
-    const importButton = document.getElementById("import-data-button")
-    if (importButton) {
-      importButton.click()
+  const handleImportData = async () => {
+    if (importData) {
+      const success = await importData()
+      if (success) {
+        toast.success("Datos importados correctamente desde salva.json")
+        setLastSaved(new Date().toLocaleTimeString())
+      } else {
+        toast.error("No se pudo importar los datos. Intente nuevamente.")
+      }
     } else {
       toast.error("No se pudo importar los datos. Intente nuevamente.")
+    }
+  }
+
+  // Función para guardar datos manualmente en el archivo salva.json
+  const handleSaveToFile = async () => {
+    if (saveToFile) {
+      const success = await saveToFile()
+      if (success) {
+        toast.success("Datos guardados correctamente en salva.json")
+        setLastSaved(new Date().toLocaleTimeString())
+      } else {
+        toast.error("No se pudo guardar los datos. Intente nuevamente.")
+      }
+    } else {
+      toast.error("No se pudo guardar los datos. Intente nuevamente.")
     }
   }
 
@@ -80,15 +106,36 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        <div className="flex space-x-4 mb-6">
-          <Button variant="outline" className="flex items-center gap-2" onClick={handleExportData}>
-            <Download className="h-4 w-4" />
-            Exportar datos (salva.json)
-          </Button>
-          <Button variant="outline" className="flex items-center gap-2" onClick={handleImportData}>
-            <Upload className="h-4 w-4" />
-            Importar datos
-          </Button>
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+            <div>
+              <h2 className="text-xl font-semibold">Gestión del archivo salva.json</h2>
+              {isAutoSaveEnabled && lastSaved && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Autoguardado activado. Último guardado: {lastSaved}
+                </p>
+              )}
+              {!isAutoSaveEnabled && (
+                <p className="text-sm text-amber-600 mt-1">
+                  Autoguardado no configurado. Configure el archivo salva.json para activar el autoguardado.
+                </p>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
+              <Button variant="outline" className="flex items-center gap-2" onClick={handleSaveToFile}>
+                <Save className="h-4 w-4" />
+                Guardar en salva.json
+              </Button>
+              <Button variant="outline" className="flex items-center gap-2" onClick={handleExportData}>
+                <Download className="h-4 w-4" />
+                Exportar salva.json
+              </Button>
+              <Button variant="outline" className="flex items-center gap-2" onClick={handleImportData}>
+                <Upload className="h-4 w-4" />
+                Importar salva.json
+              </Button>
+            </div>
+          </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">

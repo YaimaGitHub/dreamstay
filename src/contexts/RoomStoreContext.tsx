@@ -11,6 +11,8 @@ import { featuredRooms as initialRooms } from "../data/sampleRooms"
 const SAVE_FILE_NAME = "salva.json"
 // Clave para localStorage como respaldo
 const LOCAL_STORAGE_KEY = "hotel-rooms-data"
+// Clave para recordar si ya se ha configurado el archivo salva
+const FILE_HANDLE_KEY = "salva-file-configured"
 
 const RoomStoreContext = createContext<RoomStore | undefined>(undefined)
 
@@ -26,27 +28,62 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [rooms, setRooms] = useState<Room[]>([])
   const [isLoaded, setIsLoaded] = useState(false)
   const [fileHandle, setFileHandle] = useState<FileSystemFileHandle | null>(null)
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(false)
+
+  // Función para verificar si el navegador soporta la API File System Access
+  const isFileSystemAccessSupported = () => {
+    return "showOpenFilePicker" in window && "showSaveFilePicker" in window
+  }
 
   // Función para cargar datos desde el archivo salva.json
-  const loadFromFile = async () => {
+  const loadFromFile = async (showPicker = true) => {
     try {
-      // Intentar abrir el archivo salva.json
-      const fileHandles = await window.showOpenFilePicker({
-        types: [
-          {
-            description: "Archivo de datos",
-            accept: {
-              "application/json": [".json"],
+      if (!isFileSystemAccessSupported()) {
+        throw new Error("API File System Access no soportada en este navegador")
+      }
+
+      let handle: FileSystemFileHandle | null = null
+
+      // Si tenemos permisos para un archivo anterior, intentamos usarlo primero
+      if (fileHandle) {
+        // Verificar si todavía tenemos permiso para acceder al archivo
+        const permission = await fileHandle.queryPermission({ mode: "read" })
+        if (permission === "granted") {
+          handle = fileHandle
+        } else {
+          // Intentar solicitar permiso
+          const newPermission = await fileHandle.requestPermission({ mode: "read" })
+          if (newPermission === "granted") {
+            handle = fileHandle
+          }
+        }
+      }
+
+      // Si no tenemos un handle válido y se permite mostrar el selector, lo mostramos
+      if (!handle && showPicker) {
+        const fileHandles = await window.showOpenFilePicker({
+          types: [
+            {
+              description: "Archivo de datos",
+              accept: {
+                "application/json": [".json"],
+              },
             },
-          },
-        ],
-        suggestedName: SAVE_FILE_NAME,
-      })
+          ],
+          suggestedName: SAVE_FILE_NAME,
+        })
 
-      if (fileHandles && fileHandles.length > 0) {
-        const handle = fileHandles[0]
-        setFileHandle(handle)
+        if (fileHandles && fileHandles.length > 0) {
+          handle = fileHandles[0]
+          setFileHandle(handle)
 
+          // Guardar en localStorage que tenemos un archivo configurado
+          localStorage.setItem(FILE_HANDLE_KEY, "true")
+          setAutoSaveEnabled(true)
+        }
+      }
+
+      if (handle) {
         const file = await handle.getFile()
         const content = await file.text()
         const parsedRooms = JSON.parse(content)
@@ -61,12 +98,16 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }
 
   // Función para guardar datos en el archivo salva.json
-  const saveToFile = async (dataToSave: Room[]) => {
+  const saveToFile = async (dataToSave: Room[], forceSavePicker = false) => {
     try {
+      if (!isFileSystemAccessSupported()) {
+        throw new Error("API File System Access no soportada en este navegador")
+      }
+
       let handle = fileHandle
 
-      // Si no tenemos un fileHandle, pedimos al usuario que elija dónde guardar
-      if (!handle) {
+      // Si no tenemos un fileHandle o se fuerza mostrar el selector, pedimos al usuario que elija dónde guardar
+      if (!handle || forceSavePicker) {
         handle = await window.showSaveFilePicker({
           types: [
             {
@@ -79,6 +120,19 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           suggestedName: SAVE_FILE_NAME,
         })
         setFileHandle(handle)
+
+        // Guardar en localStorage que tenemos un archivo configurado
+        localStorage.setItem(FILE_HANDLE_KEY, "true")
+        setAutoSaveEnabled(true)
+      }
+
+      // Verificar si tenemos permiso para escribir
+      const permission = await handle.queryPermission({ mode: "readwrite" })
+      if (permission !== "granted") {
+        const newPermission = await handle.requestPermission({ mode: "readwrite" })
+        if (newPermission !== "granted") {
+          throw new Error("No se concedió permiso para escribir en el archivo")
+        }
       }
 
       // Escribir los datos en el archivo
@@ -111,15 +165,37 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     console.log(`Datos exportados a archivo descargable '${SAVE_FILE_NAME}'`)
   }
 
+  // Función para importar datos desde un archivo seleccionado por el usuario
+  const importFromFile = async () => {
+    const fileData = await loadFromFile(true)
+    if (fileData) {
+      setRooms(fileData)
+      return true
+    }
+    return false
+  }
+
   // Cargar habitaciones al iniciar
   useEffect(() => {
     const loadRooms = async () => {
       try {
-        // Primero intentamos cargar desde el archivo
-        const fileData = await loadFromFile()
+        // Verificar si ya tenemos un archivo configurado
+        const fileConfigured = localStorage.getItem(FILE_HANDLE_KEY) === "true"
+
+        // Si ya tenemos un archivo configurado, intentamos cargarlo automáticamente
+        let fileData = null
+        if (fileConfigured) {
+          fileData = await loadFromFile(false)
+        }
+
+        // Si no pudimos cargar automáticamente, mostramos el selector
+        if (!fileData && fileConfigured) {
+          fileData = await loadFromFile(true)
+        }
 
         if (fileData) {
           setRooms(fileData)
+          setAutoSaveEnabled(true)
         } else {
           // Si no podemos cargar desde archivo, intentamos localStorage
           const savedData = localStorage.getItem(LOCAL_STORAGE_KEY)
@@ -149,61 +225,33 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     loadRooms()
 
-    // Agregar botones para importar/exportar datos
-    const addImportExportButtons = () => {
-      // Solo agregamos los botones si no existen ya
-      if (!document.getElementById("export-data-button")) {
-        const adminHeader = document.querySelector(".container h1")
-        if (adminHeader && adminHeader.textContent?.includes("Panel Administrativo")) {
-          const buttonContainer = document.createElement("div")
-          buttonContainer.className = "flex space-x-2 mt-4"
+    // Exponer funciones para que puedan ser llamadas desde el panel administrativo
+    window.roomStoreExport = () => exportToDownloadableFile(rooms)
+    window.roomStoreImport = importFromFile
 
-          const exportButton = document.createElement("button")
-          exportButton.id = "export-data-button"
-          exportButton.className = "px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          exportButton.textContent = "Exportar datos (salva.json)"
-          exportButton.onclick = () => exportToDownloadableFile(rooms)
-
-          const importButton = document.createElement("button")
-          importButton.id = "import-data-button"
-          importButton.className = "px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-          importButton.textContent = "Importar datos"
-          importButton.onclick = async () => {
-            const fileData = await loadFromFile()
-            if (fileData) {
-              setRooms(fileData)
-              alert("Datos importados correctamente")
-            }
-          }
-
-          buttonContainer.appendChild(exportButton)
-          buttonContainer.appendChild(importButton)
-
-          adminHeader.parentNode?.insertBefore(buttonContainer, adminHeader.nextSibling)
-        }
-      }
+    return () => {
+      // Limpiar funciones globales al desmontar
+      delete window.roomStoreExport
+      delete window.roomStoreImport
     }
-
-    // Intentamos agregar los botones cada segundo hasta que encontremos el elemento adecuado
-    const interval = setInterval(addImportExportButtons, 1000)
-
-    return () => clearInterval(interval)
   }, [])
 
   // Guardar habitaciones cuando cambien
   useEffect(() => {
     const saveRooms = async () => {
       if (isLoaded) {
-        // Primero intentamos guardar en el archivo
-        const fileSaved = await saveToFile(rooms)
-
-        // Como respaldo, siempre guardamos en localStorage
+        // Siempre guardamos en localStorage como respaldo
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(rooms))
 
-        if (!fileSaved) {
-          // Si no pudimos guardar en archivo, ofrecemos exportar
-          console.log("No se pudo guardar en archivo. Los datos se han guardado en almacenamiento local.")
-          // No exportamos automáticamente para no molestar al usuario
+        // Si el autoguardado está habilitado, guardamos en el archivo
+        if (autoSaveEnabled && fileHandle) {
+          const fileSaved = await saveToFile(rooms)
+
+          if (!fileSaved) {
+            console.log(
+              "No se pudo guardar automáticamente en el archivo. Los datos se han guardado en almacenamiento local.",
+            )
+          }
         }
       }
     }
@@ -212,8 +260,9 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (isLoaded) {
       saveRooms()
     }
-  }, [rooms, isLoaded, fileHandle])
+  }, [rooms, isLoaded, autoSaveEnabled, fileHandle])
 
+  // Funciones para manipular habitaciones
   const addRoom = (room: Omit<Room, "id">) => {
     const newRoom = {
       ...room,
@@ -266,6 +315,19 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     )
   }
 
+  // Funciones adicionales para el manejo del archivo salva.json
+  const forceExportData = () => {
+    exportToDownloadableFile(rooms)
+  }
+
+  const forceImportData = async () => {
+    return await importFromFile()
+  }
+
+  const forceSaveToFile = async () => {
+    return await saveToFile(rooms, true)
+  }
+
   const value: RoomStore = {
     rooms,
     addRoom,
@@ -273,7 +335,20 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     deleteRoom,
     toggleRoomAvailability,
     addReservedDates,
+    // Añadimos funciones para manejar el archivo salva.json
+    exportData: forceExportData,
+    importData: forceImportData,
+    saveToFile: forceSaveToFile,
+    isAutoSaveEnabled: autoSaveEnabled,
   }
 
   return <RoomStoreContext.Provider value={value}>{children}</RoomStoreContext.Provider>
+}
+
+// Declaración para TypeScript
+declare global {
+  interface Window {
+    roomStoreExport?: () => void
+    roomStoreImport?: () => Promise<boolean>
+  }
 }

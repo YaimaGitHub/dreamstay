@@ -1,33 +1,19 @@
 export interface Room {
   id: number
   title: string
-  location: string
-  price: number
-  rating: number
-  reviews: number
-  image: string
-  features: string[]
   type: string
-  area: number
-  description?: string
+  price: number
+  capacity: number
+  description: string
+  image: string
+  images: string[]
+  features: string[]
   isAvailable: boolean
   reservedDates: {
     start: string
     end: string
   }[]
-  images?: {
-    id: number
-    url: string
-    alt: string
-  }[]
-  lastModified?: string
-}
-
-export interface Amenity {
-  id: number
-  name: string
-  icon: string
-  description: string // Description is required for RoomAmenities component
+  lastModified: string
 }
 
 export interface RoomStore {
@@ -37,9 +23,9 @@ export interface RoomStore {
   deleteRoom: (id: number) => void
   toggleRoomAvailability: (id: number) => void
   addReservedDates: (id: number, startDate: Date, endDate: Date) => void
-}
-
-export interface BookingFormProps {
-  roomId: number
-  price: number
+  // Nuevas funciones para manejar el archivo salva.json
+  exportData?: () => void
+  importData?: () => Promise<boolean>
+  saveToFile?: () => Promise<boolean>
+  isAutoSaveEnabled?: boolean
 }

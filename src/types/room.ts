@@ -43,5 +43,4 @@ export interface RoomStore {
 export interface BookingFormProps {
   roomId: number;
   price: number;
-  isAvailable?: boolean;
 }

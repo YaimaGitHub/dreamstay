@@ -32,15 +32,13 @@ const RoomDetails = () => {
 
   // Fix: Create compatible amenities for RoomAmenities component
   const amenities = room.features.map((feature, index) => {
-    let icon;
+    let icon = "bed";
     if (feature.toLowerCase().includes("wifi")) {
       icon = "wifi";
     } else if (feature.toLowerCase().includes("baño")) {
       icon = "bath";
     } else if (feature.toLowerCase().includes("desayuno")) {
       icon = "coffee";
-    } else {
-      icon = "bed";
     }
     
     return {
@@ -138,7 +136,6 @@ const RoomDetails = () => {
             <BookingForm 
               roomId={room.id} 
               price={room.price} 
-              isAvailable={room.isAvailable} 
             />
           </div>
         </div>

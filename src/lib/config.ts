@@ -82,7 +82,7 @@ const defaultConfig: AppConfig = {
   rooms: [
     {
       id: 1,
-      title: "Suite Premium",
+      title: "Suite Premium1",
       location: "Centro de la ciudad",
       price: 120,
       rating: 4.9,

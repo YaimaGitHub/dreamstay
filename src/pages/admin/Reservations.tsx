@@ -18,7 +18,7 @@ const reservationsData = [
   {
     id: 1,
     roomId: 1,
-    roomName: "Suite Premium",
+    roomName: "Suite Premium1",
     guestName: "Carlos Rodríguez",
     guestEmail: "carlos@example.com",
     checkIn: new Date("2025-05-12"),

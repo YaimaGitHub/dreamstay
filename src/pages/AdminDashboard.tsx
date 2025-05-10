@@ -1,171 +1,199 @@
 "use client"
+
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { useAdminAuth } from "@/contexts/AdminAuthContext"
-import { useRoomStore } from "@/contexts/RoomStoreContext"
+import AdminLayout from "@/components/AdminLayout"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import Navbar from "@/components/Navbar"
-import Footer from "@/components/Footer"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Edit, Plus, Trash } from "lucide-react"
-import { toast } from "sonner"
-import { useEffect } from "react"
-import { ConfigurationManager } from "@/components/admin/ConfigurationManager"
-import { LoadingOverlay } from "@/components/LoadingOverlay"
+import { Bed, Settings, FileJson, LogOut, Home, Users, Calendar, Clock } from "lucide-react"
+import { useAdminAuth } from "@/hooks/use-admin-auth"
+import { useDataStore } from "@/hooks/use-data-store"
 
 const AdminDashboard = () => {
-  const { isAuthenticated, logout } = useAdminAuth()
-  const { rooms, toggleRoomAvailability, deleteRoom, checkForChanges, isLoading } = useRoomStore()
   const navigate = useNavigate()
-
-  // Configurar verificación periódica de cambios
-  useEffect(() => {
-    const intervalId = setInterval(async () => {
-      if (checkForChanges) {
-        try {
-          const hasChanges = await checkForChanges()
-          if (hasChanges) {
-            toast.success("Se han detectado cambios en el archivo salva.json y se han actualizado los datos")
-          }
-        } catch (error) {
-          console.error("Error al verificar cambios:", error)
-        }
-      }
-    }, 10000) // Verificar cada 10 segundos
-
-    return () => clearInterval(intervalId)
-  }, [checkForChanges])
-
-  // Redirect if not authenticated
-  if (!isAuthenticated) {
-    navigate("/admin/login")
-    return null
-  }
-
-  const handleToggleAvailability = (id: number) => {
-    toggleRoomAvailability(id)
-    toast.success("Estado de disponibilidad actualizado")
-  }
-
-  const handleDelete = (id: number) => {
-    if (window.confirm("¿Está seguro de eliminar esta habitación? Esta acción no se puede deshacer.")) {
-      deleteRoom(id)
-      toast.success("Habitación eliminada correctamente")
-    }
-  }
-
-  const handleEdit = (id: number) => {
-    navigate(`/admin/edit-room/${id}`)
-  }
+  const { logout } = useAdminAuth()
+  const { rooms, services, lastUpdated } = useDataStore()
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const handleLogout = () => {
-    logout()
-    toast.success("Sesión cerrada correctamente")
-    navigate("/")
+    setIsLoggingOut(true)
+    setTimeout(() => {
+      logout()
+      navigate("/admin/login")
+    }, 500)
   }
 
+  const formatDate = (date: Date | null) => {
+    if (!date) return "Nunca"
+    return new Intl.DateTimeFormat("es-ES", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(date)
+  }
+
+  const stats = [
+    {
+      title: "Habitaciones",
+      value: rooms.length,
+      icon: <Bed className="h-8 w-8 text-terracotta" />,
+      description: "Total de habitaciones",
+      link: "/admin/rooms",
+    },
+    {
+      title: "Servicios",
+      value: services.length,
+      icon: <Settings className="h-8 w-8 text-terracotta" />,
+      description: "Servicios disponibles",
+      link: "/admin/services",
+    },
+    {
+      title: "Configuración",
+      value: "Exportar/Importar",
+      icon: <FileJson className="h-8 w-8 text-terracotta" />,
+      description: "Gestionar configuración",
+      link: "/admin/config",
+    },
+  ]
+
   return (
-    <div className="flex flex-col min-h-screen">
-      <LoadingOverlay />
-      <Navbar />
-      <div className="container mx-auto py-8 px-4 flex-grow">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Panel Administrativo</h1>
-          <div className="flex space-x-4">
-            <Button variant="outline" onClick={handleLogout}>
-              Cerrar sesión
-            </Button>
-          </div>
+    <AdminLayout>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold">Panel de Administración</h1>
+          <p className="text-muted-foreground">Gestiona todos los aspectos de tu plataforma</p>
         </div>
-
-        {/* Nuevo componente de gestión de configuración */}
-        <div className="mb-8">
-          <ConfigurationManager />
-        </div>
-
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold">Gestión de Habitaciones</h2>
-            <Button className="bg-terracotta hover:bg-terracotta/90" onClick={() => navigate("/admin/add-room")}>
-              <Plus className="mr-2 h-4 w-4" />
-              Agregar habitación
-            </Button>
-          </div>
-
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Imagen</TableHead>
-                  <TableHead>Título</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Precio</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rooms.map((room) => (
-                  <TableRow key={room.id}>
-                    <TableCell>{room.id}</TableCell>
-                    <TableCell>
-                      <div className="w-16 h-16 rounded overflow-hidden">
-                        <img
-                          src={room.image || "/placeholder.svg"}
-                          alt={room.title}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium">{room.title}</TableCell>
-                    <TableCell>{room.type}</TableCell>
-                    <TableCell>${room.price}/noche</TableCell>
-                    <TableCell>
-                      <Badge className={room.isAvailable ? "bg-green-500" : "bg-red-500"}>
-                        {room.isAvailable ? "Disponible" : "No disponible"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => handleEdit(room.id)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleToggleAvailability(room.id)}>
-                          {room.isAvailable ? "Deshabilitar" : "Habilitar"}
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDelete(room.id)}>
-                          <Trash className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Estadísticas Generales</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-muted p-4 rounded-lg">
-              <h3 className="text-lg font-medium">Total de habitaciones</h3>
-              <p className="text-3xl font-bold">{rooms.length}</p>
-            </div>
-            <div className="bg-muted p-4 rounded-lg">
-              <h3 className="text-lg font-medium">Habitaciones disponibles</h3>
-              <p className="text-3xl font-bold">{rooms.filter((r) => r.isAvailable).length}</p>
-            </div>
-            <div className="bg-muted p-4 rounded-lg">
-              <h3 className="text-lg font-medium">Habitaciones ocupadas</h3>
-              <p className="text-3xl font-bold">{rooms.filter((r) => !r.isAvailable).length}</p>
-            </div>
-          </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate("/")} className="flex items-center gap-2">
+            <Home className="h-4 w-4" />
+            Ver sitio
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleLogout}
+            className="flex items-center gap-2 border-destructive text-destructive hover:bg-destructive/10"
+            disabled={isLoggingOut}
+          >
+            <LogOut className="h-4 w-4" />
+            {isLoggingOut ? "Saliendo..." : "Cerrar sesión"}
+          </Button>
         </div>
       </div>
-      <Footer />
-    </div>
+
+      <div className="flex items-center mb-6 p-4 bg-muted rounded-lg">
+        <Clock className="h-5 w-5 mr-2 text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">Última actualización: {formatDate(lastUpdated)}</span>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {stats.map((stat, index) => (
+          <Card key={index} className="hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xl font-bold">{stat.title}</CardTitle>
+              {stat.icon}
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold">{stat.value}</p>
+              <CardDescription>{stat.description}</CardDescription>
+              <Button
+                variant="outline"
+                className="w-full mt-4 border-terracotta text-terracotta hover:bg-terracotta/10"
+                onClick={() => navigate(stat.link)}
+              >
+                Gestionar
+              </Button>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Actividad reciente
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="border-l-4 border-terracotta pl-4 py-1">
+                <p className="font-medium">Actualización de datos</p>
+                <p className="text-sm text-muted-foreground">
+                  {lastUpdated ? `Última actualización: ${formatDate(lastUpdated)}` : "Sin actualizaciones recientes"}
+                </p>
+              </div>
+              <div className="border-l-4 border-terracotta pl-4 py-1">
+                <p className="font-medium">Habitaciones activas</p>
+                <p className="text-sm text-muted-foreground">
+                  {rooms.filter((r) => r.available).length} de {rooms.length} habitaciones disponibles
+                </p>
+              </div>
+              <div className="border-l-4 border-terracotta pl-4 py-1">
+                <p className="font-medium">Servicios por categoría</p>
+                <p className="text-sm text-muted-foreground">
+                  {Object.entries(
+                    services.reduce(
+                      (acc, service) => {
+                        acc[service.category] = (acc[service.category] || 0) + 1
+                        return acc
+                      },
+                      {} as Record<string, number>,
+                    ),
+                  )
+                    .map(([category, count]) => `${category}: ${count}`)
+                    .join(", ")}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Accesos rápidos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <Button
+                variant="outline"
+                className="h-auto py-4 flex flex-col items-center justify-center gap-2 border-terracotta text-terracotta hover:bg-terracotta/10"
+                onClick={() => navigate("/admin/rooms/new")}
+              >
+                <Bed className="h-6 w-6" />
+                <span>Nueva habitación</span>
+              </Button>
+              <Button
+                variant="outline"
+                className="h-auto py-4 flex flex-col items-center justify-center gap-2 border-terracotta text-terracotta hover:bg-terracotta/10"
+                onClick={() => navigate("/admin/services/new")}
+              >
+                <Settings className="h-6 w-6" />
+                <span>Nuevo servicio</span>
+              </Button>
+              <Button
+                variant="outline"
+                className="h-auto py-4 flex flex-col items-center justify-center gap-2 border-terracotta text-terracotta hover:bg-terracotta/10"
+                onClick={() => navigate("/admin/config")}
+              >
+                <FileJson className="h-6 w-6" />
+                <span>Exportar datos</span>
+              </Button>
+              <Button
+                variant="outline"
+                className="h-auto py-4 flex flex-col items-center justify-center gap-2 border-terracotta text-terracotta hover:bg-terracotta/10"
+                onClick={() => navigate("/admin/config")}
+              >
+                <FileJson className="h-6 w-6" />
+                <span>Importar datos</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </AdminLayout>
   )
 }
 

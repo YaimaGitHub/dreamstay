@@ -1,7 +1,8 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Plane, Car, Wifi, Coffee, Utensils, MapPin } from "lucide-react"
-import { Link } from "react-router-dom"
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Plane, Car, Wifi, Coffee, Utensils, MapPin } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const services = [
   {
@@ -46,7 +47,7 @@ const services = [
     icon: <Utensils className="h-8 w-8 text-terracotta" />,
     price: 20,
   },
-]
+];
 
 const ServicesList = () => {
   return (
@@ -69,11 +70,7 @@ const ServicesList = () => {
               </CardHeader>
               <CardContent className="flex justify-between items-center">
                 <span className="font-bold">${service.price}</span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="border-terracotta text-terracotta hover:bg-terracotta/10"
-                >
+                <Button size="sm" variant="outline" className="border-terracotta text-terracotta hover:bg-terracotta/10">
                   Añadir
                 </Button>
               </CardContent>
@@ -82,13 +79,17 @@ const ServicesList = () => {
         </div>
 
         <div className="text-center mt-12">
-          <Button variant="default" className="bg-terracotta hover:bg-terracotta/90" asChild>
+          <Button 
+            variant="default" 
+            className="bg-terracotta hover:bg-terracotta/90"
+            asChild
+          >
             <Link to="/servicios">Ver todos los servicios</Link>
           </Button>
         </div>
       </div>
     </section>
-  )
-}
+  );
+};
 
-export default ServicesList
+export default ServicesList;

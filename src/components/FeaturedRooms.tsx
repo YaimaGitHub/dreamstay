@@ -45,7 +45,7 @@ const FeaturedRooms = () => {
   return (
     <section className="py-16 container mx-auto">
       <div className="text-center mb-12">
-        <h2 className="text-3xl font-bold mb-2">Habitaciones Destacadas</h2>
+        <h2 className="text-3xl font-bold mb-2">Habitaciones Destacadasssss</h2>
         <p className="text-muted-foreground max-w-2xl mx-auto">
           Descubre nuestras habitaciones más populares, diseñadas para proporcionar máximo confort y elegancia
         </p>

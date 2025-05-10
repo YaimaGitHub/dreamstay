@@ -3,49 +3,21 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Bed, Wifi, Coffee, Star } from "lucide-react"
 import { Link } from "react-router-dom"
-
-// Datos de muestra para las habitaciones destacadas
-const featuredRooms = [
-  {
-    id: 1,
-    title: "Suite Premium",
-    location: "Centro de la ciudad",
-    price: 120,
-    rating: 4.9,
-    reviews: 124,
-    image:
-      "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
-    features: ["Baño privado", "WiFi gratis", "Desayuno incluido"],
-  },
-  {
-    id: 2,
-    title: "Habitación Confort",
-    location: "Zona Turística",
-    price: 85,
-    rating: 4.7,
-    reviews: 95,
-    image:
-      "https://images.unsplash.com/photo-1566665797739-1674de7a421a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80",
-    features: ["Baño privado", "WiFi gratis", "TV de pantalla plana"],
-  },
-  {
-    id: 3,
-    title: "Suite Ejecutiva",
-    location: "Distrito Financiero",
-    price: 150,
-    rating: 5.0,
-    reviews: 87,
-    image:
-      "https://images.unsplash.com/photo-1590490360182-c33d57733427?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80",
-    features: ["Baño de lujo", "WiFi de alta velocidad", "Desayuno gourmet"],
-  },
-]
+import { useDataStore } from "@/hooks/use-data-store"
 
 const FeaturedRooms = () => {
+  const { rooms } = useDataStore()
+
+  // Filtrar habitaciones disponibles y ordenar por rating (destacadas)
+  const featuredRooms = rooms
+    .filter((room) => room.available !== false)
+    .sort((a, b) => b.rating - a.rating)
+    .slice(0, 3) // Mostrar solo las 3 mejores
+
   return (
     <section className="py-16 container mx-auto">
       <div className="text-center mb-12">
-        <h2 className="text-3xl font-bold mb-2">Habitaciones Destacadasssss</h2>
+        <h2 className="text-3xl font-bold mb-2">Habitaciones Destacadas</h2>
         <p className="text-muted-foreground max-w-2xl mx-auto">
           Descubre nuestras habitaciones más populares, diseñadas para proporcionar máximo confort y elegancia
         </p>
@@ -56,7 +28,7 @@ const FeaturedRooms = () => {
           <Card key={room.id} className="overflow-hidden card-hover border border-border/50">
             <div className="aspect-[16/10] overflow-hidden">
               <img
-                src={room.image}
+                src={room.image || "/placeholder.svg"}
                 alt={room.title}
                 className="w-full h-full object-cover transition-transform hover:scale-105 duration-500"
               />
@@ -74,8 +46,8 @@ const FeaturedRooms = () => {
             </CardHeader>
             <CardContent className="pb-4">
               <div className="flex flex-wrap gap-2 mb-4">
-                {room.features.map((feature) => (
-                  <div key={feature} className="flex items-center text-sm">
+                {room.features.slice(0, 3).map((feature, index) => (
+                  <div key={index} className="flex items-center text-sm">
                     {feature.includes("Baño") && <Bed className="h-3 w-3 mr-1" />}
                     {feature.includes("WiFi") && <Wifi className="h-3 w-3 mr-1" />}
                     {feature.includes("Desayuno") && <Coffee className="h-3 w-3 mr-1" />}

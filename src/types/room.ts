@@ -1,20 +1,33 @@
 export interface Room {
   id: number
   title: string
-  type: string
+  location: string
   price: number
-  capacity: number
-  size: number
+  rating: number
+  reviews: number
   image: string
-  images: string[]
-  description: string
   features: string[]
+  type: string
+  area: number
+  description?: string
   isAvailable: boolean
   reservedDates: {
     start: string
     end: string
   }[]
-  lastModified: string
+  images?: {
+    id: number
+    url: string
+    alt: string
+  }[]
+  lastModified?: string
+}
+
+export interface Amenity {
+  id: number
+  name: string
+  icon: string
+  description: string // Description is required for RoomAmenities component
 }
 
 export interface RoomStore {
@@ -25,13 +38,10 @@ export interface RoomStore {
   toggleRoomAvailability: (id: number) => void
   addReservedDates: (id: number, startDate: Date, endDate: Date) => void
   // Funciones para manejar el archivo salva.json
-  exportData: () => void
-  importData: () => Promise<boolean>
-  saveToFile: () => Promise<boolean>
-  checkForChanges: () => Promise<boolean>
-  setFilePath?: (path: string) => Promise<boolean>
-  syncStatus: "synced" | "syncing" | "error" | "offline"
-  lastModified: Date | null
-  filePath?: string
-  isOnline?: boolean
+  exportData?: () => void
+  importData?: () => Promise<boolean>
+  saveToFile?: () => Promise<boolean>
+  checkForChanges?: () => Promise<boolean>
+  syncStatus?: "synced" | "syncing" | "error"
+  lastModified?: Date | null
 }

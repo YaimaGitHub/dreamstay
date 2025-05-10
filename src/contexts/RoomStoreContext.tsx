@@ -8,13 +8,11 @@ import type { Room, RoomStore } from "../types/room"
 import { featuredRooms as initialRooms } from "../data/sampleRooms"
 
 // Nombre fijo del archivo de guardado
-const SAVE_FILE_NAME = "salva"
+const SAVE_FILE_NAME = "salva.json"
 // Clave para localStorage como respaldo
 const LOCAL_STORAGE_KEY = "hotel-rooms-data"
 // Clave para almacenar la última modificación
 const LAST_MODIFIED_KEY = "salva-last-modified"
-// Clave para almacenar la ruta del archivo
-const FILE_PATH_KEY = "salva-file-path"
 // Intervalo de verificación de cambios (en milisegundos)
 const CHECK_INTERVAL = 5000 // 5 segundos
 
@@ -32,70 +30,15 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [rooms, setRooms] = useState<Room[]>([])
   const [isLoaded, setIsLoaded] = useState(false)
   const [fileHandle, setFileHandle] = useState<FileSystemFileHandle | null>(null)
-  const [filePath, setFilePath] = useState<string>("")
   const [lastModified, setLastModified] = useState<string>("")
-  const [syncStatus, setSyncStatus] = useState<"synced" | "syncing" | "error" | "offline">("synced")
-  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine)
-
-  // Detectar cambios en la conexión
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true)
-    const handleOffline = () => setIsOnline(false)
-
-    window.addEventListener("online", handleOnline)
-    window.addEventListener("offline", handleOffline)
-
-    return () => {
-      window.removeEventListener("online", handleOnline)
-      window.removeEventListener("offline", handleOffline)
-    }
-  }, [])
+  const [syncStatus, setSyncStatus] = useState<"synced" | "syncing" | "error">("synced")
 
   // Función para verificar si el navegador soporta la API File System Access
   const isFileSystemAccessSupported = () => {
     return "showOpenFilePicker" in window && "showSaveFilePicker" in window
   }
 
-  // Función para cargar la ruta guardada del archivo
-  useEffect(() => {
-    const savedPath = localStorage.getItem(FILE_PATH_KEY)
-    if (savedPath) {
-      setFilePath(savedPath)
-    }
-  }, [])
-
-  // Función para establecer una ubicación específica para el archivo
-  const setSpecificFilePath = useCallback(async (path: string) => {
-    setFilePath(path)
-    localStorage.setItem(FILE_PATH_KEY, path)
-
-    // Si tenemos soporte para File System Access API, intentamos obtener el handle
-    if (isFileSystemAccessSupported()) {
-      try {
-        // Intentar abrir el directorio
-        const directoryHandle = await window.showDirectoryPicker({
-          id: "salvaDirectory",
-          mode: "readwrite",
-        })
-
-        // Verificar si el archivo ya existe o crearlo
-        try {
-          const fileHandle = await directoryHandle.getFileHandle(SAVE_FILE_NAME, { create: true })
-          setFileHandle(fileHandle)
-          return true
-        } catch (error) {
-          console.error("Error al obtener el archivo:", error)
-          return false
-        }
-      } catch (error) {
-        console.error("Error al seleccionar el directorio:", error)
-        return false
-      }
-    }
-    return false
-  }, [])
-
-  // Función para cargar datos desde el archivo salva
+  // Función para cargar datos desde el archivo salva.json
   const loadFromFile = useCallback(
     async (showPicker = true) => {
       try {
@@ -127,62 +70,21 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         // Si no tenemos un handle válido y se permite mostrar el selector, lo mostramos
         if (!handle && showPicker) {
           try {
-            // Si tenemos una ruta específica, intentamos abrir ese directorio
-            if (filePath) {
-              try {
-                const directoryHandle = await window.showDirectoryPicker({
-                  id: "salvaDirectory",
-                  mode: "readwrite",
-                  startIn: "documents",
-                })
-
-                try {
-                  handle = await directoryHandle.getFileHandle(SAVE_FILE_NAME, { create: false })
-                } catch (error) {
-                  console.error("El archivo no existe en el directorio seleccionado:", error)
-                  // Crear el archivo si no existe
-                  handle = await directoryHandle.getFileHandle(SAVE_FILE_NAME, { create: true })
-                  // Guardar los datos actuales en el nuevo archivo
-                  if (rooms.length > 0) {
-                    const writable = await handle.createWritable()
-                    await writable.write(JSON.stringify(rooms, null, 2))
-                    await writable.close()
-                  }
-                }
-              } catch (error) {
-                console.error("Error al abrir el directorio específico:", error)
-              }
-            }
-
-            // Si no pudimos abrir el archivo específico, mostramos el selector normal
-            if (!handle) {
-              const fileHandles = await window.showOpenFilePicker({
-                types: [
-                  {
-                    description: "Archivo de datos",
-                    accept: {
-                      "application/json": [".json"],
-                    },
+            const fileHandles = await window.showOpenFilePicker({
+              types: [
+                {
+                  description: "Archivo de datos",
+                  accept: {
+                    "application/json": [".json"],
                   },
-                ],
-                suggestedName: SAVE_FILE_NAME,
-              })
+                },
+              ],
+              suggestedName: SAVE_FILE_NAME,
+            })
 
-              if (fileHandles && fileHandles.length > 0) {
-                handle = fileHandles[0]
-              }
-            }
-
-            if (handle) {
+            if (fileHandles && fileHandles.length > 0) {
+              handle = fileHandles[0]
               setFileHandle(handle)
-              // Guardar la ruta del archivo
-              try {
-                const file = await handle.getFile()
-                setFilePath(file.name)
-                localStorage.setItem(FILE_PATH_KEY, file.name)
-              } catch (error) {
-                console.error("Error al obtener información del archivo:", error)
-              }
             }
           } catch (error) {
             console.error("Error al mostrar selector de archivos:", error)
@@ -213,16 +115,15 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
       return null
     },
-    [fileHandle, filePath, rooms],
+    [fileHandle],
   )
 
-  // Función para guardar datos en el archivo salva
+  // Función para guardar datos en el archivo salva.json
   const saveToFile = useCallback(
     async (dataToSave: Room[], forceSavePicker = false) => {
       setSyncStatus("syncing")
       try {
         if (!isFileSystemAccessSupported()) {
-          setSyncStatus("offline")
           throw new Error("API File System Access no soportada en este navegador")
         }
 
@@ -231,51 +132,18 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         // Si no tenemos un fileHandle o se fuerza mostrar el selector, pedimos al usuario que elija dónde guardar
         if (!handle || forceSavePicker) {
           try {
-            // Si tenemos una ruta específica, intentamos abrir ese directorio
-            if (filePath && !forceSavePicker) {
-              try {
-                const directoryHandle = await window.showDirectoryPicker({
-                  id: "salvaDirectory",
-                  mode: "readwrite",
-                  startIn: "documents",
-                })
-
-                try {
-                  handle = await directoryHandle.getFileHandle(SAVE_FILE_NAME, { create: true })
-                } catch (error) {
-                  console.error("Error al crear/abrir el archivo en el directorio seleccionado:", error)
-                }
-              } catch (error) {
-                console.error("Error al abrir el directorio específico:", error)
-              }
-            }
-
-            // Si no pudimos abrir el archivo específico, mostramos el selector normal
-            if (!handle) {
-              handle = await window.showSaveFilePicker({
-                types: [
-                  {
-                    description: "Archivo de datos",
-                    accept: {
-                      "application/json": [".json"],
-                    },
+            handle = await window.showSaveFilePicker({
+              types: [
+                {
+                  description: "Archivo de datos",
+                  accept: {
+                    "application/json": [".json"],
                   },
-                ],
-                suggestedName: SAVE_FILE_NAME,
-              })
-            }
-
-            if (handle) {
-              setFileHandle(handle)
-              // Guardar la ruta del archivo
-              try {
-                const file = await handle.getFile()
-                setFilePath(file.name)
-                localStorage.setItem(FILE_PATH_KEY, file.name)
-              } catch (error) {
-                console.error("Error al obtener información del archivo:", error)
-              }
-            }
+                },
+              ],
+              suggestedName: SAVE_FILE_NAME,
+            })
+            setFileHandle(handle)
           } catch (error) {
             console.error("Error al mostrar selector de guardado:", error)
             setSyncStatus("error")
@@ -319,16 +187,11 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
       } catch (error) {
         console.error("Error al guardar en archivo:", error)
-        // Si estamos offline, marcamos el estado como offline
-        if (!isOnline) {
-          setSyncStatus("offline")
-        } else {
-          setSyncStatus("error")
-        }
+        setSyncStatus("error")
         return false
       }
     },
-    [fileHandle, filePath, isOnline],
+    [fileHandle],
   )
 
   // Función para exportar datos a un archivo descargable
@@ -364,7 +227,7 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Función para verificar si hay cambios en el archivo
   const checkForChanges = useCallback(async () => {
-    if (!fileHandle || !isOnline) return false
+    if (!fileHandle) return false
 
     try {
       const file = await fileHandle.getFile()
@@ -372,7 +235,7 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       // Si la fecha de modificación es diferente, hay cambios
       if (storedLastModified && file.lastModified.toString() !== storedLastModified) {
-        console.log("Se detectaron cambios en el archivo salva")
+        console.log("Se detectaron cambios en el archivo salva.json")
 
         // Cargar los nuevos datos
         const content = await file.text()
@@ -390,7 +253,7 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
 
     return false
-  }, [fileHandle, isOnline])
+  }, [fileHandle])
 
   // Cargar habitaciones al iniciar
   useEffect(() => {
@@ -448,40 +311,29 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     window.roomStoreExport = () => exportToDownloadableFile(rooms)
     window.roomStoreImport = importFromFile
     window.roomStoreCheckChanges = checkForChanges
-    window.roomStoreSetPath = setSpecificFilePath
 
     return () => {
       // Limpiar funciones globales al desmontar
       delete window.roomStoreExport
       delete window.roomStoreImport
       delete window.roomStoreCheckChanges
-      delete window.roomStoreSetPath
     }
-  }, [loadFromFile, exportToDownloadableFile, importFromFile, checkForChanges, setSpecificFilePath])
+  }, [loadFromFile, exportToDownloadableFile, importFromFile, checkForChanges])
 
   // Configurar verificación periódica de cambios
   useEffect(() => {
-    if (!fileHandle || !isLoaded || !isOnline) return
+    if (!fileHandle || !isLoaded) return
 
     // Verificar cambios periódicamente
     const intervalId = setInterval(async () => {
       const hasChanges = await checkForChanges()
       if (hasChanges) {
-        console.log("Se actualizaron los datos desde el archivo salva")
+        console.log("Se actualizaron los datos desde el archivo salva.json")
       }
     }, CHECK_INTERVAL)
 
     return () => clearInterval(intervalId)
-  }, [fileHandle, isLoaded, checkForChanges, isOnline])
-
-  // Actualizar el estado de sincronización cuando cambia el estado de conexión
-  useEffect(() => {
-    if (!isOnline) {
-      setSyncStatus("offline")
-    } else if (syncStatus === "offline") {
-      setSyncStatus("synced")
-    }
-  }, [isOnline, syncStatus])
+  }, [fileHandle, isLoaded, checkForChanges])
 
   // Guardar habitaciones cuando cambien
   useEffect(() => {
@@ -490,8 +342,8 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         // Siempre guardamos en localStorage como respaldo
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(rooms))
 
-        // Si tenemos un fileHandle y estamos online, guardamos en el archivo
-        if (fileHandle && isOnline) {
+        // Si tenemos un fileHandle, guardamos en el archivo
+        if (fileHandle) {
           try {
             await saveToFile(rooms)
           } catch (error) {
@@ -505,7 +357,7 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (isLoaded) {
       saveRooms()
     }
-  }, [rooms, isLoaded, saveToFile, fileHandle, isOnline])
+  }, [rooms, isLoaded, saveToFile, fileHandle])
 
   // Funciones para manipular habitaciones
   const addRoom = (room: Omit<Room, "id">) => {
@@ -572,16 +424,13 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     deleteRoom,
     toggleRoomAvailability,
     addReservedDates,
-    // Funciones para manejar el archivo salva
+    // Funciones para manejar el archivo salva.json
     exportData: () => exportToDownloadableFile(rooms),
     importData: importFromFile,
     saveToFile: () => saveToFile(rooms, true),
     checkForChanges: forceCheckForChanges,
-    setFilePath: setSpecificFilePath,
     syncStatus,
     lastModified: lastModified ? new Date(Number.parseInt(lastModified)) : null,
-    filePath,
-    isOnline,
   }
 
   return <RoomStoreContext.Provider value={value}>{children}</RoomStoreContext.Provider>
@@ -593,6 +442,5 @@ declare global {
     roomStoreExport?: () => void
     roomStoreImport?: () => Promise<boolean>
     roomStoreCheckChanges?: () => Promise<boolean>
-    roomStoreSetPath?: (path: string) => Promise<boolean>
   }
 }

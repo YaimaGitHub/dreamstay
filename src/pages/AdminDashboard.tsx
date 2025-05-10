@@ -7,13 +7,12 @@ import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Edit, Plus, Trash, Download, Upload, Save, RefreshCw, FolderOpen, Wifi, WifiOff } from "lucide-react"
+import { Edit, Plus, Trash, Download, Upload, Save, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 import { useState, useEffect } from "react"
-import { FilePathSelector } from "@/components/admin/FilePathSelector"
 
 const AdminDashboard = () => {
-  const { isAuthenticated, logout, isAdministrador, currentUser } = useAdminAuth()
+  const { isAuthenticated, logout } = useAdminAuth()
   const {
     rooms,
     toggleRoomAvailability,
@@ -24,26 +23,23 @@ const AdminDashboard = () => {
     checkForChanges,
     syncStatus,
     lastModified,
-    filePath,
-    isOnline,
   } = useRoomStore()
   const navigate = useNavigate()
   const [isChecking, setIsChecking] = useState(false)
-  const [showPathSelector, setShowPathSelector] = useState(false)
 
   // Configurar verificación periódica de cambios
   useEffect(() => {
     const intervalId = setInterval(async () => {
-      if (checkForChanges && isOnline) {
+      if (checkForChanges) {
         const hasChanges = await checkForChanges()
         if (hasChanges) {
-          toast.success("Se han detectado cambios en el archivo salva y se han actualizado los datos")
+          toast.success("Se han detectado cambios en el archivo salva.json y se han actualizado los datos")
         }
       }
     }, 10000) // Verificar cada 10 segundos
 
     return () => clearInterval(intervalId)
-  }, [checkForChanges, isOnline])
+  }, [checkForChanges])
 
   // Redirect if not authenticated
   if (!isAuthenticated) {
@@ -77,7 +73,7 @@ const AdminDashboard = () => {
   const handleExportData = () => {
     if (exportData) {
       exportData()
-      toast.success("Datos exportados correctamente a archivo salva")
+      toast.success("Datos exportados correctamente a salva.json")
     } else {
       toast.error("No se pudo exportar los datos. Intente nuevamente.")
     }
@@ -88,7 +84,7 @@ const AdminDashboard = () => {
     if (importData) {
       const success = await importData()
       if (success) {
-        toast.success("Datos importados correctamente desde archivo salva")
+        toast.success("Datos importados correctamente desde salva.json")
       } else {
         toast.error("No se pudo importar los datos. Intente nuevamente.")
       }
@@ -97,12 +93,12 @@ const AdminDashboard = () => {
     }
   }
 
-  // Función para guardar datos manualmente en el archivo salva
+  // Función para guardar datos manualmente en el archivo salva.json
   const handleSaveToFile = async () => {
     if (saveToFile) {
       const success = await saveToFile()
       if (success) {
-        toast.success("Datos guardados correctamente en archivo salva")
+        toast.success("Datos guardados correctamente en salva.json")
       } else {
         toast.error("No se pudo guardar los datos. Intente nuevamente.")
       }
@@ -120,7 +116,7 @@ const AdminDashboard = () => {
         if (hasChanges) {
           toast.success("Se han detectado cambios y se han actualizado los datos")
         } else {
-          toast.info("No se detectaron cambios en el archivo salva")
+          toast.info("No se detectaron cambios en el archivo salva.json")
         }
       } catch (error) {
         toast.error("Error al verificar cambios")
@@ -139,8 +135,6 @@ const AdminDashboard = () => {
         return "Sincronizando..."
       case "error":
         return "Error de sincronización"
-      case "offline":
-        return "Modo sin conexión"
       case "synced":
         return "Sincronizado"
       default:
@@ -167,19 +161,7 @@ const AdminDashboard = () => {
       <Navbar />
       <div className="container mx-auto py-8 px-4 flex-grow">
         <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Panel Administrativo</h1>
-            {currentUser && (
-              <p className="text-sm text-muted-foreground">
-                Usuario: <span className="font-medium">{currentUser}</span>
-                {isAdministrador && (
-                  <span className="ml-2 inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-                    Administrador Principal
-                  </span>
-                )}
-              </p>
-            )}
-          </div>
+          <h1 className="text-3xl font-bold">Panel Administrativo</h1>
           <div className="flex space-x-4">
             <Button variant="outline" onClick={handleLogout}>
               Cerrar sesión
@@ -190,7 +172,7 @@ const AdminDashboard = () => {
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
             <div>
-              <h2 className="text-xl font-semibold">Gestión del archivo salva</h2>
+              <h2 className="text-xl font-semibold">Gestión del archivo salva.json</h2>
               <div className="mt-2 space-y-1">
                 <p className="text-sm">
                   <span className="font-medium">Estado:</span>{" "}
@@ -200,12 +182,9 @@ const AdminDashboard = () => {
                         ? "text-green-600"
                         : syncStatus === "syncing"
                           ? "text-amber-600"
-                          : syncStatus === "offline"
-                            ? "text-blue-600"
-                            : "text-red-600"
-                    } flex items-center gap-1`}
+                          : "text-red-600"
+                    }`}
                   >
-                    {isOnline ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
                     {getSyncStatusText()}
                   </span>
                 </p>
@@ -213,16 +192,8 @@ const AdminDashboard = () => {
                   <span className="font-medium">Última modificación:</span>{" "}
                   <span className="text-muted-foreground">{getLastModifiedText()}</span>
                 </p>
-                {filePath && (
-                  <p className="text-sm">
-                    <span className="font-medium">Archivo:</span>{" "}
-                    <span className="text-muted-foreground">{filePath}</span>
-                  </p>
-                )}
                 <p className="text-sm text-muted-foreground">
-                  {isOnline
-                    ? "Los cambios se sincronizan automáticamente y se verifican cada 10 segundos"
-                    : "Modo sin conexión: los cambios se guardarán localmente y se sincronizarán cuando vuelva a estar en línea"}
+                  Los cambios se sincronizan automáticamente y se verifican cada 10 segundos
                 </p>
               </div>
             </div>
@@ -243,27 +214,13 @@ const AdminDashboard = () => {
                 variant="outline"
                 className="flex items-center gap-2"
                 onClick={handleCheckForChanges}
-                disabled={isChecking || !isOnline}
+                disabled={isChecking}
               >
                 <RefreshCw className={`h-4 w-4 ${isChecking ? "animate-spin" : ""}`} />
                 Verificar cambios
               </Button>
-              <Button
-                variant="outline"
-                className="flex items-center gap-2"
-                onClick={() => setShowPathSelector(true)}
-                disabled={!isAdministrador}
-              >
-                <FolderOpen className="h-4 w-4" />
-                Configurar ubicación
-              </Button>
             </div>
           </div>
-
-          {/* Selector de ubicación del archivo */}
-          {showPathSelector && (
-            <FilePathSelector onClose={() => setShowPathSelector(false)} currentPath={filePath || ""} />
-          )}
         </div>
 
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">

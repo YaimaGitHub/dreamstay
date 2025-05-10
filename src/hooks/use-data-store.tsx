@@ -56,94 +56,18 @@ interface DataStoreContextType {
   exportData: () => string
   importData: (jsonData: string) => boolean
   resetToDefault: () => void
-  lastUpdated: Date | null
-  isInitialized: boolean
-  configSource: "default" | "localStorage" | "file"
 }
 
 const DataStoreContext = createContext<DataStoreContextType | undefined>(undefined)
 
-// Claves para localStorage
-const STORAGE_KEYS = {
-  ROOMS: "estanciaplus_rooms",
-  SERVICES: "estanciaplus_services",
-  LAST_UPDATED: "estanciaplus_last_updated",
-  CONFIG_SOURCE: "estanciaplus_config_source",
-}
-
 export const DataStoreProvider = ({ children }: { children: ReactNode }) => {
   const [rooms, setRooms] = useState<Room[]>([])
   const [services, setServices] = useState<Service[]>([])
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
-  const [isInitialized, setIsInitialized] = useState(false)
-  const [configSource, setConfigSource] = useState<"default" | "localStorage" | "file">("default")
 
-  // Cargar datos desde localStorage al iniciar
+  // Inicializar con datos por defecto
   useEffect(() => {
-    const loadFromStorage = () => {
-      try {
-        // Verificar la fuente de configuración
-        const storedConfigSource = localStorage.getItem(STORAGE_KEYS.CONFIG_SOURCE)
-        if (storedConfigSource) {
-          setConfigSource(storedConfigSource as "default" | "localStorage" | "file")
-        }
-
-        // Intentar cargar habitaciones
-        const storedRooms = localStorage.getItem(STORAGE_KEYS.ROOMS)
-        if (storedRooms) {
-          setRooms(JSON.parse(storedRooms))
-        } else {
-          setRooms(roomsData)
-        }
-
-        // Intentar cargar servicios
-        const storedServices = localStorage.getItem(STORAGE_KEYS.SERVICES)
-        if (storedServices) {
-          setServices(JSON.parse(storedServices))
-        } else {
-          setServices(
-            allServices.map((service) => ({
-              ...service,
-              icon: undefined, // Eliminar los iconos React para el almacenamiento
-            })),
-          )
-        }
-
-        // Cargar fecha de última actualización
-        const storedLastUpdated = localStorage.getItem(STORAGE_KEYS.LAST_UPDATED)
-        if (storedLastUpdated) {
-          setLastUpdated(new Date(storedLastUpdated))
-        }
-      } catch (error) {
-        console.error("Error al cargar datos desde localStorage:", error)
-        resetToDefault()
-      }
-      setIsInitialized(true)
-    }
-
-    loadFromStorage()
+    resetToDefault()
   }, [])
-
-  // Guardar cambios en localStorage cuando se actualicen los datos
-  useEffect(() => {
-    if (!isInitialized) return
-
-    const saveToStorage = () => {
-      try {
-        localStorage.setItem(STORAGE_KEYS.ROOMS, JSON.stringify(rooms))
-        localStorage.setItem(STORAGE_KEYS.SERVICES, JSON.stringify(services))
-        localStorage.setItem(STORAGE_KEYS.CONFIG_SOURCE, configSource)
-
-        const now = new Date()
-        localStorage.setItem(STORAGE_KEYS.LAST_UPDATED, now.toISOString())
-        setLastUpdated(now)
-      } catch (error) {
-        console.error("Error al guardar datos en localStorage:", error)
-      }
-    }
-
-    saveToStorage()
-  }, [rooms, services, configSource, isInitialized])
 
   const resetToDefault = () => {
     setRooms(roomsData)
@@ -153,18 +77,6 @@ export const DataStoreProvider = ({ children }: { children: ReactNode }) => {
         icon: undefined, // Eliminar los iconos React para el almacenamiento
       })),
     )
-
-    // Actualizar la fuente de configuración
-    setConfigSource("default")
-
-    // Limpiar localStorage
-    localStorage.removeItem(STORAGE_KEYS.ROOMS)
-    localStorage.removeItem(STORAGE_KEYS.SERVICES)
-    localStorage.removeItem(STORAGE_KEYS.CONFIG_SOURCE)
-
-    const now = new Date()
-    localStorage.setItem(STORAGE_KEYS.LAST_UPDATED, now.toISOString())
-    setLastUpdated(now)
   }
 
   // Funciones para gestionar habitaciones
@@ -200,7 +112,6 @@ export const DataStoreProvider = ({ children }: { children: ReactNode }) => {
     const data = {
       rooms,
       services,
-      lastUpdated: new Date().toISOString(),
     }
     return JSON.stringify(data, null, 2)
   }
@@ -211,21 +122,10 @@ export const DataStoreProvider = ({ children }: { children: ReactNode }) => {
       const data = JSON.parse(jsonData)
       if (data.rooms && Array.isArray(data.rooms)) {
         setRooms(data.rooms)
-        localStorage.setItem(STORAGE_KEYS.ROOMS, JSON.stringify(data.rooms))
       }
       if (data.services && Array.isArray(data.services)) {
         setServices(data.services)
-        localStorage.setItem(STORAGE_KEYS.SERVICES, JSON.stringify(data.services))
       }
-
-      // Actualizar la fuente de configuración
-      setConfigSource("file")
-      localStorage.setItem(STORAGE_KEYS.CONFIG_SOURCE, "file")
-
-      const now = new Date()
-      localStorage.setItem(STORAGE_KEYS.LAST_UPDATED, now.toISOString())
-      setLastUpdated(now)
-
       return true
     } catch (error) {
       console.error("Error al importar datos:", error)
@@ -247,9 +147,6 @@ export const DataStoreProvider = ({ children }: { children: ReactNode }) => {
         exportData,
         importData,
         resetToDefault,
-        lastUpdated,
-        isInitialized,
-        configSource,
       }}
     >
       {children}

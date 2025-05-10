@@ -9,26 +9,17 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 import { useDataStore } from "@/hooks/use-data-store"
-import { Download, Upload, RefreshCw, FileJson, Share2 } from "lucide-react"
+import { Download, Upload, RefreshCw, FileJson } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import SiteConfigStatus from "@/components/SiteConfigStatus"
 
 const AdminConfig = () => {
   const { toast } = useToast()
-  const { exportData, importData, resetToDefault, lastUpdated, configSource } = useDataStore()
+  const { exportData, importData, resetToDefault } = useDataStore()
   const [activeTab, setActiveTab] = useState("export")
   const [isExporting, setIsExporting] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
   const [isResetting, setIsResetting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const formatDate = (date: Date | null) => {
-    if (!date) return "Nunca"
-    return new Intl.DateTimeFormat("es-ES", {
-      dateStyle: "medium",
-      timeStyle: "short",
-    }).format(date)
-  }
 
   const handleExport = () => {
     setIsExporting(true)
@@ -93,8 +84,7 @@ const AdminConfig = () => {
         if (success) {
           toast({
             title: "Importación completada",
-            description:
-              "La configuración ha sido importada correctamente. Los cambios se reflejarán en todo el sitio.",
+            description: "La configuración ha sido importada correctamente",
           })
         } else {
           throw new Error("Formato de archivo inválido")
@@ -143,20 +133,11 @@ const AdminConfig = () => {
         resetToDefault()
         toast({
           title: "Configuración restablecida",
-          description:
-            "La configuración ha sido restablecida a los valores predeterminados. Los cambios se reflejarán en todo el sitio.",
+          description: "La configuración ha sido restablecida a los valores predeterminados",
         })
         setIsResetting(false)
       }, 1000)
     }
-  }
-
-  const handleShareConfig = () => {
-    // Implementación futura: compartir configuración entre dispositivos
-    toast({
-      title: "Función en desarrollo",
-      description: "La función para compartir configuración entre dispositivos estará disponible próximamente.",
-    })
   }
 
   return (
@@ -166,13 +147,10 @@ const AdminConfig = () => {
         <p className="text-muted-foreground">Gestiona la configuración de tu plataforma</p>
       </div>
 
-      <SiteConfigStatus />
-
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-6">
           <TabsTrigger value="export">Exportar</TabsTrigger>
           <TabsTrigger value="import">Importar</TabsTrigger>
-          <TabsTrigger value="share">Compartir</TabsTrigger>
           <TabsTrigger value="reset">Restablecer</TabsTrigger>
         </TabsList>
 
@@ -185,13 +163,6 @@ const AdminConfig = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Alert className="mb-6">
-                <AlertTitle>Información</AlertTitle>
-                <AlertDescription>
-                  El archivo de configuración exportado contiene todas las habitaciones, servicios y ajustes actuales.
-                  Puedes usar este archivo para cargar la configuración en otro dispositivo o como copia de seguridad.
-                </AlertDescription>
-              </Alert>
               <div className="flex items-center justify-center p-8 border-2 border-dashed rounded-lg">
                 <div className="text-center">
                   <FileJson className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -226,7 +197,7 @@ const AdminConfig = () => {
                 <AlertTitle>Importante</AlertTitle>
                 <AlertDescription>
                   Al importar una configuración, se reemplazarán todos los datos actuales. Asegúrate de hacer una copia
-                  de seguridad antes de continuar. Los cambios se reflejarán inmediatamente en todo el sitio.
+                  de seguridad antes de continuar.
                 </AlertDescription>
               </Alert>
               <div
@@ -254,43 +225,6 @@ const AdminConfig = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="share">
-          <Card>
-            <CardHeader>
-              <CardTitle>Compartir configuración</CardTitle>
-              <CardDescription>Comparte tu configuración entre dispositivos</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Alert className="mb-6">
-                <AlertTitle>Información</AlertTitle>
-                <AlertDescription>
-                  Esta función te permite compartir tu configuración actual con otros dispositivos sin necesidad de
-                  exportar e importar manualmente archivos JSON.
-                </AlertDescription>
-              </Alert>
-              <div className="flex items-center justify-center p-8 border-2 border-dashed rounded-lg">
-                <div className="text-center">
-                  <Share2 className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <h3 className="mt-2 text-lg font-medium">Compartir configuración</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Comparte tu configuración actual con otros dispositivos
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button
-                onClick={handleShareConfig}
-                className="w-full bg-terracotta hover:bg-terracotta/90"
-                disabled={true}
-              >
-                <Share2 className="mr-2 h-4 w-4" />
-                Compartir configuración (Próximamente)
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-
         <TabsContent value="reset">
           <Card>
             <CardHeader>
@@ -302,8 +236,7 @@ const AdminConfig = () => {
                 <AlertTitle>Advertencia</AlertTitle>
                 <AlertDescription>
                   Esta acción eliminará todas las habitaciones y servicios personalizados y restablecerá la
-                  configuración a los valores predeterminados. Esta acción no se puede deshacer. Los cambios se
-                  reflejarán inmediatamente en todo el sitio.
+                  configuración a los valores predeterminados. Esta acción no se puede deshacer.
                 </AlertDescription>
               </Alert>
             </CardContent>

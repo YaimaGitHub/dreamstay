@@ -2,45 +2,53 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Plane, Car, Wifi, Coffee, Utensils, MapPin } from "lucide-react"
 import { Link } from "react-router-dom"
-import { useDataStore } from "@/hooks/use-data-store"
 
-// Función para obtener el icono según la categoría y título del servicio
-const getServiceIcon = (category: string, title: string) => {
-  if (title.toLowerCase().includes("traslado") || title.toLowerCase().includes("aeropuerto")) {
-    return <Plane className="h-8 w-8 text-terracotta" />
-  } else if (title.toLowerCase().includes("vehículo") || title.toLowerCase().includes("alquiler")) {
-    return <Car className="h-8 w-8 text-terracotta" />
-  } else if (title.toLowerCase().includes("tour") || title.toLowerCase().includes("guiado")) {
-    return <MapPin className="h-8 w-8 text-terracotta" />
-  } else if (title.toLowerCase().includes("wifi") || title.toLowerCase().includes("internet")) {
-    return <Wifi className="h-8 w-8 text-terracotta" />
-  } else if (title.toLowerCase().includes("desayuno") || title.toLowerCase().includes("café")) {
-    return <Coffee className="h-8 w-8 text-terracotta" />
-  } else if (title.toLowerCase().includes("restaurante") || title.toLowerCase().includes("comida")) {
-    return <Utensils className="h-8 w-8 text-terracotta" />
-  } else {
-    // Icono por defecto según la categoría
-    switch (category) {
-      case "transporte":
-        return <Car className="h-8 w-8 text-terracotta" />
-      case "gastronomía":
-        return <Utensils className="h-8 w-8 text-terracotta" />
-      case "comodidades":
-        return <Wifi className="h-8 w-8 text-terracotta" />
-      case "experiencias":
-        return <MapPin className="h-8 w-8 text-terracotta" />
-      default:
-        return <Utensils className="h-8 w-8 text-terracotta" />
-    }
-  }
-}
+const services = [
+  {
+    id: 1,
+    title: "Traslado desde el aeropuerto",
+    description: "Te recogemos en el aeropuerto y te llevamos directamente a tu habitación.",
+    icon: <Plane className="h-8 w-8 text-terracotta" />,
+    price: 25,
+  },
+  {
+    id: 2,
+    title: "Alquiler de vehículos",
+    description: "Contamos con una flota de vehículos disponibles para que explores la ciudad.",
+    icon: <Car className="h-8 w-8 text-terracotta" />,
+    price: 45,
+  },
+  {
+    id: 3,
+    title: "WiFi de alta velocidad",
+    description: "Conexión premium para que puedas trabajar o entretenerte sin interrupciones.",
+    icon: <Wifi className="h-8 w-8 text-terracotta" />,
+    price: 10,
+  },
+  {
+    id: 4,
+    title: "Desayuno gourmet",
+    description: "Disfruta de un desayuno completo preparado con ingredientes locales y frescos.",
+    icon: <Coffee className="h-8 w-8 text-terracotta" />,
+    price: 15,
+  },
+  {
+    id: 5,
+    title: "Tours guiados",
+    description: "Conoce los mejores lugares de la ciudad con nuestros guías expertos.",
+    icon: <MapPin className="h-8 w-8 text-terracotta" />,
+    price: 30,
+  },
+  {
+    id: 6,
+    title: "Servicio de restaurante",
+    description: "Saborea la gastronomía local en nuestro restaurante o en la comodidad de tu habitación.",
+    icon: <Utensils className="h-8 w-8 text-terracotta" />,
+    price: 20,
+  },
+]
 
 const ServicesList = () => {
-  const { services } = useDataStore()
-
-  // Mostrar solo 6 servicios en la página principal
-  const displayedServices = services.slice(0, 6)
-
   return (
     <section className="py-16 bg-muted">
       <div className="container mx-auto">
@@ -52,15 +60,15 @@ const ServicesList = () => {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {displayedServices.map((service) => (
+          {services.map((service) => (
             <Card key={service.id} className="card-hover border border-border/50 bg-card">
               <CardHeader>
-                <div className="mb-3">{getServiceIcon(service.category, service.title)}</div>
+                <div className="mb-3">{service.icon}</div>
                 <CardTitle>{service.title}</CardTitle>
                 <CardDescription>{service.description}</CardDescription>
               </CardHeader>
               <CardContent className="flex justify-between items-center">
-                <span className="font-bold">{service.price > 0 ? `$${service.price}` : "Incluido"}</span>
+                <span className="font-bold">${service.price}</span>
                 <Button
                   size="sm"
                   variant="outline"

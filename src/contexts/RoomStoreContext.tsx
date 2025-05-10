@@ -8,9 +8,9 @@ import type { Room, RoomStore } from "../types/room"
 import { featuredRooms as initialRooms } from "../data/sampleRooms"
 
 // Nombre fijo del archivo de guardado
-const SAVE_FILE_NAME = "salva.json"
-// Clave para localStorage como respaldo
-const LOCAL_STORAGE_KEY = "hotel-rooms-data"
+const SAVE_FILE_NAME = "salva"
+// Ruta fija para el archivo de guardado
+const SAVE_FILE_PATH = "/"
 // Clave para almacenar la última modificación
 const LAST_MODIFIED_KEY = "salva-last-modified"
 // Intervalo de verificación de cambios (en milisegundos)
@@ -142,6 +142,7 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 },
               ],
               suggestedName: SAVE_FILE_NAME,
+              startIn: SAVE_FILE_PATH,
             })
             setFileHandle(handle)
           } catch (error) {
@@ -259,35 +260,38 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   useEffect(() => {
     const loadRooms = async () => {
       try {
-        // Intentamos cargar desde el archivo
-        let result = null
+        // Intentamos cargar directamente desde el archivo salva en la raíz
+        const result = null
         try {
-          result = await loadFromFile(false)
-        } catch (error) {
-          console.error("Error al cargar automáticamente:", error)
-        }
+          // Intentar abrir el archivo salva en la raíz
+          const fileHandles = await window.showOpenFilePicker({
+            types: [
+              {
+                description: "Archivo de datos",
+                accept: {
+                  "application/json": [".json"],
+                },
+              },
+            ],
+            suggestedName: SAVE_FILE_NAME,
+            startIn: SAVE_FILE_PATH,
+          })
 
-        // Si no pudimos cargar automáticamente, mostramos el selector
-        if (!result) {
-          try {
-            result = await loadFromFile(true)
-          } catch (error) {
-            console.error("Error al cargar con selector:", error)
-          }
-        }
+          if (fileHandles && fileHandles.length > 0) {
+            const handle = fileHandles[0]
+            setFileHandle(handle)
+            const file = await handle.getFile()
+            const content = await file.text()
+            const parsedRooms = JSON.parse(content)
 
-        if (result) {
-          setRooms(result.data)
-        } else {
-          // Si no podemos cargar desde archivo, intentamos localStorage
-          const savedData = localStorage.getItem(LOCAL_STORAGE_KEY)
+            // Guardar la última fecha de modificación
+            setLastModified(file.lastModified.toString())
+            localStorage.setItem(LAST_MODIFIED_KEY, file.lastModified.toString())
 
-          if (savedData) {
-            const parsedData = JSON.parse(savedData)
-            setRooms(parsedData)
-            console.log("Habitaciones cargadas desde almacenamiento local:", parsedData.length)
+            setRooms(parsedRooms)
+            console.log(`Habitaciones cargadas desde archivo '${SAVE_FILE_NAME}':`, parsedRooms.length)
           } else {
-            // Si no hay datos guardados, usamos los datos iniciales
+            // Si no se pudo cargar el archivo, usar datos iniciales
             const roomsWithModifiedDate = initialRooms.map((room) => ({
               ...room,
               lastModified: new Date().toISOString(),
@@ -295,12 +299,22 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             setRooms(roomsWithModifiedDate as Room[])
             console.log("Usando datos iniciales de habitaciones")
           }
+        } catch (error) {
+          console.error("Error al cargar desde archivo:", error)
+          // En caso de error, usar datos iniciales
+          const roomsWithModifiedDate = initialRooms.map((room) => ({
+            ...room,
+            lastModified: new Date().toISOString(),
+          }))
+          setRooms(roomsWithModifiedDate as Room[])
+          console.log("Usando datos iniciales de habitaciones debido a un error:", error)
+        } finally {
+          setIsLoaded(true)
         }
       } catch (error) {
         console.error("Error al cargar habitaciones:", error)
         // En caso de error, usar datos iniciales
         setRooms(initialRooms as Room[])
-      } finally {
         setIsLoaded(true)
       }
     }
@@ -339,9 +353,6 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   useEffect(() => {
     const saveRooms = async () => {
       if (isLoaded) {
-        // Siempre guardamos en localStorage como respaldo
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(rooms))
-
         // Si tenemos un fileHandle, guardamos en el archivo
         if (fileHandle) {
           try {

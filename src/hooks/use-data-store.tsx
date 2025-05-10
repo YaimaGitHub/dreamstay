@@ -57,6 +57,8 @@ interface DataStoreContextType {
   importData: (jsonData: string) => boolean
   resetToDefault: () => void
   lastUpdated: Date | null
+  isInitialized: boolean
+  configSource: "default" | "localStorage" | "file"
 }
 
 const DataStoreContext = createContext<DataStoreContextType | undefined>(undefined)
@@ -66,6 +68,7 @@ const STORAGE_KEYS = {
   ROOMS: "estanciaplus_rooms",
   SERVICES: "estanciaplus_services",
   LAST_UPDATED: "estanciaplus_last_updated",
+  CONFIG_SOURCE: "estanciaplus_config_source",
 }
 
 export const DataStoreProvider = ({ children }: { children: ReactNode }) => {
@@ -73,11 +76,18 @@ export const DataStoreProvider = ({ children }: { children: ReactNode }) => {
   const [services, setServices] = useState<Service[]>([])
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)
+  const [configSource, setConfigSource] = useState<"default" | "localStorage" | "file">("default")
 
   // Cargar datos desde localStorage al iniciar
   useEffect(() => {
     const loadFromStorage = () => {
       try {
+        // Verificar la fuente de configuración
+        const storedConfigSource = localStorage.getItem(STORAGE_KEYS.CONFIG_SOURCE)
+        if (storedConfigSource) {
+          setConfigSource(storedConfigSource as "default" | "localStorage" | "file")
+        }
+
         // Intentar cargar habitaciones
         const storedRooms = localStorage.getItem(STORAGE_KEYS.ROOMS)
         if (storedRooms) {
@@ -122,6 +132,7 @@ export const DataStoreProvider = ({ children }: { children: ReactNode }) => {
       try {
         localStorage.setItem(STORAGE_KEYS.ROOMS, JSON.stringify(rooms))
         localStorage.setItem(STORAGE_KEYS.SERVICES, JSON.stringify(services))
+        localStorage.setItem(STORAGE_KEYS.CONFIG_SOURCE, configSource)
 
         const now = new Date()
         localStorage.setItem(STORAGE_KEYS.LAST_UPDATED, now.toISOString())
@@ -132,7 +143,7 @@ export const DataStoreProvider = ({ children }: { children: ReactNode }) => {
     }
 
     saveToStorage()
-  }, [rooms, services, isInitialized])
+  }, [rooms, services, configSource, isInitialized])
 
   const resetToDefault = () => {
     setRooms(roomsData)
@@ -143,12 +154,16 @@ export const DataStoreProvider = ({ children }: { children: ReactNode }) => {
       })),
     )
 
+    // Actualizar la fuente de configuración
+    setConfigSource("default")
+
     // Limpiar localStorage
     localStorage.removeItem(STORAGE_KEYS.ROOMS)
     localStorage.removeItem(STORAGE_KEYS.SERVICES)
-    localStorage.removeItem(STORAGE_KEYS.LAST_UPDATED)
+    localStorage.removeItem(STORAGE_KEYS.CONFIG_SOURCE)
 
     const now = new Date()
+    localStorage.setItem(STORAGE_KEYS.LAST_UPDATED, now.toISOString())
     setLastUpdated(now)
   }
 
@@ -203,6 +218,10 @@ export const DataStoreProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem(STORAGE_KEYS.SERVICES, JSON.stringify(data.services))
       }
 
+      // Actualizar la fuente de configuración
+      setConfigSource("file")
+      localStorage.setItem(STORAGE_KEYS.CONFIG_SOURCE, "file")
+
       const now = new Date()
       localStorage.setItem(STORAGE_KEYS.LAST_UPDATED, now.toISOString())
       setLastUpdated(now)
@@ -229,6 +248,8 @@ export const DataStoreProvider = ({ children }: { children: ReactNode }) => {
         importData,
         resetToDefault,
         lastUpdated,
+        isInitialized,
+        configSource,
       }}
     >
       {children}

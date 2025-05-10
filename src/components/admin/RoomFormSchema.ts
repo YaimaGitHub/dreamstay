@@ -15,7 +15,7 @@ export const roomFormSchema = z.object({
   reviews: z.coerce.number().int().nonnegative(),
   image: z.string().url({
     message: "Debe ser una URL de imagen válida",
-  }),
+  }).optional(),
   type: z.string().min(1, {
     message: "Seleccione un tipo de habitación",
   }),
@@ -29,6 +29,7 @@ export const roomFormSchema = z.object({
   features: z.array(z.string()).min(1, {
     message: "Agregue al menos una característica",
   }),
+  lastModified: z.date().optional().default(() => new Date()),
 });
 
 export type RoomFormValues = z.infer<typeof roomFormSchema>;

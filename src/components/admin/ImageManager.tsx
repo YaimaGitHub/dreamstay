@@ -1,11 +1,12 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { FormField, FormItem, FormControl, FormMessage } from "@/components/ui/form";
-import { Plus, Trash } from "lucide-react";
+import { Plus, Trash, Upload, ImagePlus } from "lucide-react";
 import { useFormContext } from "react-hook-form";
+import { toast } from "sonner";
 
 interface RoomImage {
   id: number;
@@ -20,6 +21,7 @@ interface ImageManagerProps {
 
 const ImageManager = ({ roomImages, setRoomImages }: ImageManagerProps) => {
   const form = useFormContext();
+  const [isUploading, setIsUploading] = useState(false);
 
   const addImage = () => {
     const newImageUrl = form.getValues("image");
@@ -38,10 +40,50 @@ const ImageManager = ({ roomImages, setRoomImages }: ImageManagerProps) => {
     setRoomImages(roomImages.filter(img => img.id !== id));
   };
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    setIsUploading(true);
+    
+    Array.from(files).forEach(file => {
+      // Verificar que sea una imagen
+      if (!file.type.startsWith('image/')) {
+        toast.error(`El archivo ${file.name} no es una imagen válida`);
+        return;
+      }
+
+      // Convertir la imagen a base64 para almacenamiento local
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64Image = e.target?.result as string;
+        
+        const newImage = {
+          id: roomImages.length > 0 ? Math.max(...roomImages.map(img => img.id)) + 1 : 1,
+          url: base64Image,
+          alt: `Imagen de ${form.getValues("title") || "habitación"} - ${file.name}`
+        };
+        
+        setRoomImages(prevImages => [...prevImages, newImage]);
+        toast.success(`Imagen ${file.name} cargada correctamente`);
+      };
+      
+      reader.onerror = () => {
+        toast.error(`Error al leer el archivo ${file.name}`);
+      };
+      
+      reader.readAsDataURL(file);
+    });
+    
+    setIsUploading(false);
+    // Limpiar el input de archivos
+    event.target.value = '';
+  };
+
   return (
     <div>
       <Label>Imágenes</Label>
-      <div className="mt-2 grid grid-cols-1 gap-4">
+      <div className="mt-2 grid gap-4">
         <div className="flex space-x-2">
           <FormField
             control={form.control}
@@ -65,6 +107,27 @@ const ImageManager = ({ roomImages, setRoomImages }: ImageManagerProps) => {
           >
             <Plus className="h-4 w-4 mr-2" />
             Agregar
+          </Button>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Input
+            type="file"
+            accept="image/*"
+            multiple
+            id="image-upload"
+            className="hidden"
+            onChange={handleFileUpload}
+          />
+          <Button 
+            type="button"
+            variant="outline" 
+            className="w-full gap-2" 
+            onClick={() => document.getElementById('image-upload')?.click()}
+            disabled={isUploading}
+          >
+            <ImagePlus className="h-4 w-4" />
+            {isUploading ? "Subiendo..." : "Subir imágenes desde dispositivo"}
           </Button>
         </div>
       </div>

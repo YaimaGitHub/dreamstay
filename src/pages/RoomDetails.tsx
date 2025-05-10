@@ -9,7 +9,8 @@ import RoomAmenities from "@/components/RoomAmenities";
 import AdditionalServices from "@/components/AdditionalServices";
 import { Star, User, MapPin } from "lucide-react";
 import { useRoomStore } from "@/contexts/RoomStoreContext";
-import { Amenity } from "@/types/room";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 const RoomDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -30,14 +31,25 @@ const RoomDetails = () => {
   }
 
   // Fix: Create compatible amenities for RoomAmenities component
-  const amenities: Amenity[] = room.features.map(feature => ({
-    id: rooms.indexOf(room) + 1,
-    name: feature,
-    icon: feature.includes("WiFi") ? "wifi" : 
-          feature.includes("Baño") ? "bath" : 
-          feature.includes("Desayuno") ? "coffee" : "bed",
-    description: "" // Add empty description to satisfy the type
-  }));
+  const amenities = room.features.map((feature, index) => {
+    let icon;
+    if (feature.toLowerCase().includes("wifi")) {
+      icon = "wifi";
+    } else if (feature.toLowerCase().includes("baño")) {
+      icon = "bath";
+    } else if (feature.toLowerCase().includes("desayuno")) {
+      icon = "coffee";
+    } else {
+      icon = "bed";
+    }
+    
+    return {
+      id: index + 1,
+      name: feature,
+      icon: icon,
+      description: `Disfruta de ${feature.toLowerCase()} en tu habitación`
+    };
+  });
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -61,6 +73,11 @@ const RoomDetails = () => {
             <MapPin className="h-4 w-4 mr-1" />
             <span>{room.location}</span>
           </div>
+          {room.lastModified && (
+            <div className="text-sm text-muted-foreground">
+              Actualizado: {format(new Date(room.lastModified), "dd/MM/yyyy", { locale: es })}
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -118,7 +135,11 @@ const RoomDetails = () => {
           </div>
 
           <div className="lg:col-span-1">
-            <BookingForm roomId={room.id} price={room.price} isAvailable={room.isAvailable} />
+            <BookingForm 
+              roomId={room.id} 
+              price={room.price} 
+              isAvailable={room.isAvailable} 
+            />
           </div>
         </div>
       </main>

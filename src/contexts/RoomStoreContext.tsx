@@ -5,6 +5,8 @@ import { Room, RoomStore } from "../types/room";
 // Sample initial rooms data
 import { featuredRooms as initialRooms } from "../data/sampleRooms";
 
+const LOCAL_STORAGE_KEY = "hotel-rooms-data";
+
 const RoomStoreContext = createContext<RoomStore | undefined>(undefined);
 
 export const useRoomStore = () => {
@@ -17,26 +19,55 @@ export const useRoomStore = () => {
 
 export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   // Load rooms from localStorage or use initial data
   useEffect(() => {
-    const savedRooms = localStorage.getItem("rooms");
-    if (savedRooms) {
-      setRooms(JSON.parse(savedRooms));
-    } else {
-      setRooms(initialRooms as Room[]);
-    }
+    const loadRooms = () => {
+      try {
+        const savedRooms = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (savedRooms) {
+          const parsedRooms = JSON.parse(savedRooms);
+          setRooms(parsedRooms);
+          console.log("Habitaciones cargadas desde almacenamiento local:", parsedRooms.length);
+        } else {
+          // No hay datos guardados, usar datos iniciales
+          const roomsWithModifiedDate = initialRooms.map(room => ({
+            ...room,
+            lastModified: new Date().toISOString(),
+          }));
+          setRooms(roomsWithModifiedDate as Room[]);
+          console.log("Usando datos iniciales de habitaciones");
+        }
+      } catch (error) {
+        console.error("Error al cargar habitaciones:", error);
+        // En caso de error, usar datos iniciales
+        setRooms(initialRooms as Room[]);
+      } finally {
+        setIsLoaded(true);
+      }
+    };
+
+    loadRooms();
   }, []);
 
   // Save rooms to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem("rooms", JSON.stringify(rooms));
-  }, [rooms]);
+    if (isLoaded) {
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(rooms));
+        console.log("Habitaciones guardadas en almacenamiento local");
+      } catch (error) {
+        console.error("Error al guardar habitaciones:", error);
+      }
+    }
+  }, [rooms, isLoaded]);
 
   const addRoom = (room: Omit<Room, "id">) => {
     const newRoom = {
       ...room,
       id: rooms.length > 0 ? Math.max(...rooms.map(r => r.id)) + 1 : 1,
+      lastModified: new Date().toISOString(),
     };
     setRooms([...rooms, newRoom as Room]);
   };
@@ -54,7 +85,11 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const toggleRoomAvailability = (id: number) => {
     setRooms(
       rooms.map(room => 
-        room.id === id ? { ...room, isAvailable: !room.isAvailable } : room
+        room.id === id ? { 
+          ...room, 
+          isAvailable: !room.isAvailable,
+          lastModified: new Date().toISOString() 
+        } : room
       )
     );
   };
@@ -71,7 +106,8 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 start: startDate.toISOString(),
                 end: endDate.toISOString()
               }
-            ]
+            ],
+            lastModified: new Date().toISOString()
           };
         }
         return room;

@@ -21,13 +21,14 @@ export interface Room {
     url: string;
     alt: string;
   }[];
+  lastModified?: string;
 }
 
 export interface Amenity {
   id: number;
   name: string;
   icon: string;
-  description?: string; // Added description as optional
+  description: string; // Description is required for RoomAmenities component
 }
 
 export interface RoomStore {
@@ -42,5 +43,5 @@ export interface RoomStore {
 export interface BookingFormProps {
   roomId: number;
   price: number;
-  isAvailable?: boolean; // Added isAvailable as optional
+  isAvailable?: boolean;
 }

@@ -8,6 +8,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { DateRange } from "react-day-picker";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 // Import refactored components
 import BasicInfoFields from "@/components/admin/BasicInfoFields";
@@ -27,6 +29,7 @@ const RoomForm = ({ mode }: RoomFormProps) => {
   const [features, setFeatures] = useState<string[]>([]);
   const [reservedDates, setReservedDates] = useState<DateRange | undefined>();
   const [roomImages, setRoomImages] = useState<{id: number, url: string, alt: string}[]>([]);
+  const [lastModified, setLastModified] = useState<Date | null>(null);
 
   const roomId = id ? parseInt(id) : undefined;
   const currentRoom = roomId ? rooms.find(room => room.id === roomId) : undefined;
@@ -40,12 +43,13 @@ const RoomForm = ({ mode }: RoomFormProps) => {
           price: currentRoom.price,
           rating: currentRoom.rating,
           reviews: currentRoom.reviews,
-          image: currentRoom.image,
+          image: "",  // We'll handle images separately
           type: currentRoom.type,
           area: currentRoom.area,
           description: currentRoom.description || "",
           isAvailable: currentRoom.isAvailable,
           features: currentRoom.features,
+          lastModified: currentRoom.lastModified ? new Date(currentRoom.lastModified) : new Date(),
         }
       : {
           title: "",
@@ -59,6 +63,7 @@ const RoomForm = ({ mode }: RoomFormProps) => {
           description: "",
           isAvailable: true,
           features: [],
+          lastModified: new Date(),
         },
   });
 
@@ -68,11 +73,30 @@ const RoomForm = ({ mode }: RoomFormProps) => {
       
       if (currentRoom.images && currentRoom.images.length > 0) {
         setRoomImages(currentRoom.images);
+      } else if (currentRoom.image) {
+        // Si no hay imágenes pero hay una imagen principal, la añadimos al array
+        setRoomImages([{
+          id: 1,
+          url: currentRoom.image,
+          alt: currentRoom.title
+        }]);
+      }
+      
+      // Last modified date
+      if (currentRoom.lastModified) {
+        setLastModified(new Date(currentRoom.lastModified));
       }
       
       // If room has reserved dates, we'd use them here
       if (currentRoom.reservedDates && currentRoom.reservedDates.length > 0) {
         // This would need more logic to handle multiple date ranges
+        const latestReservation = currentRoom.reservedDates[currentRoom.reservedDates.length - 1];
+        if (latestReservation.start && latestReservation.end) {
+          setReservedDates({
+            from: new Date(latestReservation.start),
+            to: new Date(latestReservation.end)
+          });
+        }
       }
     }
   }, [currentRoom, mode]);
@@ -90,6 +114,7 @@ const RoomForm = ({ mode }: RoomFormProps) => {
 
     // Use the first image as the main image
     const mainImage = roomImages[0].url;
+    const now = new Date();
 
     if (mode === "edit" && currentRoom) {
       updateRoom({
@@ -98,8 +123,9 @@ const RoomForm = ({ mode }: RoomFormProps) => {
         image: mainImage,
         features,
         images: roomImages,
-        // Keep the existing reserved dates
-        reservedDates: currentRoom.reservedDates || []
+        // Keep the existing reserved dates or initialize as empty array
+        reservedDates: currentRoom.reservedDates || [],
+        lastModified: now.toISOString(),
       });
       toast.success("Habitación actualizada correctamente");
     } else {
@@ -117,7 +143,8 @@ const RoomForm = ({ mode }: RoomFormProps) => {
         isAvailable: values.isAvailable,
         features,
         images: roomImages,
-        reservedDates: []
+        reservedDates: [],
+        lastModified: now.toISOString(),
       });
       toast.success("Habitación agregada correctamente");
     }
@@ -130,6 +157,12 @@ const RoomForm = ({ mode }: RoomFormProps) => {
       <h2 className="text-2xl font-bold mb-6">
         {mode === "add" ? "Agregar nueva habitación" : "Editar habitación"}
       </h2>
+      
+      {lastModified && mode === "edit" && (
+        <div className="mb-4 text-sm text-muted-foreground">
+          <p>Última modificación: {format(lastModified, "dd 'de' MMMM 'de' yyyy 'a las' HH:mm:ss", { locale: es })}</p>
+        </div>
+      )}
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">

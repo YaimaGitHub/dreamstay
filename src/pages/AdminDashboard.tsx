@@ -5,14 +5,15 @@ import { useNavigate } from "react-router-dom"
 import AdminLayout from "@/components/AdminLayout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Bed, Settings, FileJson, LogOut, Home, Users, Calendar } from "lucide-react"
+import { Bed, Settings, FileJson, LogOut, Home, Users, Calendar, RefreshCw } from "lucide-react"
 import { useAdminAuth } from "@/hooks/use-admin-auth"
 import { useDataStore } from "@/hooks/use-data-store"
+import { Badge } from "@/components/ui/badge"
 
 const AdminDashboard = () => {
   const navigate = useNavigate()
   const { logout } = useAdminAuth()
-  const { rooms, services } = useDataStore()
+  const { rooms, services, lastUpdated } = useDataStore()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const handleLogout = () => {
@@ -21,6 +22,14 @@ const AdminDashboard = () => {
       logout()
       navigate("/admin/login")
     }, 500)
+  }
+
+  const formatDate = (date: Date | null) => {
+    if (!date) return "No disponible"
+    return new Intl.DateTimeFormat("es-ES", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(date)
   }
 
   const stats = [
@@ -69,6 +78,23 @@ const AdminDashboard = () => {
             {isLoggingOut ? "Saliendo..." : "Cerrar sesión"}
           </Button>
         </div>
+      </div>
+
+      <div className="mb-6">
+        <Card>
+          <CardContent className="pt-6 pb-4">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <RefreshCw className="h-5 w-5 text-terracotta" />
+                <span className="font-medium">Última actualización:</span>
+                <span>{formatDate(lastUpdated)}</span>
+              </div>
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                Guardado automático activado
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

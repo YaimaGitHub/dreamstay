@@ -14,7 +14,7 @@
     ],
     "type": "Suite",
     "area": 35,
-    "isAvailable": false,
+    "isAvailable": true,
     "reservedDates": [],
     "images": [
       {
@@ -23,7 +23,7 @@
         "alt": "Vista principal de la Suite Premium"
       }
     ],
-    "lastModified": "2025-05-10T09:23:49.641Z"
+    "lastModified": "2025-05-10T09:36:28.971Z"
   },
   {
     "id": 2,
@@ -66,7 +66,7 @@
     ],
     "type": "Suite",
     "area": 40,
-    "isAvailable": true,
+    "isAvailable": false,
     "reservedDates": [],
     "images": [
       {
@@ -75,6 +75,6 @@
         "alt": "Vista principal de la Suite Ejecutiva"
       }
     ],
-    "lastModified": "2025-05-10T09:23:31.327Z"
+    "lastModified": "2025-05-10T09:38:32.371Z"
   }
 ]

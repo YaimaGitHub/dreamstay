@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { createContext, useContext, useEffect, useState, useCallback } from "react"
-import type { Room, RoomStore } from "../types/room"
+import type { Room, RoomStore, ConfigBackup } from "../types/room"
 
 // Sample initial rooms data
 import { featuredRooms as initialRooms } from "../data/sampleRooms"
@@ -11,8 +11,14 @@ import { featuredRooms as initialRooms } from "../data/sampleRooms"
 const SAVE_FILE_NAME = "salva"
 // Clave para almacenar la última modificación
 const LAST_MODIFIED_KEY = "salva-last-modified"
+// Clave para almacenar las copias de seguridad
+const BACKUPS_KEY = "salva-backups"
+// Clave para almacenar la configuración de autoguardado
+const AUTOSAVE_KEY = "salva-autosave-enabled"
 // Intervalo de verificación de cambios (en milisegundos)
 const CHECK_INTERVAL = 5000 // 5 segundos
+// Intervalo de autoguardado (en milisegundos)
+const AUTOSAVE_INTERVAL = 30000 // 30 segundos
 
 const RoomStoreContext = createContext<RoomStore | undefined>(undefined)
 
@@ -30,6 +36,8 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [fileHandle, setFileHandle] = useState<FileSystemFileHandle | null>(null)
   const [lastModified, setLastModified] = useState<string>("")
   const [syncStatus, setSyncStatus] = useState<"synced" | "syncing" | "error">("synced")
+  const [backups, setBackups] = useState<ConfigBackup[]>([])
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState<boolean>(false)
 
   // Función para verificar si el navegador soporta la API File System Access
   const isFileSystemAccessSupported = useCallback(() => {
@@ -287,10 +295,103 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return false
   }, [fileHandle])
 
+  // Función para crear una copia de seguridad
+  const backupConfigurations = useCallback(
+    (backupName: string) => {
+      try {
+        // Crear la copia de seguridad
+        const backup: ConfigBackup = {
+          name: backupName,
+          date: new Date(),
+          data: [...rooms],
+          size: `${JSON.stringify(rooms).length / 1024} KB`,
+        }
+
+        // Añadir a la lista de copias de seguridad
+        const updatedBackups = [...backups, backup]
+        setBackups(updatedBackups)
+
+        // Guardar en localStorage
+        localStorage.setItem(
+          BACKUPS_KEY,
+          JSON.stringify(
+            updatedBackups.map((b) => ({
+              name: b.name,
+              date: b.date.toISOString(),
+              data: b.data,
+              size: b.size,
+            })),
+          ),
+        )
+
+        return true
+      } catch (error) {
+        console.error("Error al crear copia de seguridad:", error)
+        return false
+      }
+    },
+    [rooms, backups],
+  )
+
+  // Función para restaurar desde una copia de seguridad
+  const restoreFromBackup = useCallback(
+    (backupName: string) => {
+      try {
+        const backup = backups.find((b) => b.name === backupName)
+        if (!backup) return false
+
+        // Restaurar los datos
+        setRooms(backup.data)
+        return true
+      } catch (error) {
+        console.error("Error al restaurar desde copia de seguridad:", error)
+        return false
+      }
+    },
+    [backups],
+  )
+
+  // Función para obtener la lista de copias de seguridad
+  const getBackupsList = useCallback(() => {
+    return backups.map((b) => ({
+      name: b.name,
+      date: b.date,
+      size: b.size,
+    }))
+  }, [backups])
+
+  // Función para activar/desactivar el autoguardado
+  const toggleAutoSave = useCallback((enabled: boolean) => {
+    setAutoSaveEnabled(enabled)
+    localStorage.setItem(AUTOSAVE_KEY, enabled.toString())
+  }, [])
+
   // Cargar habitaciones al iniciar
   useEffect(() => {
     const loadRooms = async () => {
       try {
+        // Cargar configuración de autoguardado
+        const savedAutoSave = localStorage.getItem(AUTOSAVE_KEY)
+        if (savedAutoSave !== null) {
+          setAutoSaveEnabled(savedAutoSave === "true")
+        }
+
+        // Cargar copias de seguridad
+        const savedBackups = localStorage.getItem(BACKUPS_KEY)
+        if (savedBackups) {
+          try {
+            const parsedBackups = JSON.parse(savedBackups)
+            setBackups(
+              parsedBackups.map((b: any) => ({
+                ...b,
+                date: new Date(b.date),
+              })),
+            )
+          } catch (error) {
+            console.error("Error al parsear copias de seguridad:", error)
+          }
+        }
+
         // Intentar cargar desde localStorage primero como fallback
         const savedRooms = localStorage.getItem("salva-rooms")
         if (savedRooms) {
@@ -323,6 +424,24 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     loadRooms()
   }, [])
+
+  // Configurar autoguardado
+  useEffect(() => {
+    if (!autoSaveEnabled || !isLoaded) return
+
+    const intervalId = setInterval(async () => {
+      try {
+        if (fileHandle) {
+          await saveToFile(rooms, false)
+          console.log("Autoguardado completado:", new Date().toLocaleTimeString())
+        }
+      } catch (error) {
+        console.error("Error en autoguardado:", error)
+      }
+    }, AUTOSAVE_INTERVAL)
+
+    return () => clearInterval(intervalId)
+  }, [autoSaveEnabled, isLoaded, rooms, saveToFile, fileHandle])
 
   // Guardar en localStorage como respaldo
   useEffect(() => {
@@ -414,6 +533,12 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       console.log("Intentando establecer ruta:", path)
       return Promise.resolve(false)
     },
+    // Nuevas funcionalidades
+    backupConfigurations,
+    restoreFromBackup,
+    getBackupsList,
+    autoSaveEnabled,
+    toggleAutoSave,
   }
 
   return <RoomStoreContext.Provider value={value}>{children}</RoomStoreContext.Provider>

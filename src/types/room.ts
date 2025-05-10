@@ -32,4 +32,18 @@ export interface RoomStore {
   lastModified: Date | null
   isOnline?: boolean
   setFilePath?: (path: string) => Promise<boolean>
+
+  // Nuevas funcionalidades
+  backupConfigurations?: (backupName: string) => boolean
+  restoreFromBackup?: (backupName: string) => boolean
+  getBackupsList?: () => Array<{ name: string; date: Date; size: string }>
+  autoSaveEnabled?: boolean
+  toggleAutoSave?: (enabled: boolean) => void
+}
+
+export interface ConfigBackup {
+  name: string
+  date: Date
+  data: Room[]
+  size: string
 }

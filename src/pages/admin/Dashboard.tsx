@@ -37,7 +37,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalRooms}</div>
-            <p className="text-xs text-muted-foreground">{featuredRooms.length} habitaciones destacadas</p>
+            <p className="text-xs text-muted-foreground">{featuredRooms.length} habitaciones destacadasssss</p>
           </CardContent>
         </Card>
 

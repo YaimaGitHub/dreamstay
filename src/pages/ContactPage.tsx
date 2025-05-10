@@ -1,46 +1,43 @@
-"use client"
 
-import type React from "react"
-
-import Navbar from "@/components/Navbar"
-import Footer from "@/components/Footer"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Card } from "@/components/ui/card"
-import { MapPin, Phone, Mail, Clock, Send } from "lucide-react"
-import { useState } from "react"
-import { useToast } from "@/components/ui/use-toast"
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card } from "@/components/ui/card";
+import { MapPin, Phone, Mail, Clock, Send } from "lucide-react";
+import { useState } from "react";
+import { useToast } from "@/components/ui/use-toast";
 
 const ContactPage = () => {
-  const { toast } = useToast()
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     subject: "",
     message: "",
-  })
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-
+    e.preventDefault();
+    setIsSubmitting(true);
+    
     // Simulación de envío del formulario
     setTimeout(() => {
       toast({
         title: "Mensaje enviado",
         description: "Gracias por contactarnos. Te responderemos lo antes posible.",
-      })
-      setFormData({ name: "", email: "", subject: "", message: "" })
-      setIsSubmitting(false)
-    }, 1500)
-  }
+      });
+      setFormData({ name: "", email: "", subject: "", message: "" });
+      setIsSubmitting(false);
+    }, 1500);
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -49,10 +46,12 @@ const ContactPage = () => {
         <section className="bg-deepblue text-white py-16">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto text-center">
-              <h1 className="text-4xl md:text-5xl font-bold mb-6">Contáctanos</h1>
+              <h1 className="text-4xl md:text-5xl font-bold mb-6">
+                Contáctanos
+              </h1>
               <p className="text-lg opacity-90">
-                Estamos aquí para ayudarte con cualquier pregunta o solicitud especial. No dudes en ponerte en contacto
-                con nosotros.
+                Estamos aquí para ayudarte con cualquier pregunta o solicitud especial.
+                No dudes en ponerte en contacto con nosotros.
               </p>
             </div>
           </div>
@@ -77,7 +76,7 @@ const ContactPage = () => {
                     placeholder="Tu nombre"
                   />
                 </div>
-
+                
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium mb-1">
                     Correo electrónico
@@ -93,7 +92,7 @@ const ContactPage = () => {
                     placeholder="tu@email.com"
                   />
                 </div>
-
+                
                 <div>
                   <label htmlFor="subject" className="block text-sm font-medium mb-1">
                     Asunto
@@ -108,7 +107,7 @@ const ContactPage = () => {
                     placeholder="¿Sobre qué nos escribes?"
                   />
                 </div>
-
+                
                 <div>
                   <label htmlFor="message" className="block text-sm font-medium mb-1">
                     Mensaje
@@ -123,8 +122,12 @@ const ContactPage = () => {
                     placeholder="¿En qué podemos ayudarte?"
                   />
                 </div>
-
-                <Button type="submit" className="w-full bg-terracotta hover:bg-terracotta/90" disabled={isSubmitting}>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full bg-terracotta hover:bg-terracotta/90"
+                  disabled={isSubmitting}
+                >
                   {isSubmitting ? (
                     <span className="flex items-center">
                       <span className="mr-2">Enviando...</span>
@@ -138,10 +141,10 @@ const ContactPage = () => {
                 </Button>
               </form>
             </div>
-
+            
             <div>
               <h2 className="text-2xl font-bold mb-6">Información de contacto</h2>
-
+              
               <div className="space-y-6">
                 <Card className="p-4 flex items-start">
                   <MapPin className="h-5 w-5 text-terracotta mr-3 mt-1" />
@@ -154,7 +157,7 @@ const ContactPage = () => {
                     </p>
                   </div>
                 </Card>
-
+                
                 <Card className="p-4 flex items-start">
                   <Phone className="h-5 w-5 text-terracotta mr-3 mt-1" />
                   <div>
@@ -166,7 +169,7 @@ const ContactPage = () => {
                     </p>
                   </div>
                 </Card>
-
+                
                 <Card className="p-4 flex items-start">
                   <Mail className="h-5 w-5 text-terracotta mr-3 mt-1" />
                   <div>
@@ -178,7 +181,7 @@ const ContactPage = () => {
                     </p>
                   </div>
                 </Card>
-
+                
                 <Card className="p-4 flex items-start">
                   <Clock className="h-5 w-5 text-terracotta mr-3 mt-1" />
                   <div>
@@ -191,7 +194,7 @@ const ContactPage = () => {
                   </div>
                 </Card>
               </div>
-
+              
               <div className="mt-8">
                 <h3 className="font-medium mb-2">Encuéntranos aquí</h3>
                 <div className="aspect-video bg-muted rounded-lg overflow-hidden">
@@ -212,22 +215,22 @@ const ContactPage = () => {
               <div className="bg-card rounded-lg p-4">
                 <h3 className="font-semibold text-lg">¿Cuál es la hora de check-in y check-out?</h3>
                 <p className="text-muted-foreground mt-2">
-                  El check-in es a partir de las 3:00 PM y el check-out hasta las 12:00 PM. Podemos acomodar llegadas
-                  tempranas o salidas tardías con previo aviso.
+                  El check-in es a partir de las 3:00 PM y el check-out hasta las 12:00 PM. 
+                  Podemos acomodar llegadas tempranas o salidas tardías con previo aviso.
                 </p>
               </div>
               <div className="bg-card rounded-lg p-4">
                 <h3 className="font-semibold text-lg">¿Se admiten mascotas?</h3>
                 <p className="text-muted-foreground mt-2">
-                  Ofrecemos habitaciones específicas que aceptan mascotas. Por favor, infórmanos al momento de la
-                  reserva si viajarás con tu mascota.
+                  Ofrecemos habitaciones específicas que aceptan mascotas. 
+                  Por favor, infórmanos al momento de la reserva si viajarás con tu mascota.
                 </p>
               </div>
               <div className="bg-card rounded-lg p-4">
                 <h3 className="font-semibold text-lg">¿Hay estacionamiento disponible?</h3>
                 <p className="text-muted-foreground mt-2">
-                  Sí, contamos con estacionamiento gratuito para nuestros huéspedes. También ofrecemos servicio de valet
-                  parking con costo adicional.
+                  Sí, contamos con estacionamiento gratuito para nuestros huéspedes. 
+                  También ofrecemos servicio de valet parking con costo adicional.
                 </p>
               </div>
             </div>
@@ -236,7 +239,7 @@ const ContactPage = () => {
       </main>
       <Footer />
     </div>
-  )
-}
+  );
+};
 
-export default ContactPage
+export default ContactPage;

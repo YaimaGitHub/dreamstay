@@ -11,10 +11,11 @@ import { Edit, Plus, Trash } from "lucide-react"
 import { toast } from "sonner"
 import { useEffect } from "react"
 import { ConfigurationManager } from "@/components/admin/ConfigurationManager"
+import { LoadingOverlay } from "@/components/LoadingOverlay"
 
 const AdminDashboard = () => {
   const { isAuthenticated, logout } = useAdminAuth()
-  const { rooms, toggleRoomAvailability, deleteRoom, checkForChanges } = useRoomStore()
+  const { rooms, toggleRoomAvailability, deleteRoom, checkForChanges, isLoading } = useRoomStore()
   const navigate = useNavigate()
 
   // Configurar verificación periódica de cambios
@@ -65,6 +66,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
+      <LoadingOverlay />
       <Navbar />
       <div className="container mx-auto py-8 px-4 flex-grow">
         <div className="flex justify-between items-center mb-8">

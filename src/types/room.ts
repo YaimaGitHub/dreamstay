@@ -28,9 +28,13 @@ export interface RoomStore {
   importData: () => Promise<boolean>
   saveToFile: () => Promise<boolean>
   checkForChanges: () => Promise<boolean>
+  reloadFromFile: () => Promise<boolean>
   syncStatus: "synced" | "syncing" | "error"
   lastModified: Date | null
   isOnline?: boolean
+  isLoading?: boolean
+  loadError?: string | null
+  savedFilePath?: string | null
   setFilePath?: (path: string) => Promise<boolean>
 
   // Nuevas funcionalidades

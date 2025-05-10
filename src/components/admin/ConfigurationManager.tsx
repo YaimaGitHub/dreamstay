@@ -19,6 +19,8 @@ import {
   FileJson,
   History,
   Calendar,
+  Loader2,
+  FileUp,
 } from "lucide-react"
 import { toast } from "sonner"
 import { format } from "date-fns"
@@ -30,15 +32,24 @@ export function ConfigurationManager() {
     importData,
     saveToFile,
     checkForChanges,
+    reloadFromFile,
     syncStatus,
     lastModified,
     backupConfigurations,
     restoreFromBackup,
+    getBackupsList,
     autoSaveEnabled,
     toggleAutoSave,
+    isLoading,
+    loadError,
+    savedFilePath,
   } = useRoomStore()
 
   const [isChecking, setIsChecking] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
+  const [isImporting, setIsImporting] = useState(false)
+  const [isReloading, setIsReloading] = useState(false)
   const [lastChecked, setLastChecked] = useState<Date | null>(null)
   const [lastAutoSave, setLastAutoSave] = useState<Date | null>(null)
   const [autoSaveProgress, setAutoSaveProgress] = useState(0)
@@ -120,9 +131,32 @@ export function ConfigurationManager() {
     }
   }
 
+  // Función para recargar datos desde el archivo
+  const handleReloadFromFile = async () => {
+    if (reloadFromFile) {
+      setIsReloading(true)
+      try {
+        const success = await reloadFromFile()
+        if (success) {
+          toast.success("Datos recargados correctamente desde salva.json")
+        } else {
+          toast.error("No se pudieron recargar los datos. Verifique que el archivo sea accesible.")
+        }
+      } catch (error) {
+        console.error("Error al recargar datos:", error)
+        toast.error("Error al recargar datos. Verifique los permisos del archivo.")
+      } finally {
+        setIsReloading(false)
+      }
+    } else {
+      toast.error("La función de recarga no está disponible en este navegador.")
+    }
+  }
+
   // Función para exportar datos manualmente
   const handleExportData = () => {
     if (exportData) {
+      setIsExporting(true)
       try {
         const success = exportData()
         if (success) {
@@ -133,6 +167,8 @@ export function ConfigurationManager() {
       } catch (error) {
         console.error("Error al exportar datos:", error)
         toast.error("Error al exportar datos. Intente nuevamente.")
+      } finally {
+        setIsExporting(false)
       }
     } else {
       toast.error("La función de exportación no está disponible en este navegador.")
@@ -142,6 +178,7 @@ export function ConfigurationManager() {
   // Función para importar datos manualmente
   const handleImportData = async () => {
     if (importData) {
+      setIsImporting(true)
       try {
         const success = await importData()
         if (success) {
@@ -152,6 +189,8 @@ export function ConfigurationManager() {
       } catch (error) {
         console.error("Error al importar datos:", error)
         toast.error("Error al importar datos. Verifique los permisos del archivo.")
+      } finally {
+        setIsImporting(false)
       }
     } else {
       toast.error("La función de importación no está disponible en este navegador.")
@@ -161,6 +200,7 @@ export function ConfigurationManager() {
   // Función para guardar datos manualmente
   const handleSaveToFile = async () => {
     if (saveToFile) {
+      setIsSaving(true)
       try {
         const success = await saveToFile()
         if (success) {
@@ -171,6 +211,8 @@ export function ConfigurationManager() {
       } catch (error) {
         console.error("Error al guardar datos:", error)
         toast.error("Error al guardar datos. Intente nuevamente.")
+      } finally {
+        setIsSaving(false)
       }
     } else {
       toast.error("La función de guardado no está disponible en este navegador.")
@@ -265,12 +307,8 @@ export function ConfigurationManager() {
     }
   }
 
-  // Simulación de copias de seguridad (en una implementación real, esto vendría del contexto)
-  const backups = [
-    { name: "backup_20250510_090000", date: new Date(2025, 4, 10, 9, 0, 0), size: "45 KB" },
-    { name: "backup_20250509_180000", date: new Date(2025, 4, 9, 18, 0, 0), size: "44 KB" },
-    { name: "backup_20250508_120000", date: new Date(2025, 4, 8, 12, 0, 0), size: "43 KB" },
-  ]
+  // Obtener la lista de copias de seguridad
+  const backups = getBackupsList ? getBackupsList() : []
 
   return (
     <Card className="shadow-lg border-0">
@@ -281,7 +319,20 @@ export function ConfigurationManager() {
               <FileJson className="h-5 w-5 text-blue-600" />
               Gestor de Configuración
             </CardTitle>
-            <CardDescription>Administre la configuración de su plataforma</CardDescription>
+            <CardDescription>
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Cargando configuración...
+                </span>
+              ) : savedFilePath ? (
+                <span>
+                  Archivo actual: <span className="font-medium">{savedFilePath}</span>
+                </span>
+              ) : (
+                "Administre la configuración de su plataforma"
+              )}
+            </CardDescription>
           </div>
           <Badge
             variant={syncStatus === "synced" ? "default" : syncStatus === "syncing" ? "outline" : "destructive"}
@@ -292,6 +343,14 @@ export function ConfigurationManager() {
           </Badge>
         </div>
       </CardHeader>
+
+      {loadError && (
+        <Alert variant="destructive" className="mx-6 mt-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error al cargar datos</AlertTitle>
+          <AlertDescription>{loadError}</AlertDescription>
+        </Alert>
+      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="px-6 pt-2">
@@ -360,17 +419,41 @@ export function ConfigurationManager() {
           </CardContent>
 
           <CardFooter className="flex flex-wrap gap-2 border-t pt-4 bg-slate-50">
-            <Button variant="default" className="flex items-center gap-2" onClick={handleSaveToFile}>
-              <Save className="h-4 w-4" />
+            <Button
+              variant="default"
+              className="flex items-center gap-2"
+              onClick={handleSaveToFile}
+              disabled={isSaving}
+            >
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Guardar configuración
             </Button>
-            <Button variant="outline" className="flex items-center gap-2" onClick={handleExportData}>
-              <Download className="h-4 w-4" />
+            <Button
+              variant="outline"
+              className="flex items-center gap-2"
+              onClick={handleExportData}
+              disabled={isExporting}
+            >
+              {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
               Exportar salva.json
             </Button>
-            <Button variant="outline" className="flex items-center gap-2" onClick={handleImportData}>
-              <Upload className="h-4 w-4" />
+            <Button
+              variant="outline"
+              className="flex items-center gap-2"
+              onClick={handleImportData}
+              disabled={isImporting}
+            >
+              {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
               Importar salva.json
+            </Button>
+            <Button
+              variant="outline"
+              className="flex items-center gap-2"
+              onClick={handleReloadFromFile}
+              disabled={isReloading}
+            >
+              {isReloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
+              Recargar desde archivo
             </Button>
             <Button
               variant="outline"
@@ -472,7 +555,10 @@ export function ConfigurationManager() {
                   <div>
                     <h3 className="font-medium">Ubicación del archivo</h3>
                     <p className="text-sm text-muted-foreground">
-                      Ruta actual: <code className="bg-slate-100 px-1 py-0.5 rounded text-xs">salva.json</code>
+                      Archivo actual:{" "}
+                      <code className="bg-slate-100 px-1 py-0.5 rounded text-xs">
+                        {savedFilePath || "No seleccionado"}
+                      </code>
                     </p>
                   </div>
                   <Button variant="outline" onClick={handleSaveToFile}>

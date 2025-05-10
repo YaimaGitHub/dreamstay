@@ -1,51 +1,51 @@
+"use client"
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
-import { Calendar as CalendarIcon, ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { DateRange } from "react-day-picker";
+import { useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { format } from "date-fns"
+import { es } from "date-fns/locale"
+import { Calendar as CalendarIcon, ChevronDown } from "lucide-react"
+import type { DateRange } from "react-day-picker"
 
 interface BookingFormProps {
-  roomId: number;
-  price: number;
+  roomId: number
+  price: number
 }
 
 const BookingForm = ({ roomId, price }: BookingFormProps) => {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(),
     to: new Date(new Date().setDate(new Date().getDate() + 3)),
-  });
-  const [guests, setGuests] = useState("2");
-  const [isProcessing, setIsProcessing] = useState(false);
+  })
+  const [guests, setGuests] = useState("2")
+  const [isProcessing, setIsProcessing] = useState(false)
 
   // Calcular la duración de la estancia en días
   const getStayDuration = () => {
-    if (!dateRange?.from || !dateRange?.to) return 0;
-    const diffTime = dateRange.to.getTime() - dateRange.from.getTime();
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  };
+    if (!dateRange?.from || !dateRange?.to) return 0
+    const diffTime = dateRange.to.getTime() - dateRange.from.getTime()
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  }
 
-  const duration = getStayDuration();
+  const duration = getStayDuration()
 
   // Calcular el precio total
-  const totalPrice = price * duration;
+  const totalPrice = price * duration
 
   const handleBooking = () => {
-    setIsProcessing(true);
+    setIsProcessing(true)
     // Aquí iría la lógica para procesar la reserva
     setTimeout(() => {
-      setIsProcessing(false);
+      setIsProcessing(false)
       // Redireccionar a una página de confirmación
-      navigate("/confirmacion");
-    }, 1500);
-  };
+      navigate("/confirmacion")
+    }, 1500)
+  }
 
   return (
     <div className="bg-white rounded-lg border border-border p-6 sticky top-24">
@@ -69,10 +69,7 @@ const BookingForm = ({ roomId, price }: BookingFormProps) => {
           <label className="block text-sm font-medium">Fechas</label>
           <Popover>
             <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="w-full justify-between border-border"
-              >
+              <Button variant="outline" className="w-full justify-between border-border">
                 <div className="flex items-center">
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {dateRange?.from && dateRange?.to ? (
@@ -117,22 +114,18 @@ const BookingForm = ({ roomId, price }: BookingFormProps) => {
           </Select>
         </div>
 
-        <Button 
-          className="w-full bg-terracotta hover:bg-terracotta/90" 
-          onClick={handleBooking}
-          disabled={isProcessing}
-        >
+        <Button className="w-full bg-terracotta hover:bg-terracotta/90" onClick={handleBooking} disabled={isProcessing}>
           {isProcessing ? "Procesando..." : "Reservar ahora"}
         </Button>
 
-        <p className="text-center text-sm text-muted-foreground">
-          No se te cobrará nada todavía
-        </p>
+        <p className="text-center text-sm text-muted-foreground">No se te cobrará nada todavía</p>
       </div>
 
       <div className="border-t border-border mt-6 pt-4 space-y-2">
         <div className="flex justify-between">
-          <span>${price} x {duration} noches</span>
+          <span>
+            ${price} x {duration} noches
+          </span>
           <span>${price * duration}</span>
         </div>
         <div className="flex justify-between">
@@ -149,7 +142,7 @@ const BookingForm = ({ roomId, price }: BookingFormProps) => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default BookingForm;
+export default BookingForm

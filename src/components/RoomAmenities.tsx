@@ -1,23 +1,22 @@
-
-import { Card } from "@/components/ui/card";
-import { Bed, Wifi, Coffee, Tv, Bath, Wind } from "lucide-react";
+import { Card } from "@/components/ui/card"
+import { Bed, Wifi, Coffee, Tv, Bath, Wind } from "lucide-react"
 
 interface Amenity {
-  id: number;
-  name: string;
-  description: string;
-  icon: JSX.Element;
+  id: number
+  name: string
+  description: string
+  icon: JSX.Element
 }
 
 interface RoomAmenitiesProps {
-  amenities: Amenity[];
+  amenities: Amenity[]
 }
 
 const RoomAmenities = ({ amenities }: RoomAmenitiesProps) => {
   return (
     <div>
       <h3 className="text-2xl font-semibold mb-4">Lo que ofrece esta habitación</h3>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {amenities.map((amenity) => (
           <Card key={amenity.id} className="p-4 flex items-start">
@@ -30,8 +29,8 @@ const RoomAmenities = ({ amenities }: RoomAmenitiesProps) => {
         ))}
       </div>
     </div>
-  );
-};
+  )
+}
 
 // Datos de muestra para usar en las páginas
 export const sampleAmenities: Amenity[] = [
@@ -71,6 +70,6 @@ export const sampleAmenities: Amenity[] = [
     description: "Control de temperatura individual",
     icon: <Wind className="h-5 w-5" />,
   },
-];
+]
 
-export default RoomAmenities;
+export default RoomAmenities

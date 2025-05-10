@@ -1,5 +1,4 @@
-
-import * as z from "zod";
+import * as z from "zod"
 
 export const roomFormSchema = z.object({
   title: z.string().min(3, {
@@ -13,9 +12,12 @@ export const roomFormSchema = z.object({
   }),
   rating: z.coerce.number().min(0).max(5),
   reviews: z.coerce.number().int().nonnegative(),
-  image: z.string().url({
-    message: "Debe ser una URL de imagen válida",
-  }).optional(),
+  image: z
+    .string()
+    .url({
+      message: "Debe ser una URL de imagen válida",
+    })
+    .optional(),
   type: z.string().min(1, {
     message: "Seleccione un tipo de habitación",
   }),
@@ -29,7 +31,10 @@ export const roomFormSchema = z.object({
   features: z.array(z.string()).min(1, {
     message: "Agregue al menos una característica",
   }),
-  lastModified: z.date().optional().default(() => new Date()),
-});
+  lastModified: z
+    .date()
+    .optional()
+    .default(() => new Date()),
+})
 
-export type RoomFormValues = z.infer<typeof roomFormSchema>;
+export type RoomFormValues = z.infer<typeof roomFormSchema>

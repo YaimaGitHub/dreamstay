@@ -1,16 +1,15 @@
-
-import { Link } from "react-router-dom";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Bed, Wifi, Coffee, Star } from "lucide-react";
-import { useRoomStore } from "@/contexts/RoomStoreContext";
+import { Link } from "react-router-dom"
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Bed, Wifi, Coffee, Star } from "lucide-react"
+import { useRoomStore } from "@/contexts/RoomStoreContext"
 
 const FeaturedRooms = () => {
-  const { rooms } = useRoomStore();
-  
+  const { rooms } = useRoomStore()
+
   // Only show available rooms in the featured section
-  const availableRooms = rooms.filter(room => room.isAvailable).slice(0, 3);
+  const availableRooms = rooms.filter((room) => room.isAvailable).slice(0, 3)
 
   return (
     <section className="py-16 container mx-auto">
@@ -59,12 +58,7 @@ const FeaturedRooms = () => {
                 <span className="font-bold text-lg">${room.price}</span>
                 <span className="text-muted-foreground text-sm"> / noche</span>
               </div>
-              <Button 
-                variant="default" 
-                size="sm" 
-                className="bg-terracotta hover:bg-terracotta/90"
-                asChild
-              >
+              <Button variant="default" size="sm" className="bg-terracotta hover:bg-terracotta/90" asChild>
                 <Link to={`/habitacion/${room.id}`}>Ver detalles</Link>
               </Button>
             </CardFooter>
@@ -73,23 +67,15 @@ const FeaturedRooms = () => {
       </div>
 
       <div className="text-center mt-12">
-        <Button 
-          variant="outline" 
-          className="border-terracotta text-terracotta hover:bg-terracotta/10 mr-4"
-          asChild
-        >
+        <Button variant="outline" className="border-terracotta text-terracotta hover:bg-terracotta/10 mr-4" asChild>
           <Link to="/habitaciones">Ver todas las habitaciones</Link>
         </Button>
-        <Button 
-          variant="outline" 
-          className="border-deepblue text-deepblue hover:bg-deepblue/10"
-          asChild
-        >
+        <Button variant="outline" className="border-deepblue text-deepblue hover:bg-deepblue/10" asChild>
           <Link to="/admin/login">Panel administrativo</Link>
         </Button>
       </div>
     </section>
-  );
-};
+  )
+}
 
-export default FeaturedRooms;
+export default FeaturedRooms

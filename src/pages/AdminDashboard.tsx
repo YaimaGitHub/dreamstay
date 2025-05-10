@@ -1,55 +1,71 @@
-
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAdminAuth } from "@/contexts/AdminAuthContext";
-import { useRoomStore } from "@/contexts/RoomStoreContext";
-import { Button } from "@/components/ui/button";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Edit, Plus, Trash } from "lucide-react";
-import { toast } from "sonner";
+"use client"
+import { useNavigate } from "react-router-dom"
+import { useAdminAuth } from "@/contexts/AdminAuthContext"
+import { useRoomStore } from "@/contexts/RoomStoreContext"
+import { Button } from "@/components/ui/button"
+import Navbar from "@/components/Navbar"
+import Footer from "@/components/Footer"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
+import { Edit, Plus, Trash, Download, Upload } from "lucide-react"
+import { toast } from "sonner"
 
 const AdminDashboard = () => {
-  const { isAuthenticated, logout } = useAdminAuth();
-  const { rooms, toggleRoomAvailability, deleteRoom } = useRoomStore();
-  const navigate = useNavigate();
+  const { isAuthenticated, logout } = useAdminAuth()
+  const { rooms, toggleRoomAvailability, deleteRoom } = useRoomStore()
+  const navigate = useNavigate()
 
   // Redirect if not authenticated
   if (!isAuthenticated) {
-    navigate("/admin/login");
-    return null;
+    navigate("/admin/login")
+    return null
   }
 
   const handleToggleAvailability = (id: number) => {
-    toggleRoomAvailability(id);
-    toast.success("Estado de disponibilidad actualizado");
-  };
+    toggleRoomAvailability(id)
+    toast.success("Estado de disponibilidad actualizado")
+  }
 
   const handleDelete = (id: number) => {
     if (window.confirm("¿Está seguro de eliminar esta habitación? Esta acción no se puede deshacer.")) {
-      deleteRoom(id);
-      toast.success("Habitación eliminada correctamente");
+      deleteRoom(id)
+      toast.success("Habitación eliminada correctamente")
     }
-  };
+  }
 
   const handleEdit = (id: number) => {
-    navigate(`/admin/edit-room/${id}`);
-  };
+    navigate(`/admin/edit-room/${id}`)
+  }
 
   const handleLogout = () => {
-    logout();
-    toast.success("Sesión cerrada correctamente");
-    navigate("/");
-  };
+    logout()
+    toast.success("Sesión cerrada correctamente")
+    navigate("/")
+  }
+
+  // Función para exportar datos manualmente
+  const handleExportData = () => {
+    // Esta función se implementa en RoomStoreContext
+    // Aquí solo disparamos el evento para que los botones dinámicos lo manejen
+    const exportButton = document.getElementById("export-data-button")
+    if (exportButton) {
+      exportButton.click()
+    } else {
+      toast.error("No se pudo exportar los datos. Intente nuevamente.")
+    }
+  }
+
+  // Función para importar datos manualmente
+  const handleImportData = () => {
+    // Esta función se implementa en RoomStoreContext
+    // Aquí solo disparamos el evento para que los botones dinámicos lo manejen
+    const importButton = document.getElementById("import-data-button")
+    if (importButton) {
+      importButton.click()
+    } else {
+      toast.error("No se pudo importar los datos. Intente nuevamente.")
+    }
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -58,22 +74,27 @@ const AdminDashboard = () => {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Panel Administrativo</h1>
           <div className="flex space-x-4">
-            <Button 
-              variant="outline"
-              onClick={handleLogout}
-            >
+            <Button variant="outline" onClick={handleLogout}>
               Cerrar sesión
             </Button>
           </div>
         </div>
 
+        <div className="flex space-x-4 mb-6">
+          <Button variant="outline" className="flex items-center gap-2" onClick={handleExportData}>
+            <Download className="h-4 w-4" />
+            Exportar datos (salva.json)
+          </Button>
+          <Button variant="outline" className="flex items-center gap-2" onClick={handleImportData}>
+            <Upload className="h-4 w-4" />
+            Importar datos
+          </Button>
+        </div>
+
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold">Gestión de Habitaciones</h2>
-            <Button 
-              className="bg-terracotta hover:bg-terracotta/90"
-              onClick={() => navigate("/admin/add-room")}
-            >
+            <Button className="bg-terracotta hover:bg-terracotta/90" onClick={() => navigate("/admin/add-room")}>
               <Plus className="mr-2 h-4 w-4" />
               Agregar habitación
             </Button>
@@ -98,10 +119,10 @@ const AdminDashboard = () => {
                     <TableCell>{room.id}</TableCell>
                     <TableCell>
                       <div className="w-16 h-16 rounded overflow-hidden">
-                        <img 
-                          src={room.image} 
+                        <img
+                          src={room.image || "/placeholder.svg"}
                           alt={room.title}
-                          className="w-full h-full object-cover" 
+                          className="w-full h-full object-cover"
                         />
                       </div>
                     </TableCell>
@@ -109,33 +130,19 @@ const AdminDashboard = () => {
                     <TableCell>{room.type}</TableCell>
                     <TableCell>${room.price}/noche</TableCell>
                     <TableCell>
-                      <Badge 
-                        className={room.isAvailable ? "bg-green-500" : "bg-red-500"}
-                      >
+                      <Badge className={room.isAvailable ? "bg-green-500" : "bg-red-500"}>
                         {room.isAvailable ? "Disponible" : "No disponible"}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleEdit(room.id)}
-                        >
+                        <Button variant="outline" size="sm" onClick={() => handleEdit(room.id)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleToggleAvailability(room.id)}
-                        >
+                        <Button variant="outline" size="sm" onClick={() => handleToggleAvailability(room.id)}>
                           {room.isAvailable ? "Deshabilitar" : "Habilitar"}
                         </Button>
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          onClick={() => handleDelete(room.id)}
-                        >
+                        <Button variant="destructive" size="sm" onClick={() => handleDelete(room.id)}>
                           <Trash className="h-4 w-4" />
                         </Button>
                       </div>
@@ -156,18 +163,18 @@ const AdminDashboard = () => {
             </div>
             <div className="bg-muted p-4 rounded-lg">
               <h3 className="text-lg font-medium">Habitaciones disponibles</h3>
-              <p className="text-3xl font-bold">{rooms.filter(r => r.isAvailable).length}</p>
+              <p className="text-3xl font-bold">{rooms.filter((r) => r.isAvailable).length}</p>
             </div>
             <div className="bg-muted p-4 rounded-lg">
               <h3 className="text-lg font-medium">Habitaciones ocupadas</h3>
-              <p className="text-3xl font-bold">{rooms.filter(r => !r.isAvailable).length}</p>
+              <p className="text-3xl font-bold">{rooms.filter((r) => !r.isAvailable).length}</p>
             </div>
           </div>
         </div>
       </div>
       <Footer />
     </div>
-  );
-};
+  )
+}
 
-export default AdminDashboard;
+export default AdminDashboard

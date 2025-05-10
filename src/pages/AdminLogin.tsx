@@ -1,31 +1,34 @@
+"use client"
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAdminAuth } from "@/contexts/AdminAuthContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import { toast } from "sonner";
+import type React from "react"
+
+import { useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { useAdminAuth } from "@/contexts/AdminAuthContext"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import Navbar from "@/components/Navbar"
+import Footer from "@/components/Footer"
+import { toast } from "sonner"
 
 const AdminLogin = () => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const navigate = useNavigate();
-  const { login } = useAdminAuth();
+  const [username, setUsername] = useState("")
+  const [password, setPassword] = useState("")
+  const navigate = useNavigate()
+  const { login } = useAdminAuth()
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const success = login(username, password);
-    
+    e.preventDefault()
+    const success = login(username, password)
+
     if (success) {
-      toast.success("Inicio de sesión exitoso");
-      navigate("/admin/dashboard");
+      toast.success("Inicio de sesión exitoso")
+      navigate("/admin/dashboard")
     } else {
-      toast.error("Credenciales incorrectas");
+      toast.error("Credenciales incorrectas")
     }
-  };
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -34,9 +37,7 @@ const AdminLogin = () => {
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">Panel Administrativo</CardTitle>
-            <CardDescription>
-              Ingrese sus credenciales para acceder al panel de administración
-            </CardDescription>
+            <CardDescription>Ingrese sus credenciales para acceder al panel de administración</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -64,10 +65,7 @@ const AdminLogin = () => {
                   required
                 />
               </div>
-              <Button 
-                type="submit" 
-                className="w-full bg-terracotta hover:bg-terracotta/90"
-              >
+              <Button type="submit" className="w-full bg-terracotta hover:bg-terracotta/90">
                 Iniciar sesión
               </Button>
             </form>
@@ -79,7 +77,7 @@ const AdminLogin = () => {
       </main>
       <Footer />
     </div>
-  );
-};
+  )
+}
 
-export default AdminLogin;
+export default AdminLogin

@@ -1,36 +1,35 @@
+"use client"
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns";
-import { Calendar as CalendarIcon, Search } from "lucide-react";
-import { es } from "date-fns/locale";
-import { cn } from "@/lib/utils";
-import { DateRange } from "react-day-picker";
+import type React from "react"
+
+import { useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { format } from "date-fns"
+import { Calendar as CalendarIcon, Search } from "lucide-react"
+import { es } from "date-fns/locale"
+import type { DateRange } from "react-day-picker"
 
 const SearchForm = () => {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(),
     to: new Date(new Date().setDate(new Date().getDate() + 7)),
-  });
-  const [guests, setGuests] = useState("1");
+  })
+  const [guests, setGuests] = useState("1")
 
   const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     // En una implementación real, esto pasaría parámetros a la página de resultados
-    navigate("/habitaciones");
-  };
+    navigate("/habitaciones")
+  }
 
   return (
-    <form
-      onSubmit={handleSearch}
-      className="bg-white rounded-lg shadow-lg p-4 md:p-6 grid gap-4 md:flex md:items-end"
-    >
+    <form onSubmit={handleSearch} className="bg-white rounded-lg shadow-lg p-4 md:p-6 grid gap-4 md:flex md:items-end">
       <div className="space-y-2 flex-1">
         <label htmlFor="location" className="block text-sm font-medium">
           Destino
@@ -42,15 +41,11 @@ const SearchForm = () => {
         <label className="block text-sm font-medium">Fechas</label>
         <Popover>
           <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className="justify-start text-left font-normal w-full border-muted"
-            >
+            <Button variant="outline" className="justify-start text-left font-normal w-full border-muted">
               <CalendarIcon className="mr-2 h-4 w-4" />
               {dateRange?.from && dateRange?.to ? (
                 <>
-                  {format(dateRange.from, "d MMM", { locale: es })} -{" "}
-                  {format(dateRange.to, "d MMM", { locale: es })}
+                  {format(dateRange.from, "d MMM", { locale: es })} - {format(dateRange.to, "d MMM", { locale: es })}
                 </>
               ) : (
                 <span>Seleccionar fechas</span>
@@ -94,7 +89,7 @@ const SearchForm = () => {
         Buscar
       </Button>
     </form>
-  );
-};
+  )
+}
 
-export default SearchForm;
+export default SearchForm

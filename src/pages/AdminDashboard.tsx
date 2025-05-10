@@ -7,23 +7,39 @@ import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Edit, Plus, Trash, Download, Upload, Save } from "lucide-react"
+import { Edit, Plus, Trash, Download, Upload, Save, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 import { useState, useEffect } from "react"
 
 const AdminDashboard = () => {
   const { isAuthenticated, logout } = useAdminAuth()
-  const { rooms, toggleRoomAvailability, deleteRoom, exportData, importData, saveToFile, isAutoSaveEnabled } =
-    useRoomStore()
+  const {
+    rooms,
+    toggleRoomAvailability,
+    deleteRoom,
+    exportData,
+    importData,
+    saveToFile,
+    checkForChanges,
+    syncStatus,
+    lastModified,
+  } = useRoomStore()
   const navigate = useNavigate()
-  const [lastSaved, setLastSaved] = useState<string | null>(null)
+  const [isChecking, setIsChecking] = useState(false)
 
-  // Actualizar la hora del último guardado
+  // Configurar verificación periódica de cambios
   useEffect(() => {
-    if (isAutoSaveEnabled) {
-      setLastSaved(new Date().toLocaleTimeString())
-    }
-  }, [rooms, isAutoSaveEnabled])
+    const intervalId = setInterval(async () => {
+      if (checkForChanges) {
+        const hasChanges = await checkForChanges()
+        if (hasChanges) {
+          toast.success("Se han detectado cambios en el archivo salva.json y se han actualizado los datos")
+        }
+      }
+    }, 10000) // Verificar cada 10 segundos
+
+    return () => clearInterval(intervalId)
+  }, [checkForChanges])
 
   // Redirect if not authenticated
   if (!isAuthenticated) {
@@ -69,7 +85,6 @@ const AdminDashboard = () => {
       const success = await importData()
       if (success) {
         toast.success("Datos importados correctamente desde salva.json")
-        setLastSaved(new Date().toLocaleTimeString())
       } else {
         toast.error("No se pudo importar los datos. Intente nuevamente.")
       }
@@ -84,13 +99,61 @@ const AdminDashboard = () => {
       const success = await saveToFile()
       if (success) {
         toast.success("Datos guardados correctamente en salva.json")
-        setLastSaved(new Date().toLocaleTimeString())
       } else {
         toast.error("No se pudo guardar los datos. Intente nuevamente.")
       }
     } else {
       toast.error("No se pudo guardar los datos. Intente nuevamente.")
     }
+  }
+
+  // Función para verificar cambios manualmente
+  const handleCheckForChanges = async () => {
+    if (checkForChanges) {
+      setIsChecking(true)
+      try {
+        const hasChanges = await checkForChanges()
+        if (hasChanges) {
+          toast.success("Se han detectado cambios y se han actualizado los datos")
+        } else {
+          toast.info("No se detectaron cambios en el archivo salva.json")
+        }
+      } catch (error) {
+        toast.error("Error al verificar cambios")
+      } finally {
+        setIsChecking(false)
+      }
+    } else {
+      toast.error("No se pudo verificar cambios. Intente nuevamente.")
+    }
+  }
+
+  // Obtener el estado de sincronización
+  const getSyncStatusText = () => {
+    switch (syncStatus) {
+      case "syncing":
+        return "Sincronizando..."
+      case "error":
+        return "Error de sincronización"
+      case "synced":
+        return "Sincronizado"
+      default:
+        return "No sincronizado"
+    }
+  }
+
+  // Formatear la fecha de última modificación
+  const getLastModifiedText = () => {
+    if (!lastModified) return "No disponible"
+
+    return new Intl.DateTimeFormat("es-ES", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    }).format(lastModified)
   }
 
   return (
@@ -110,29 +173,51 @@ const AdminDashboard = () => {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
             <div>
               <h2 className="text-xl font-semibold">Gestión del archivo salva.json</h2>
-              {isAutoSaveEnabled && lastSaved && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  Autoguardado activado. Último guardado: {lastSaved}
+              <div className="mt-2 space-y-1">
+                <p className="text-sm">
+                  <span className="font-medium">Estado:</span>{" "}
+                  <span
+                    className={`${
+                      syncStatus === "synced"
+                        ? "text-green-600"
+                        : syncStatus === "syncing"
+                          ? "text-amber-600"
+                          : "text-red-600"
+                    }`}
+                  >
+                    {getSyncStatusText()}
+                  </span>
                 </p>
-              )}
-              {!isAutoSaveEnabled && (
-                <p className="text-sm text-amber-600 mt-1">
-                  Autoguardado no configurado. Configure el archivo salva.json para activar el autoguardado.
+                <p className="text-sm">
+                  <span className="font-medium">Última modificación:</span>{" "}
+                  <span className="text-muted-foreground">{getLastModifiedText()}</span>
                 </p>
-              )}
+                <p className="text-sm text-muted-foreground">
+                  Los cambios se sincronizan automáticamente y se verifican cada 10 segundos
+                </p>
+              </div>
             </div>
             <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
               <Button variant="outline" className="flex items-center gap-2" onClick={handleSaveToFile}>
                 <Save className="h-4 w-4" />
-                Guardar en salva.json
+                Guardar
               </Button>
               <Button variant="outline" className="flex items-center gap-2" onClick={handleExportData}>
                 <Download className="h-4 w-4" />
-                Exportar salva.json
+                Exportar
               </Button>
               <Button variant="outline" className="flex items-center gap-2" onClick={handleImportData}>
                 <Upload className="h-4 w-4" />
-                Importar salva.json
+                Importar
+              </Button>
+              <Button
+                variant="outline"
+                className="flex items-center gap-2"
+                onClick={handleCheckForChanges}
+                disabled={isChecking}
+              >
+                <RefreshCw className={`h-4 w-4 ${isChecking ? "animate-spin" : ""}`} />
+                Verificar cambios
               </Button>
             </div>
           </div>

@@ -1,45 +1,16 @@
-
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Bed, Wifi, Coffee, Star } from "lucide-react";
-import { Link } from "react-router-dom";
-
-// Datos de muestra para las habitaciones destacadas
-const featuredRooms = [
-  {
-    id: 1,
-    title: "Suite Premium",
-    location: "Centro de la ciudad",
-    price: 120,
-    rating: 4.9,
-    reviews: 124,
-    image: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
-    features: ["Baño privado", "WiFi gratis", "Desayuno incluido"]
-  },
-  {
-    id: 2,
-    title: "Habitación Confort",
-    location: "Zona Turística",
-    price: 85,
-    rating: 4.7,
-    reviews: 95,
-    image: "https://images.unsplash.com/photo-1566665797739-1674de7a421a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80",
-    features: ["Baño privado", "WiFi gratis", "TV de pantalla plana"]
-  },
-  {
-    id: 3,
-    title: "Suite Ejecutiva",
-    location: "Distrito Financiero",
-    price: 150,
-    rating: 5.0,
-    reviews: 87,
-    image: "https://images.unsplash.com/photo-1590490360182-c33d57733427?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80",
-    features: ["Baño de lujo", "WiFi de alta velocidad", "Desayuno gourmet"]
-  }
-];
+import { Link } from "react-router-dom"
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Bed, Wifi, Coffee, Star } from "lucide-react"
+import { useRoomStore } from "@/contexts/RoomStoreContext"
 
 const FeaturedRooms = () => {
+  const { rooms } = useRoomStore()
+
+  // Only show available rooms in the featured section
+  const availableRooms = rooms.filter((room) => room.isAvailable).slice(0, 3)
+
   return (
     <section className="py-16 container mx-auto">
       <div className="text-center mb-12">
@@ -50,7 +21,7 @@ const FeaturedRooms = () => {
       </div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {featuredRooms.map((room) => (
+        {availableRooms.map((room) => (
           <Card key={room.id} className="overflow-hidden card-hover border border-border/50">
             <div className="aspect-[16/10] overflow-hidden">
               <img
@@ -87,12 +58,7 @@ const FeaturedRooms = () => {
                 <span className="font-bold text-lg">${room.price}</span>
                 <span className="text-muted-foreground text-sm"> / noche</span>
               </div>
-              <Button 
-                variant="default" 
-                size="sm" 
-                className="bg-terracotta hover:bg-terracotta/90"
-                asChild
-              >
+              <Button variant="default" size="sm" className="bg-terracotta hover:bg-terracotta/90" asChild>
                 <Link to={`/habitacion/${room.id}`}>Ver detalles</Link>
               </Button>
             </CardFooter>
@@ -101,16 +67,15 @@ const FeaturedRooms = () => {
       </div>
 
       <div className="text-center mt-12">
-        <Button 
-          variant="outline" 
-          className="border-terracotta text-terracotta hover:bg-terracotta/10"
-          asChild
-        >
+        <Button variant="outline" className="border-terracotta text-terracotta hover:bg-terracotta/10 mr-4" asChild>
           <Link to="/habitaciones">Ver todas las habitaciones</Link>
+        </Button>
+        <Button variant="outline" className="border-deepblue text-deepblue hover:bg-deepblue/10" asChild>
+          <Link to="/admin/login">Panel administrativo</Link>
         </Button>
       </div>
     </section>
-  );
-};
+  )
+}
 
-export default FeaturedRooms;
+export default FeaturedRooms

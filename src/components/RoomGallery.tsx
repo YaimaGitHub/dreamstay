@@ -1,38 +1,35 @@
+"use client"
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Maximize } from "lucide-react";
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { ChevronLeft, ChevronRight, Maximize } from "lucide-react"
 
 interface GalleryProps {
   images: Array<{
-    id: number;
-    url: string;
-    alt: string;
-  }>;
+    id: number
+    url: string
+    alt: string
+  }>
 }
 
 const RoomGallery = ({ images }: GalleryProps) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [showFullscreen, setShowFullscreen] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [showFullscreen, setShowFullscreen] = useState(false)
 
   const handlePrev = () => {
-    setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
-  };
+    setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))
+  }
 
   const handleNext = () => {
-    setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-  };
+    setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))
+  }
 
   return (
     <div className="relative">
       {/* Main Image */}
       <div className="relative aspect-[16/9] rounded-lg overflow-hidden mb-2 md:mb-4">
-        <img
-          src={images[currentIndex].url}
-          alt={images[currentIndex].alt}
-          className="w-full h-full object-cover"
-        />
-        
+        <img src={images[currentIndex].url} alt={images[currentIndex].alt} className="w-full h-full object-cover" />
+
         <Button
           variant="outline"
           size="icon"
@@ -72,11 +69,7 @@ const RoomGallery = ({ images }: GalleryProps) => {
             }`}
             onClick={() => setCurrentIndex(index)}
           >
-            <img
-              src={image.url}
-              alt={image.alt}
-              className="w-full h-full object-cover"
-            />
+            <img src={image.url} alt={image.alt} className="w-full h-full object-cover" />
           </div>
         ))}
       </div>
@@ -119,7 +112,7 @@ const RoomGallery = ({ images }: GalleryProps) => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default RoomGallery;
+export default RoomGallery

@@ -31,9 +31,13 @@ const AdminDashboard = () => {
   useEffect(() => {
     const intervalId = setInterval(async () => {
       if (checkForChanges) {
-        const hasChanges = await checkForChanges()
-        if (hasChanges) {
-          toast.success("Se han detectado cambios en el archivo salva.json y se han actualizado los datos")
+        try {
+          const hasChanges = await checkForChanges()
+          if (hasChanges) {
+            toast.success("Se han detectado cambios en el archivo salva.json y se han actualizado los datos")
+          }
+        } catch (error) {
+          console.error("Error al verificar cambios:", error)
         }
       }
     }, 10000) // Verificar cada 10 segundos
@@ -72,38 +76,53 @@ const AdminDashboard = () => {
   // Función para exportar datos manualmente
   const handleExportData = () => {
     if (exportData) {
-      exportData()
-      toast.success("Datos exportados correctamente a salva.json")
+      try {
+        exportData()
+        toast.success("Datos exportados correctamente a salva.json")
+      } catch (error) {
+        console.error("Error al exportar datos:", error)
+        toast.error("Error al exportar datos. Intente nuevamente.")
+      }
     } else {
-      toast.error("No se pudo exportar los datos. Intente nuevamente.")
+      toast.error("La función de exportación no está disponible en este navegador.")
     }
   }
 
   // Función para importar datos manualmente
   const handleImportData = async () => {
     if (importData) {
-      const success = await importData()
-      if (success) {
-        toast.success("Datos importados correctamente desde salva.json")
-      } else {
-        toast.error("No se pudo importar los datos. Intente nuevamente.")
+      try {
+        const success = await importData()
+        if (success) {
+          toast.success("Datos importados correctamente desde salva.json")
+        } else {
+          toast.error("No se pudo importar los datos. Verifique que el archivo sea válido.")
+        }
+      } catch (error) {
+        console.error("Error al importar datos:", error)
+        toast.error("Error al importar datos. Verifique los permisos del archivo.")
       }
     } else {
-      toast.error("No se pudo importar los datos. Intente nuevamente.")
+      toast.error("La función de importación no está disponible en este navegador.")
     }
   }
 
   // Función para guardar datos manualmente en el archivo salva.json
   const handleSaveToFile = async () => {
     if (saveToFile) {
-      const success = await saveToFile()
-      if (success) {
-        toast.success("Datos guardados correctamente en salva.json")
-      } else {
-        toast.error("No se pudo guardar los datos. Intente nuevamente.")
+      try {
+        const success = await saveToFile()
+        if (success) {
+          toast.success("Datos guardados correctamente en salva.json")
+        } else {
+          toast.error("No se pudo guardar los datos. Verifique los permisos del archivo.")
+        }
+      } catch (error) {
+        console.error("Error al guardar datos:", error)
+        toast.error("Error al guardar datos. Intente nuevamente.")
       }
     } else {
-      toast.error("No se pudo guardar los datos. Intente nuevamente.")
+      toast.error("La función de guardado no está disponible en este navegador.")
     }
   }
 
@@ -119,12 +138,13 @@ const AdminDashboard = () => {
           toast.info("No se detectaron cambios en el archivo salva.json")
         }
       } catch (error) {
-        toast.error("Error al verificar cambios")
+        console.error("Error al verificar cambios:", error)
+        toast.error("Error al verificar cambios. Verifique los permisos del archivo.")
       } finally {
         setIsChecking(false)
       }
     } else {
-      toast.error("No se pudo verificar cambios. Intente nuevamente.")
+      toast.error("La función de verificación de cambios no está disponible en este navegador.")
     }
   }
 
@@ -169,6 +189,7 @@ const AdminDashboard = () => {
           </div>
         </div>
 
+        {/* Mejorar la sección de gestión del archivo salva.json para hacerla más clara y funcional */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
             <div>
@@ -193,22 +214,22 @@ const AdminDashboard = () => {
                   <span className="text-muted-foreground">{getLastModifiedText()}</span>
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Los cambios se sincronizan automáticamente y se verifican cada 10 segundos
+                  Los cambios en las habitaciones se guardan automáticamente en el archivo salva.json
                 </p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
               <Button variant="outline" className="flex items-center gap-2" onClick={handleSaveToFile}>
                 <Save className="h-4 w-4" />
-                Guardar
+                Guardar salva.json
               </Button>
               <Button variant="outline" className="flex items-center gap-2" onClick={handleExportData}>
                 <Download className="h-4 w-4" />
-                Exportar
+                Exportar salva.json
               </Button>
               <Button variant="outline" className="flex items-center gap-2" onClick={handleImportData}>
                 <Upload className="h-4 w-4" />
-                Importar
+                Importar salva.json
               </Button>
               <Button
                 variant="outline"

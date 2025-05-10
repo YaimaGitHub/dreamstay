@@ -48,50 +48,66 @@ export function SalvaFileManager() {
         }
         setLastChecked(new Date())
       } catch (error) {
-        toast.error("Error al verificar cambios")
+        console.error("Error al verificar cambios:", error)
+        toast.error("Error al verificar cambios. Verifique los permisos del archivo.")
       } finally {
         setIsChecking(false)
       }
     } else {
-      toast.error("No se pudo verificar cambios. Intente nuevamente.")
+      toast.error("La función de verificación de cambios no está disponible en este navegador.")
     }
   }
 
   // Función para exportar datos manualmente
   const handleExportData = () => {
     if (exportData) {
-      exportData()
-      toast.success("Datos exportados correctamente a salva.json")
+      try {
+        exportData()
+        toast.success("Datos exportados correctamente a salva.json")
+      } catch (error) {
+        console.error("Error al exportar datos:", error)
+        toast.error("Error al exportar datos. Intente nuevamente.")
+      }
     } else {
-      toast.error("No se pudo exportar los datos. Intente nuevamente.")
+      toast.error("La función de exportación no está disponible en este navegador.")
     }
   }
 
   // Función para importar datos manualmente
   const handleImportData = async () => {
     if (importData) {
-      const success = await importData()
-      if (success) {
-        toast.success("Datos importados correctamente desde salva.json")
-      } else {
-        toast.error("No se pudo importar los datos. Intente nuevamente.")
+      try {
+        const success = await importData()
+        if (success) {
+          toast.success("Datos importados correctamente desde salva.json")
+        } else {
+          toast.error("No se pudo importar los datos. Verifique que el archivo sea válido.")
+        }
+      } catch (error) {
+        console.error("Error al importar datos:", error)
+        toast.error("Error al importar datos. Verifique los permisos del archivo.")
       }
     } else {
-      toast.error("No se pudo importar los datos. Intente nuevamente.")
+      toast.error("La función de importación no está disponible en este navegador.")
     }
   }
 
   // Función para guardar datos manualmente
   const handleSaveToFile = async () => {
     if (saveToFile) {
-      const success = await saveToFile()
-      if (success) {
-        toast.success("Datos guardados correctamente en salva.json")
-      } else {
-        toast.error("No se pudo guardar los datos. Intente nuevamente.")
+      try {
+        const success = await saveToFile()
+        if (success) {
+          toast.success("Datos guardados correctamente en salva.json")
+        } else {
+          toast.error("No se pudo guardar los datos. Verifique los permisos del archivo.")
+        }
+      } catch (error) {
+        console.error("Error al guardar datos:", error)
+        toast.error("Error al guardar datos. Intente nuevamente.")
       }
     } else {
-      toast.error("No se pudo guardar los datos. Intente nuevamente.")
+      toast.error("La función de guardado no está disponible en este navegador.")
     }
   }
 

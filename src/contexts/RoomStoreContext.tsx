@@ -9,8 +9,6 @@ import { featuredRooms as initialRooms } from "../data/sampleRooms"
 
 // Nombre fijo del archivo de guardado
 const SAVE_FILE_NAME = "salva"
-// Ruta fija para el archivo de guardado
-const SAVE_FILE_PATH = "/"
 // Clave para almacenar la última modificación
 const LAST_MODIFIED_KEY = "salva-last-modified"
 // Intervalo de verificación de cambios (en milisegundos)
@@ -34,24 +32,49 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [syncStatus, setSyncStatus] = useState<"synced" | "syncing" | "error">("synced")
 
   // Función para verificar si el navegador soporta la API File System Access
-  const isFileSystemAccessSupported = () => {
-    return "showOpenFilePicker" in window && "showSaveFilePicker" in window
-  }
+  const isFileSystemAccessSupported = useCallback(() => {
+    return typeof window !== "undefined" && "showOpenFilePicker" in window && "showSaveFilePicker" in window
+  }, [])
 
-  // Función para cargar datos desde el archivo salva.json
+  // Función para exportar datos a un archivo descargable (método tradicional)
+  const exportToDownloadableFile = useCallback((dataToExport: Room[]) => {
+    try {
+      const jsonString = JSON.stringify(dataToExport, null, 2)
+      const blob = new Blob([jsonString], { type: "application/json" })
+      const url = URL.createObjectURL(blob)
+
+      const a = document.createElement("a")
+      a.href = url
+      a.download = "salva.json"
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+
+      console.log(`Datos exportados a archivo descargable 'salva.json'`)
+      return true
+    } catch (error) {
+      console.error("Error al exportar datos:", error)
+      return false
+    }
+  }, [])
+
+  // Modificar la función loadFromFile para que busque específicamente el archivo "salva.json"
   const loadFromFile = useCallback(
     async (showPicker = true) => {
       try {
         if (!isFileSystemAccessSupported()) {
-          throw new Error("API File System Access no soportada en este navegador")
+          console.warn("API File System Access no soportada en este navegador")
+          // Fallback para navegadores que no soportan File System Access API
+          return null
         }
 
         let handle: FileSystemFileHandle | null = null
 
         // Si tenemos permisos para un archivo anterior, intentamos usarlo primero
         if (fileHandle) {
-          // Verificar si todavía tenemos permiso para acceder al archivo
           try {
+            // Verificar si todavía tenemos permiso para acceder al archivo
             const permission = await fileHandle.queryPermission({ mode: "read" })
             if (permission === "granted") {
               handle = fileHandle
@@ -64,6 +87,7 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             }
           } catch (error) {
             console.error("Error al verificar permisos:", error)
+            // Continuar con el selector de archivos
           }
         }
 
@@ -79,7 +103,7 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                   },
                 },
               ],
-              suggestedName: SAVE_FILE_NAME,
+              multiple: false,
             })
 
             if (fileHandles && fileHandles.length > 0) {
@@ -88,7 +112,8 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             }
           } catch (error) {
             console.error("Error al mostrar selector de archivos:", error)
-            throw error
+            // El usuario canceló la selección o hubo un error
+            return null
           }
         }
 
@@ -96,13 +121,20 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           try {
             const file = await handle.getFile()
             const content = await file.text()
-            const parsedRooms = JSON.parse(content)
+            let parsedRooms
+
+            try {
+              parsedRooms = JSON.parse(content)
+            } catch (parseError) {
+              console.error("Error al parsear JSON:", parseError)
+              throw new Error("El archivo seleccionado no contiene un JSON válido")
+            }
 
             // Guardar la última fecha de modificación
             setLastModified(file.lastModified.toString())
             localStorage.setItem(LAST_MODIFIED_KEY, file.lastModified.toString())
 
-            console.log(`Habitaciones cargadas desde archivo '${SAVE_FILE_NAME}':`, parsedRooms.length)
+            console.log(`Habitaciones cargadas desde archivo:`, parsedRooms.length)
             return { data: parsedRooms, lastModified: file.lastModified }
           } catch (error) {
             console.error("Error al leer el archivo:", error)
@@ -115,16 +147,21 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
       return null
     },
-    [fileHandle],
+    [fileHandle, isFileSystemAccessSupported],
   )
 
-  // Función para guardar datos en el archivo salva.json
+  // Modificar la función saveToFile para guardar específicamente como "salva.json"
   const saveToFile = useCallback(
     async (dataToSave: Room[], forceSavePicker = false) => {
       setSyncStatus("syncing")
       try {
         if (!isFileSystemAccessSupported()) {
-          throw new Error("API File System Access no soportada en este navegador")
+          console.warn("API File System Access no soportada en este navegador")
+          // Fallback para navegadores que no soportan File System Access API
+          // Usar el método de descarga tradicional
+          exportToDownloadableFile(dataToSave)
+          setSyncStatus("synced")
+          return true
         }
 
         let handle = fileHandle
@@ -141,15 +178,20 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                   },
                 },
               ],
-              suggestedName: SAVE_FILE_NAME,
-              startIn: SAVE_FILE_PATH,
+              suggestedName: "salva.json",
             })
             setFileHandle(handle)
           } catch (error) {
             console.error("Error al mostrar selector de guardado:", error)
             setSyncStatus("error")
-            throw error
+            // El usuario canceló la selección o hubo un error
+            return false
           }
+        }
+
+        if (!handle) {
+          setSyncStatus("error")
+          return false
         }
 
         // Verificar si tenemos permiso para escribir
@@ -178,7 +220,7 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           setLastModified(file.lastModified.toString())
           localStorage.setItem(LAST_MODIFIED_KEY, file.lastModified.toString())
 
-          console.log(`Datos guardados en archivo '${SAVE_FILE_NAME}'`)
+          console.log(`Datos guardados en archivo 'salva.json'`)
           setSyncStatus("synced")
           return true
         } catch (error) {
@@ -192,38 +234,27 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return false
       }
     },
-    [fileHandle],
+    [fileHandle, isFileSystemAccessSupported, exportToDownloadableFile],
   )
-
-  // Función para exportar datos a un archivo descargable
-  const exportToDownloadableFile = useCallback((dataToExport: Room[]) => {
-    const jsonString = JSON.stringify(dataToExport, null, 2)
-    const blob = new Blob([jsonString], { type: "application/json" })
-    const url = URL.createObjectURL(blob)
-
-    const a = document.createElement("a")
-    a.href = url
-    a.download = SAVE_FILE_NAME
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-
-    console.log(`Datos exportados a archivo descargable '${SAVE_FILE_NAME}'`)
-  }, [])
 
   // Función para importar datos desde un archivo seleccionado por el usuario
   const importFromFile = useCallback(async () => {
     try {
+      setSyncStatus("syncing")
       const result = await loadFromFile(true)
-      if (result) {
+      if (result && result.data) {
         setRooms(result.data)
+        setSyncStatus("synced")
         return true
+      } else {
+        setSyncStatus("error")
+        return false
       }
     } catch (error) {
       console.error("Error al importar archivo:", error)
+      setSyncStatus("error")
+      return false
     }
-    return false
   }, [loadFromFile])
 
   // Función para verificar si hay cambios en el archivo
@@ -260,57 +291,28 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   useEffect(() => {
     const loadRooms = async () => {
       try {
-        // Intentamos cargar directamente desde el archivo salva en la raíz
-        const result = null
-        try {
-          // Intentar abrir el archivo salva en la raíz
-          const fileHandles = await window.showOpenFilePicker({
-            types: [
-              {
-                description: "Archivo de datos",
-                accept: {
-                  "application/json": [".json"],
-                },
-              },
-            ],
-            suggestedName: SAVE_FILE_NAME,
-            startIn: SAVE_FILE_PATH,
-          })
-
-          if (fileHandles && fileHandles.length > 0) {
-            const handle = fileHandles[0]
-            setFileHandle(handle)
-            const file = await handle.getFile()
-            const content = await file.text()
-            const parsedRooms = JSON.parse(content)
-
-            // Guardar la última fecha de modificación
-            setLastModified(file.lastModified.toString())
-            localStorage.setItem(LAST_MODIFIED_KEY, file.lastModified.toString())
-
+        // Intentar cargar desde localStorage primero como fallback
+        const savedRooms = localStorage.getItem("salva-rooms")
+        if (savedRooms) {
+          try {
+            const parsedRooms = JSON.parse(savedRooms)
             setRooms(parsedRooms)
-            console.log(`Habitaciones cargadas desde archivo '${SAVE_FILE_NAME}':`, parsedRooms.length)
-          } else {
-            // Si no se pudo cargar el archivo, usar datos iniciales
-            const roomsWithModifiedDate = initialRooms.map((room) => ({
-              ...room,
-              lastModified: new Date().toISOString(),
-            }))
-            setRooms(roomsWithModifiedDate as Room[])
-            console.log("Usando datos iniciales de habitaciones")
+            setIsLoaded(true)
+            console.log("Habitaciones cargadas desde localStorage")
+            return
+          } catch (error) {
+            console.error("Error al parsear habitaciones de localStorage:", error)
           }
-        } catch (error) {
-          console.error("Error al cargar desde archivo:", error)
-          // En caso de error, usar datos iniciales
-          const roomsWithModifiedDate = initialRooms.map((room) => ({
-            ...room,
-            lastModified: new Date().toISOString(),
-          }))
-          setRooms(roomsWithModifiedDate as Room[])
-          console.log("Usando datos iniciales de habitaciones debido a un error:", error)
-        } finally {
-          setIsLoaded(true)
         }
+
+        // Si no hay datos en localStorage o hubo un error, usar datos iniciales
+        const roomsWithModifiedDate = initialRooms.map((room) => ({
+          ...room,
+          lastModified: new Date().toISOString(),
+        }))
+        setRooms(roomsWithModifiedDate as Room[])
+        console.log("Usando datos iniciales de habitaciones")
+        setIsLoaded(true)
       } catch (error) {
         console.error("Error al cargar habitaciones:", error)
         // En caso de error, usar datos iniciales
@@ -320,55 +322,18 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
 
     loadRooms()
+  }, [])
 
-    // Exponer funciones para que puedan ser llamadas desde el panel administrativo
-    window.roomStoreExport = () => exportToDownloadableFile(rooms)
-    window.roomStoreImport = importFromFile
-    window.roomStoreCheckChanges = checkForChanges
-
-    return () => {
-      // Limpiar funciones globales al desmontar
-      delete window.roomStoreExport
-      delete window.roomStoreImport
-      delete window.roomStoreCheckChanges
-    }
-  }, [loadFromFile, exportToDownloadableFile, importFromFile, checkForChanges])
-
-  // Configurar verificación periódica de cambios
+  // Guardar en localStorage como respaldo
   useEffect(() => {
-    if (!fileHandle || !isLoaded) return
-
-    // Verificar cambios periódicamente
-    const intervalId = setInterval(async () => {
-      const hasChanges = await checkForChanges()
-      if (hasChanges) {
-        console.log("Se actualizaron los datos desde el archivo salva.json")
-      }
-    }, CHECK_INTERVAL)
-
-    return () => clearInterval(intervalId)
-  }, [fileHandle, isLoaded, checkForChanges])
-
-  // Guardar habitaciones cuando cambien
-  useEffect(() => {
-    const saveRooms = async () => {
-      if (isLoaded) {
-        // Si tenemos un fileHandle, guardamos en el archivo
-        if (fileHandle) {
-          try {
-            await saveToFile(rooms)
-          } catch (error) {
-            console.error("Error al guardar automáticamente:", error)
-          }
-        }
+    if (isLoaded && rooms.length > 0) {
+      try {
+        localStorage.setItem("salva-rooms", JSON.stringify(rooms))
+      } catch (error) {
+        console.error("Error al guardar en localStorage:", error)
       }
     }
-
-    // Solo guardamos cuando hay cambios y ya se ha cargado
-    if (isLoaded) {
-      saveRooms()
-    }
-  }, [rooms, isLoaded, saveToFile, fileHandle])
+  }, [rooms, isLoaded])
 
   // Funciones para manipular habitaciones
   const addRoom = (room: Omit<Room, "id">) => {
@@ -442,6 +407,13 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     checkForChanges: forceCheckForChanges,
     syncStatus,
     lastModified: lastModified ? new Date(Number.parseInt(lastModified)) : null,
+    isOnline: typeof navigator !== "undefined" ? navigator.onLine : true,
+    setFilePath: (path: string) => {
+      // Esta función es un placeholder, ya que la API File System Access
+      // no permite establecer una ruta específica por razones de seguridad
+      console.log("Intentando establecer ruta:", path)
+      return Promise.resolve(false)
+    },
   }
 
   return <RoomStoreContext.Provider value={value}>{children}</RoomStoreContext.Provider>

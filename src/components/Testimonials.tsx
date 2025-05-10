@@ -1,6 +1,5 @@
-
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Star } from "lucide-react";
+import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { Star } from "lucide-react"
 
 const testimonials = [
   {
@@ -27,7 +26,7 @@ const testimonials = [
     rating: 4,
     avatar: "https://randomuser.me/api/portraits/women/68.jpg",
   },
-];
+]
 
 const Testimonials = () => {
   return (
@@ -47,20 +46,14 @@ const Testimonials = () => {
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
-                    className={`h-4 w-4 ${
-                      i < testimonial.rating ? "fill-accent text-accent" : "text-muted"
-                    }`}
+                    className={`h-4 w-4 ${i < testimonial.rating ? "fill-accent text-accent" : "text-muted"}`}
                   />
                 ))}
               </div>
               <p className="italic mb-4">"{testimonial.text}"</p>
             </CardContent>
             <CardFooter className="flex items-center border-t pt-4">
-              <img
-                src={testimonial.avatar}
-                alt={testimonial.name}
-                className="w-10 h-10 rounded-full mr-3"
-              />
+              <img src={testimonial.avatar} alt={testimonial.name} className="w-10 h-10 rounded-full mr-3" />
               <div>
                 <h4 className="font-medium">{testimonial.name}</h4>
                 <p className="text-sm text-muted-foreground">{testimonial.location}</p>
@@ -70,7 +63,7 @@ const Testimonials = () => {
         ))}
       </div>
     </section>
-  );
-};
+  )
+}
 
-export default Testimonials;
+export default Testimonials

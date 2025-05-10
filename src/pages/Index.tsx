@@ -1,10 +1,9 @@
-
-import Navbar from "@/components/Navbar";
-import HeroSection from "@/components/HeroSection";
-import FeaturedRooms from "@/components/FeaturedRooms";
-import ServicesList from "@/components/ServicesList";
-import Testimonials from "@/components/Testimonials";
-import Footer from "@/components/Footer";
+import Navbar from "@/components/Navbar"
+import HeroSection from "@/components/HeroSection"
+import FeaturedRooms from "@/components/FeaturedRooms"
+import ServicesList from "@/components/ServicesList"
+import Testimonials from "@/components/Testimonials"
+import Footer from "@/components/Footer"
 
 const Index = () => {
   return (
@@ -18,7 +17,7 @@ const Index = () => {
       </main>
       <Footer />
     </div>
-  );
-};
+  )
+}
 
-export default Index;
+export default Index

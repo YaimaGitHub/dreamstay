@@ -1,43 +1,12 @@
 
-"use client"
-
-import { useParams } from "react-router-dom"
-import Navbar from "@/components/Navbar"
-import Footer from "@/components/Footer"
-import RoomGallery from "@/components/RoomGallery"
-import BookingForm from "@/components/BookingForm"
-import RoomAmenities, { sampleAmenities } from "@/components/RoomAmenities"
-import AdditionalServices, { sampleServices } from "@/components/AdditionalServices"
-import { Star, User, MapPin } from "lucide-react"
-import { Amenity as RoomAmenity } from "@/types/room"
-
-// Convert sample amenities to match the updated Amenity type
-const formattedAmenities: RoomAmenity[] = [
-  {
-    id: 1,
-    name: "WiFi de alta velocidad",
-    icon: "wifi",
-    description: "Conexión rápida y estable en toda la habitación"
-  },
-  {
-    id: 2,
-    name: "Baño privado",
-    icon: "bath",
-    description: "Baño completo con ducha y bañera"
-  },
-  {
-    id: 3,
-    name: "Aire acondicionado",
-    icon: "air",
-    description: "Control individual de temperatura"
-  },
-  {
-    id: 4,
-    name: "TV de pantalla plana",
-    icon: "tv",
-    description: "Televisión con canales premium"
-  }
-]
+import { useParams } from "react-router-dom";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import RoomGallery from "@/components/RoomGallery";
+import BookingForm from "@/components/BookingForm";
+import RoomAmenities, { sampleAmenities } from "@/components/RoomAmenities";
+import AdditionalServices, { sampleServices } from "@/components/AdditionalServices";
+import { Star, User, MapPin } from "lucide-react";
 
 // Datos de muestra para la habitación
 const roomData = {
@@ -54,7 +23,7 @@ const roomData = {
   maxGuests: 2,
   beds: 1,
   bathrooms: 1,
-  amenities: formattedAmenities,
+  amenities: sampleAmenities,
   services: sampleServices,
   images: [
     {
@@ -78,10 +47,10 @@ const roomData = {
       alt: "Vista desde la ventana",
     },
   ],
-}
+};
 
 const RoomDetails = () => {
-  const { id } = useParams<{ id: string }>()
+  const { id } = useParams<{ id: string }>();
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -107,9 +76,12 @@ const RoomDetails = () => {
             <div className="mt-8">
               <div className="flex items-center justify-between pb-4 border-b mb-6">
                 <div>
-                  <h2 className="text-xl font-semibold">Habitación en alojamiento entero</h2>
+                  <h2 className="text-xl font-semibold">
+                    Habitación en alojamiento entero
+                  </h2>
                   <p className="text-muted-foreground">
-                    Máximo {roomData.maxGuests} huéspedes • {roomData.beds} cama • {roomData.bathrooms} baño
+                    Máximo {roomData.maxGuests} huéspedes • {roomData.beds} cama •{" "}
+                    {roomData.bathrooms} baño
                   </p>
                 </div>
                 <div className="flex items-center">
@@ -118,13 +90,17 @@ const RoomDetails = () => {
                   </div>
                   <div className="ml-2">
                     <p className="font-medium">{roomData.host}</p>
-                    <p className="text-sm text-muted-foreground">Anfitrión desde {roomData.hostJoined}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Anfitrión desde {roomData.hostJoined}
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div className="mb-8">
-                <p className="text-lg mb-4">{roomData.description}</p>
+                <p className="text-lg mb-4">
+                  {roomData.description}
+                </p>
               </div>
 
               <div className="mb-10">
@@ -144,7 +120,7 @@ const RoomDetails = () => {
       </main>
       <Footer />
     </div>
-  )
-}
+  );
+};
 
-export default RoomDetails
+export default RoomDetails;

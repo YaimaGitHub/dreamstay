@@ -1,5 +1,5 @@
 // Archivo generado automáticamente por el panel de administración
-// Última actualización: 11/5/2025, 3:02:35
+// Última actualización: 11/5/2025, 3:09:23
 
 export const roomsData = [
   {

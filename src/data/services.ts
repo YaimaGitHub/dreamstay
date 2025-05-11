@@ -1,12 +1,12 @@
 // Archivo generado automáticamente por el panel de administración
-// Última actualización: 11/5/2025, 3:02:35
+// Última actualización: 11/5/2025, 3:09:23
 
 import { Utensils, Car, Wifi, MapPin } from 'lucide-react';
 
 export const allServices = [
   {
     id: 1,
-    title: "Traslado desde el aeropuerto",
+    title: "Traslado desde el aeropuertoo",
     description: "Te recogemos en el aeropuerto y te llevamos directamente a tu habitación.",
     longDescription: "Nuestro servicio de traslado premium te garantiza un viaje cómodo desde el aeropuerto hasta tu alojamiento. Contamos con conductores profesionales y vehículos modernos totalmente equipados para que tu viaje sea placentero. Confirmamos tu vuelo de antemano y nos aseguramos de estar esperándote a tu llegada.",
     price: 25,

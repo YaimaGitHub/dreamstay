@@ -1,17 +1,15 @@
-"use client"
-
-import { useState } from "react"
-import { Link } from "react-router-dom"
-import Navbar from "@/components/Navbar"
-import Footer from "@/components/Footer"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Slider } from "@/components/ui/slider"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Bed, Wifi, Coffee, Star, SlidersHorizontal } from "lucide-react"
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Bed, Wifi, Coffee, Star, Search, SlidersHorizontal } from "lucide-react";
 
 // Datos de muestra para las habitaciones
 const roomsData = [
@@ -22,11 +20,10 @@ const roomsData = [
     price: 120,
     rating: 4.9,
     reviews: 124,
-    image:
-      "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
+    image: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
     features: ["Baño privado", "WiFi gratis", "Desayuno incluido"],
     type: "Suite",
-    area: 35,
+    area: 35
   },
   {
     id: 2,
@@ -35,11 +32,10 @@ const roomsData = [
     price: 85,
     rating: 4.7,
     reviews: 95,
-    image:
-      "https://images.unsplash.com/photo-1566665797739-1674de7a421a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80",
+    image: "https://images.unsplash.com/photo-1566665797739-1674de7a421a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80",
     features: ["Baño privado", "WiFi gratis", "TV de pantalla plana"],
     type: "Estándar",
-    area: 25,
+    area: 25
   },
   {
     id: 3,
@@ -48,11 +44,10 @@ const roomsData = [
     price: 150,
     rating: 5.0,
     reviews: 87,
-    image:
-      "https://images.unsplash.com/photo-1590490360182-c33d57733427?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80",
+    image: "https://images.unsplash.com/photo-1590490360182-c33d57733427?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80",
     features: ["Baño de lujo", "WiFi de alta velocidad", "Desayuno gourmet"],
     type: "Suite",
-    area: 40,
+    area: 40
   },
   {
     id: 4,
@@ -61,11 +56,10 @@ const roomsData = [
     price: 110,
     rating: 4.6,
     reviews: 72,
-    image:
-      "https://images.unsplash.com/photo-1505692952047-9e5ddd7c1664?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
+    image: "https://images.unsplash.com/photo-1505692952047-9e5ddd7c1664?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
     features: ["2 camas dobles", "WiFi gratis", "TV por cable"],
     type: "Familiar",
-    area: 38,
+    area: 38
   },
   {
     id: 5,
@@ -74,11 +68,10 @@ const roomsData = [
     price: 65,
     rating: 4.3,
     reviews: 58,
-    image:
-      "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
+    image: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
     features: ["Baño compartido", "WiFi gratis", "Escritorio"],
     type: "Económica",
-    area: 18,
+    area: 18
   },
   {
     id: 6,
@@ -87,31 +80,29 @@ const roomsData = [
     price: 130,
     rating: 4.8,
     reviews: 103,
-    image:
-      "https://images.unsplash.com/photo-1618773928121-c32242e63f39?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
+    image: "https://images.unsplash.com/photo-1618773928121-c32242e63f39?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
     features: ["Minibar", "WiFi gratis", "Desayuno buffet"],
     type: "Suite",
-    area: 32,
+    area: 32
   },
-]
+];
 
 const RoomsList = () => {
-  const [priceRange, setPriceRange] = useState<number[]>([50, 200])
-  const [roomType, setRoomType] = useState<string>("all")
-  const [searchTerm, setSearchTerm] = useState<string>("")
-  const [showFilters, setShowFilters] = useState<boolean>(false)
+  const [priceRange, setPriceRange] = useState<number[]>([50, 200]);
+  const [roomType, setRoomType] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [showFilters, setShowFilters] = useState<boolean>(false);
 
   // Filtrar habitaciones
   const filteredRooms = roomsData.filter((room) => {
-    const matchesPrice = room.price >= priceRange[0] && room.price <= priceRange[1]
-    const matchesType = roomType === "all" || room.type === roomType
-    const matchesSearch =
-      searchTerm === "" ||
+    const matchesPrice = room.price >= priceRange[0] && room.price <= priceRange[1];
+    const matchesType = roomType === "all" || room.type === roomType;
+    const matchesSearch = searchTerm === "" || 
       room.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      room.location.toLowerCase().includes(searchTerm.toLowerCase())
-
-    return matchesPrice && matchesType && matchesSearch
-  })
+      room.location.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    return matchesPrice && matchesType && matchesSearch;
+  });
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -127,7 +118,7 @@ const RoomsList = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="md:w-64"
             />
-            <Button
+            <Button 
               variant="outline"
               onClick={() => setShowFilters(!showFilters)}
               className="border-terracotta text-terracotta"
@@ -180,21 +171,15 @@ const RoomsList = () => {
                 <div className="space-y-2">
                   <div className="flex items-center">
                     <Checkbox id="wifi" />
-                    <label htmlFor="wifi" className="ml-2 text-sm">
-                      WiFi gratis
-                    </label>
+                    <label htmlFor="wifi" className="ml-2 text-sm">WiFi gratis</label>
                   </div>
                   <div className="flex items-center">
                     <Checkbox id="breakfast" />
-                    <label htmlFor="breakfast" className="ml-2 text-sm">
-                      Desayuno incluido
-                    </label>
+                    <label htmlFor="breakfast" className="ml-2 text-sm">Desayuno incluido</label>
                   </div>
                   <div className="flex items-center">
                     <Checkbox id="bathroom" />
-                    <label htmlFor="bathroom" className="ml-2 text-sm">
-                      Baño privado
-                    </label>
+                    <label htmlFor="bathroom" className="ml-2 text-sm">Baño privado</label>
                   </div>
                 </div>
               </div>
@@ -240,7 +225,12 @@ const RoomsList = () => {
                   <span className="font-bold text-lg">${room.price}</span>
                   <span className="text-muted-foreground text-sm"> / noche</span>
                 </div>
-                <Button variant="default" size="sm" className="bg-terracotta hover:bg-terracotta/90" asChild>
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  className="bg-terracotta hover:bg-terracotta/90"
+                  asChild
+                >
                   <Link to={`/habitacion/${room.id}`}>Ver detalles</Link>
                 </Button>
               </CardFooter>
@@ -257,7 +247,7 @@ const RoomsList = () => {
       </main>
       <Footer />
     </div>
-  )
-}
+  );
+};
 
-export default RoomsList
+export default RoomsList;

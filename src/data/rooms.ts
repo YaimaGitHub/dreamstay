@@ -1,10 +1,10 @@
 // Archivo generado automáticamente por el panel de administración
-// Última actualización: 10/5/2025, 12:57:09
+// Última actualización: 11/5/2025, 3:02:35
 
 export const roomsData = [
   {
     id: 1,
-    title: "Suite Premiummmmm",
+    title: "La Terraza | Bendecida",
     location: "Centro de la ciudad",
     price: 120,
     rating: 4.9,

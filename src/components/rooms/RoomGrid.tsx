@@ -1,8 +1,9 @@
-import RoomCard from "./RoomCard"
-import type { Room } from "@/types/room"
+
+import RoomCard from "./RoomCard";
+import { Room } from "@/types/room";
 
 interface RoomGridProps {
-  rooms: Room[]
+  rooms: Room[];
 }
 
 const RoomGrid = ({ rooms }: RoomGridProps) => {
@@ -12,7 +13,7 @@ const RoomGrid = ({ rooms }: RoomGridProps) => {
         <h3 className="text-xl font-semibold mb-2">No se encontraron habitaciones</h3>
         <p className="text-muted-foreground">Intenta con otros filtros de búsqueda</p>
       </div>
-    )
+    );
   }
 
   return (
@@ -21,7 +22,7 @@ const RoomGrid = ({ rooms }: RoomGridProps) => {
         <RoomCard key={room.id} room={room} />
       ))}
     </div>
-  )
-}
+  );
+};
 
-export default RoomGrid
+export default RoomGrid;

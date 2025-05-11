@@ -1,17 +1,18 @@
-import { Link } from "react-router-dom"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
-import { Bed, Coffee, Star, Wifi } from "lucide-react"
-import type { Room } from "@/types/room"
+
+import { Link } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Bed, Coffee, Star, Wifi } from "lucide-react";
+import { Room } from "@/types/room";
 
 interface RoomCardProps {
-  room: Room
+  room: Room;
 }
 
 const RoomCard = ({ room }: RoomCardProps) => {
   return (
-    <Card className={`overflow-hidden card-hover border border-border/50 ${!room.isAvailable ? "opacity-70" : ""}`}>
+    <Card className={`overflow-hidden card-hover border border-border/50 ${!room.isAvailable ? 'opacity-70' : ''}`}>
       <div className="aspect-[16/10] overflow-hidden relative">
         <img
           src={room.image}
@@ -20,7 +21,9 @@ const RoomCard = ({ room }: RoomCardProps) => {
         />
         {!room.isAvailable && (
           <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <span className="text-white font-bold text-lg px-4 py-2 bg-red-500 rounded-md">No disponible</span>
+            <span className="text-white font-bold text-lg px-4 py-2 bg-red-500 rounded-md">
+              No disponible
+            </span>
           </div>
         )}
       </div>
@@ -46,7 +49,9 @@ const RoomCard = ({ room }: RoomCardProps) => {
             </div>
           ))}
           {room.features.length > 3 && (
-            <div className="text-sm text-muted-foreground">+{room.features.length - 3} más</div>
+            <div className="text-sm text-muted-foreground">
+              +{room.features.length - 3} más
+            </div>
           )}
         </div>
       </CardContent>
@@ -55,9 +60,9 @@ const RoomCard = ({ room }: RoomCardProps) => {
           <span className="font-bold text-lg">${room.price}</span>
           <span className="text-muted-foreground text-sm"> / noche</span>
         </div>
-        <Button
+        <Button 
           variant={room.isAvailable ? "default" : "outline"}
-          size="sm"
+          size="sm" 
           className={room.isAvailable ? "bg-terracotta hover:bg-terracotta/90" : ""}
           asChild
         >
@@ -65,7 +70,7 @@ const RoomCard = ({ room }: RoomCardProps) => {
         </Button>
       </CardFooter>
     </Card>
-  )
-}
+  );
+};
 
-export default RoomCard
+export default RoomCard;

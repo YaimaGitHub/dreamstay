@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useParams } from "react-router-dom"
@@ -8,6 +9,35 @@ import BookingForm from "@/components/BookingForm"
 import RoomAmenities, { sampleAmenities } from "@/components/RoomAmenities"
 import AdditionalServices, { sampleServices } from "@/components/AdditionalServices"
 import { Star, User, MapPin } from "lucide-react"
+import { Amenity as RoomAmenity } from "@/types/room"
+
+// Convert sample amenities to match the updated Amenity type
+const formattedAmenities: RoomAmenity[] = [
+  {
+    id: 1,
+    name: "WiFi de alta velocidad",
+    icon: "wifi",
+    description: "Conexión rápida y estable en toda la habitación"
+  },
+  {
+    id: 2,
+    name: "Baño privado",
+    icon: "bath",
+    description: "Baño completo con ducha y bañera"
+  },
+  {
+    id: 3,
+    name: "Aire acondicionado",
+    icon: "air",
+    description: "Control individual de temperatura"
+  },
+  {
+    id: 4,
+    name: "TV de pantalla plana",
+    icon: "tv",
+    description: "Televisión con canales premium"
+  }
+]
 
 // Datos de muestra para la habitación
 const roomData = {
@@ -24,7 +54,7 @@ const roomData = {
   maxGuests: 2,
   beds: 1,
   bathrooms: 1,
-  amenities: sampleAmenities,
+  amenities: formattedAmenities,
   services: sampleServices,
   images: [
     {

@@ -1,27 +1,46 @@
+
 export interface Room {
-  id: number
-  title: string
-  description: string
-  location: string
-  price: number
-  currency?: string
-  rating: number
-  reviews: number
-  image?: string
-  type: string
-  area: number
-  maxGuests: number
-  beds: number
-  bathrooms: number
-  features: string[]
-  isAvailable: boolean
-  availableDates?: {
-    from: Date
-    to: Date
-  }
-  images: {
-    id: number
-    url: string
-    alt: string
-  }[]
+  id: number;
+  title: string;
+  location: string;
+  price: number;
+  rating: number;
+  reviews: number;
+  image: string;
+  features: string[];
+  type: string;
+  area: number;
+  description?: string;
+  isAvailable: boolean;
+  reservedDates: {
+    start: string;
+    end: string;
+  }[];
+  images?: {
+    id: number;
+    url: string;
+    alt: string;
+  }[];
+  lastModified?: string;
+}
+
+export interface Amenity {
+  id: number;
+  name: string;
+  icon: string | JSX.Element;  // Updated to support both string and JSX.Element
+  description: string; // Description is required for RoomAmenities component
+}
+
+export interface RoomStore {
+  rooms: Room[];
+  addRoom: (room: Omit<Room, "id">) => void;
+  updateRoom: (room: Room) => void;
+  deleteRoom: (id: number) => void;
+  toggleRoomAvailability: (id: number) => void;
+  addReservedDates: (id: number, startDate: Date, endDate: Date) => void;
+}
+
+export interface BookingFormProps {
+  roomId: number;
+  price: number;
 }

@@ -1,12 +1,13 @@
-"use client"
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useFormContext } from "react-hook-form"
+
+import React from "react";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useFormContext } from "react-hook-form";
 
 const BasicInfoFields = () => {
-  const form = useFormContext()
+  const form = useFormContext();
 
   return (
     <>
@@ -61,7 +62,10 @@ const BasicInfoFields = () => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Tipo de habitación</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar tipo" />
@@ -131,7 +135,11 @@ const BasicInfoFields = () => {
           <FormItem>
             <FormLabel>Descripción</FormLabel>
             <FormControl>
-              <Textarea placeholder="Describa la habitación con detalle" className="min-h-32" {...field} />
+              <Textarea 
+                placeholder="Describa la habitación con detalle" 
+                className="min-h-32" 
+                {...field} 
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -144,7 +152,12 @@ const BasicInfoFields = () => {
         render={({ field }) => (
           <FormItem className="flex items-center space-x-2 space-y-0">
             <FormControl>
-              <input type="checkbox" checked={field.value} onChange={field.onChange} className="w-4 h-4" />
+              <input
+                type="checkbox"
+                checked={field.value}
+                onChange={field.onChange}
+                className="w-4 h-4"
+              />
             </FormControl>
             <FormLabel className="font-normal">Disponible para reservas</FormLabel>
             <FormMessage />
@@ -152,7 +165,7 @@ const BasicInfoFields = () => {
         )}
       />
     </>
-  )
-}
+  );
+};
 
-export default BasicInfoFields
+export default BasicInfoFields;

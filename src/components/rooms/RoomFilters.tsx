@@ -1,23 +1,22 @@
-
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SlidersHorizontal } from "lucide-react";
+"use client"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Slider } from "@/components/ui/slider"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { SlidersHorizontal } from "lucide-react"
 
 interface RoomFiltersProps {
-  priceRange: number[];
-  setPriceRange: (value: number[]) => void;
-  roomType: string;
-  setRoomType: (value: string) => void;
-  searchTerm: string;
-  setSearchTerm: (value: string) => void;
-  showFilters: boolean;
-  setShowFilters: (value: boolean) => void;
-  showUnavailable: boolean;
-  setShowUnavailable: (value: boolean) => void;
+  priceRange: number[]
+  setPriceRange: (value: number[]) => void
+  roomType: string
+  setRoomType: (value: string) => void
+  searchTerm: string
+  setSearchTerm: (value: string) => void
+  showFilters: boolean
+  setShowFilters: (value: boolean) => void
+  showUnavailable: boolean
+  setShowUnavailable: (value: boolean) => void
 }
 
 const RoomFilters = ({
@@ -30,7 +29,7 @@ const RoomFilters = ({
   showFilters,
   setShowFilters,
   showUnavailable,
-  setShowUnavailable
+  setShowUnavailable,
 }: RoomFiltersProps) => {
   return (
     <>
@@ -44,7 +43,7 @@ const RoomFilters = ({
             onChange={(e) => setSearchTerm(e.target.value)}
             className="md:w-64"
           />
-          <Button 
+          <Button
             variant="outline"
             onClick={() => setShowFilters(!showFilters)}
             className="border-terracotta text-terracotta"
@@ -97,20 +96,26 @@ const RoomFilters = ({
               <div className="space-y-2">
                 <div className="flex items-center">
                   <Checkbox id="wifi" />
-                  <label htmlFor="wifi" className="ml-2 text-sm">WiFi gratis</label>
+                  <label htmlFor="wifi" className="ml-2 text-sm">
+                    WiFi gratis
+                  </label>
                 </div>
                 <div className="flex items-center">
                   <Checkbox id="breakfast" />
-                  <label htmlFor="breakfast" className="ml-2 text-sm">Desayuno incluido</label>
+                  <label htmlFor="breakfast" className="ml-2 text-sm">
+                    Desayuno incluido
+                  </label>
                 </div>
                 <div className="flex items-center">
                   <Checkbox id="bathroom" />
-                  <label htmlFor="bathroom" className="ml-2 text-sm">Baño privado</label>
+                  <label htmlFor="bathroom" className="ml-2 text-sm">
+                    Baño privado
+                  </label>
                 </div>
                 <div className="flex items-center mt-4">
-                  <Checkbox 
+                  <Checkbox
                     id="showUnavailable"
-                    checked={showUnavailable} 
+                    checked={showUnavailable}
                     onCheckedChange={(checked) => setShowUnavailable(checked === true)}
                   />
                   <label htmlFor="showUnavailable" className="ml-2 text-sm font-medium">
@@ -123,7 +128,7 @@ const RoomFilters = ({
         </div>
       )}
     </>
-  );
-};
+  )
+}
 
-export default RoomFilters;
+export default RoomFilters

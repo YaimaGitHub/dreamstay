@@ -1,37 +1,38 @@
+"use client"
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Plane, Car, Wifi, Coffee, Utensils, MapPin } from "lucide-react";
-import { Link } from "react-router-dom";
-import { useDataStore } from "@/hooks/use-data-store";
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Plane, Car, Wifi, Utensils, MapPin } from "lucide-react"
+import { Link } from "react-router-dom"
+import { useDataStore } from "@/hooks/use-data-store"
 
 const ServicesList = () => {
-  const { services } = useDataStore();
-  const [featuredServices, setFeaturedServices] = useState([]);
-  
+  const { services } = useDataStore()
+  const [featuredServices, setFeaturedServices] = useState([])
+
   useEffect(() => {
     if (services && services.length > 0) {
       // Mostrar solo los primeros 6 servicios
-      setFeaturedServices(services.slice(0, 6));
+      setFeaturedServices(services.slice(0, 6))
     }
-  }, [services]);
+  }, [services])
 
   // Función para obtener el icono según la categoría
   const getServiceIcon = (category) => {
     switch (category.toLowerCase()) {
       case "transporte":
-        return <Car className="h-8 w-8 text-terracotta" />;
+        return <Car className="h-8 w-8 text-terracotta" />
       case "gastronomía":
-        return <Utensils className="h-8 w-8 text-terracotta" />;
+        return <Utensils className="h-8 w-8 text-terracotta" />
       case "comodidades":
-        return <Wifi className="h-8 w-8 text-terracotta" />;
+        return <Wifi className="h-8 w-8 text-terracotta" />
       case "experiencias":
-        return <MapPin className="h-8 w-8 text-terracotta" />;
+        return <MapPin className="h-8 w-8 text-terracotta" />
       default:
-        return <Plane className="h-8 w-8 text-terracotta" />;
+        return <Plane className="h-8 w-8 text-terracotta" />
     }
-  };
+  }
 
   return (
     <section className="py-16 bg-muted">
@@ -53,7 +54,11 @@ const ServicesList = () => {
               </CardHeader>
               <CardContent className="flex justify-between items-center">
                 <span className="font-bold">${service.price}</span>
-                <Button size="sm" variant="outline" className="border-terracotta text-terracotta hover:bg-terracotta/10">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-terracotta text-terracotta hover:bg-terracotta/10"
+                >
                   Añadir
                 </Button>
               </CardContent>
@@ -62,17 +67,13 @@ const ServicesList = () => {
         </div>
 
         <div className="text-center mt-12">
-          <Button 
-            variant="default" 
-            className="bg-terracotta hover:bg-terracotta/90"
-            asChild
-          >
+          <Button variant="default" className="bg-terracotta hover:bg-terracotta/90" asChild>
             <Link to="/servicios">Ver todos los servicios</Link>
           </Button>
         </div>
       </div>
     </section>
-  );
-};
+  )
+}
 
-export default ServicesList;
+export default ServicesList

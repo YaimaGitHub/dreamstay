@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from "react"
@@ -124,7 +123,9 @@ const AdminRooms = () => {
                       <Badge
                         variant="outline"
                         className={`${
-                          room.available ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"
+                          room.available
+                            ? "bg-green-50 text-green-700 border-green-200"
+                            : "bg-red-50 text-red-700 border-red-200"
                         }`}
                       >
                         {room.available ? "Disponible" : "No disponible"}

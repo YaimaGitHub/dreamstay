@@ -1,11 +1,12 @@
+"use client"
 
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Menu, X, Search, User, Globe } from "lucide-react";
+import { useState } from "react"
+import { Link } from "react-router-dom"
+import { Button } from "@/components/ui/button"
+import { Menu, X, User, Globe } from "lucide-react"
 
 const Navbar = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   return (
     <header className="border-b bg-white sticky top-0 z-50">
@@ -47,11 +48,7 @@ const Navbar = () => {
         </div>
 
         {/* Mobile Menu Button */}
-        <button
-          className="md:hidden p-2"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          aria-label="Toggle menu"
-        >
+        <button className="md:hidden p-2" onClick={() => setIsMenuOpen(!isMenuOpen)} aria-label="Toggle menu">
           {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
       </div>
@@ -60,11 +57,7 @@ const Navbar = () => {
       {isMenuOpen && (
         <div className="md:hidden bg-white absolute top-full left-0 w-full border-b shadow-lg animate-fade-in">
           <nav className="container mx-auto py-4 flex flex-col space-y-4">
-            <Link
-              to="/"
-              className="px-4 py-2 hover:bg-muted rounded-md"
-              onClick={() => setIsMenuOpen(false)}
-            >
+            <Link to="/" className="px-4 py-2 hover:bg-muted rounded-md" onClick={() => setIsMenuOpen(false)}>
               Inicio
             </Link>
             <Link
@@ -74,18 +67,10 @@ const Navbar = () => {
             >
               Habitaciones
             </Link>
-            <Link
-              to="/servicios"
-              className="px-4 py-2 hover:bg-muted rounded-md"
-              onClick={() => setIsMenuOpen(false)}
-            >
+            <Link to="/servicios" className="px-4 py-2 hover:bg-muted rounded-md" onClick={() => setIsMenuOpen(false)}>
               Servicios
             </Link>
-            <Link
-              to="/contacto"
-              className="px-4 py-2 hover:bg-muted rounded-md"
-              onClick={() => setIsMenuOpen(false)}
-            >
+            <Link to="/contacto" className="px-4 py-2 hover:bg-muted rounded-md" onClick={() => setIsMenuOpen(false)}>
               Contacto
             </Link>
             <Link
@@ -95,14 +80,12 @@ const Navbar = () => {
             >
               Administración
             </Link>
-            <Button className="bg-terracotta hover:bg-terracotta/90">
-              Reservar Ahora
-            </Button>
+            <Button className="bg-terracotta hover:bg-terracotta/90">Reservar Ahora</Button>
           </nav>
         </div>
       )}
     </header>
-  );
-};
+  )
+}
 
-export default Navbar;
+export default Navbar

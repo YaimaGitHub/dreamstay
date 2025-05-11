@@ -1,8 +1,7 @@
-
-import { Link } from "react-router-dom";
-import { Facebook, Twitter, Instagram, Mail, Phone, MapPin } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Link } from "react-router-dom"
+import { Facebook, Twitter, Instagram, Mail, Phone, MapPin } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 
 const Footer = () => {
   return (
@@ -12,8 +11,8 @@ const Footer = () => {
           <div>
             <h3 className="text-xl font-bold mb-4">EstanciaPlus</h3>
             <p className="text-gray-300 mb-4">
-              Ofrecemos habitaciones exclusivas con servicios personalizados para una experiencia 
-              única. Tu comodidad es nuestra prioridad.
+              Ofrecemos habitaciones exclusivas con servicios personalizados para una experiencia única. Tu comodidad es
+              nuestra prioridad.
             </p>
             <div className="flex space-x-4">
               <Button variant="ghost" size="icon" className="hover:bg-white/10">
@@ -59,9 +58,7 @@ const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-start">
                 <MapPin className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-                <span className="text-gray-300">
-                  Av. Principal 123, Ciudad Central
-                </span>
+                <span className="text-gray-300">Av. Principal 123, Ciudad Central</span>
               </li>
               <li className="flex items-center">
                 <Phone className="h-5 w-5 mr-2 flex-shrink-0" />
@@ -76,18 +73,14 @@ const Footer = () => {
 
           <div>
             <h4 className="font-bold mb-4">Boletín Informativo</h4>
-            <p className="text-gray-300 mb-4">
-              Suscríbete para recibir ofertas especiales y novedades
-            </p>
+            <p className="text-gray-300 mb-4">Suscríbete para recibir ofertas especiales y novedades</p>
             <div className="flex flex-col sm:flex-row gap-2">
               <Input
                 type="email"
                 placeholder="Tu correo electrónico"
                 className="bg-deepblue border-white/20 text-white"
               />
-              <Button className="bg-terracotta hover:bg-terracotta/90">
-                Suscribir
-              </Button>
+              <Button className="bg-terracotta hover:bg-terracotta/90">Suscribir</Button>
             </div>
           </div>
         </div>
@@ -107,7 +100,7 @@ const Footer = () => {
         </div>
       </div>
     </footer>
-  );
-};
+  )
+}
 
-export default Footer;
+export default Footer

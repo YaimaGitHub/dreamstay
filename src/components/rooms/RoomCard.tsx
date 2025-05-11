@@ -11,15 +11,18 @@ interface RoomCardProps {
 }
 
 const RoomCard = ({ room }: RoomCardProps) => {
+  // Utilizar isAvailable o available, lo que esté disponible
+  const isRoomAvailable = room.isAvailable !== undefined ? room.isAvailable : room.available;
+
   return (
-    <Card className={`overflow-hidden card-hover border border-border/50 ${!room.isAvailable ? 'opacity-70' : ''}`}>
+    <Card className={`overflow-hidden card-hover border border-border/50 ${!isRoomAvailable ? 'opacity-70' : ''}`}>
       <div className="aspect-[16/10] overflow-hidden relative">
         <img
           src={room.image}
           alt={room.title}
           className="w-full h-full object-cover transition-transform hover:scale-105 duration-500"
         />
-        {!room.isAvailable && (
+        {!isRoomAvailable && (
           <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
             <span className="text-white font-bold text-lg px-4 py-2 bg-red-500 rounded-md">
               No disponible
@@ -61,9 +64,9 @@ const RoomCard = ({ room }: RoomCardProps) => {
           <span className="text-muted-foreground text-sm"> / noche</span>
         </div>
         <Button 
-          variant={room.isAvailable ? "default" : "outline"}
+          variant={isRoomAvailable ? "default" : "outline"}
           size="sm" 
-          className={room.isAvailable ? "bg-terracotta hover:bg-terracotta/90" : ""}
+          className={isRoomAvailable ? "bg-terracotta hover:bg-terracotta/90" : ""}
           asChild
         >
           <Link to={`/habitacion/${room.id}`}>Ver detalles</Link>

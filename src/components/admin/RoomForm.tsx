@@ -1,7 +1,7 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useRoomStore } from "@/contexts/RoomStoreContext";
-import { Room } from "@/types/room";
+import { useDataStore } from "@/hooks/use-data-store";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,7 +23,7 @@ type RoomFormProps = {
 };
 
 const RoomForm = ({ mode }: RoomFormProps) => {
-  const { rooms, addRoom, updateRoom } = useRoomStore();
+  const { addRoom, updateRoom, rooms } = useDataStore();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [features, setFeatures] = useState<string[]>([]);
@@ -43,13 +43,13 @@ const RoomForm = ({ mode }: RoomFormProps) => {
           price: currentRoom.price,
           rating: currentRoom.rating,
           reviews: currentRoom.reviews,
-          image: "",  // We'll handle images separately
+          image: "",
           type: currentRoom.type,
           area: currentRoom.area,
           description: currentRoom.description || "",
-          isAvailable: currentRoom.isAvailable,
+          isAvailable: currentRoom.available,
           features: currentRoom.features,
-          lastModified: currentRoom.lastModified ? new Date(currentRoom.lastModified) : new Date(),
+          lastModified: currentRoom.lastUpdated ? new Date(currentRoom.lastUpdated) : new Date(),
         }
       : {
           title: "",
@@ -83,21 +83,12 @@ const RoomForm = ({ mode }: RoomFormProps) => {
       }
       
       // Last modified date
-      if (currentRoom.lastModified) {
-        setLastModified(new Date(currentRoom.lastModified));
+      if (currentRoom.lastUpdated) {
+        setLastModified(new Date(currentRoom.lastUpdated));
       }
       
       // If room has reserved dates, we'd use them here
-      if (currentRoom.reservedDates && currentRoom.reservedDates.length > 0) {
-        // This would need more logic to handle multiple date ranges
-        const latestReservation = currentRoom.reservedDates[currentRoom.reservedDates.length - 1];
-        if (latestReservation.start && latestReservation.end) {
-          setReservedDates({
-            from: new Date(latestReservation.start),
-            to: new Date(latestReservation.end)
-          });
-        }
-      }
+      // This would need more logic to handle multiple date ranges
     }
   }, [currentRoom, mode]);
 
@@ -119,18 +110,6 @@ const RoomForm = ({ mode }: RoomFormProps) => {
     if (mode === "edit" && currentRoom) {
       updateRoom({
         ...currentRoom,
-        ...values,
-        image: mainImage,
-        features,
-        images: roomImages,
-        // Keep the existing reserved dates or initialize as empty array
-        reservedDates: currentRoom.reservedDates || [],
-        lastModified: now.toISOString(),
-      });
-      toast.success("Habitación actualizada correctamente");
-    } else {
-      // Ensure all required fields are provided for the Room type
-      addRoom({
         title: values.title,
         location: values.location,
         price: values.price,
@@ -141,23 +120,38 @@ const RoomForm = ({ mode }: RoomFormProps) => {
         area: values.area,
         description: values.description,
         isAvailable: values.isAvailable,
+        available: values.isAvailable, // Aseguramos compatibilidad con ambos campos
         features,
         images: roomImages,
+        lastUpdated: now.toISOString(),
+      });
+      toast.success("Habitación actualizada correctamente");
+    } else {
+      addRoom({
+        title: values.title,
+        location: values.location,
+        price: values.price,
+        rating: values.rating,
+        reviews: values.reviews,
+        image: mainImage,
+        features,
+        type: values.type,
+        area: values.area,
+        description: values.description,
+        isAvailable: values.isAvailable,
+        available: values.isAvailable, // Aseguramos compatibilidad con ambos campos
         reservedDates: [],
-        lastModified: now.toISOString(),
+        images: roomImages,
+        lastUpdated: now.toISOString(),
       });
       toast.success("Habitación agregada correctamente");
     }
 
-    navigate("/admin/dashboard");
+    navigate("/admin/rooms");
   }
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow-lg">
-      <h2 className="text-2xl font-bold mb-6">
-        {mode === "add" ? "Agregar nueva habitación" : "Editar habitación"}
-      </h2>
-      
+    <div className="p-6 bg-white rounded-lg shadow-lg">      
       {lastModified && mode === "edit" && (
         <div className="mb-4 text-sm text-muted-foreground">
           <p>Última modificación: {format(lastModified, "dd 'de' MMMM 'de' yyyy 'a las' HH:mm:ss", { locale: es })}</p>
@@ -187,7 +181,7 @@ const RoomForm = ({ mode }: RoomFormProps) => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate("/admin/dashboard")}
+              onClick={() => navigate("/admin/rooms")}
             >
               Cancelar
             </Button>

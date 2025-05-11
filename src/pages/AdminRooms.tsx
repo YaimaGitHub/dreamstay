@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Plus, Search, MoreHorizontal, Pencil, Trash, Eye } from "lucide-react"
 import { useDataStore } from "@/hooks/use-data-store"
 import { useToast } from "@/hooks/use-toast"
+import { Skeleton } from "@/components/ui/skeleton"
 
 const AdminRooms = () => {
   const navigate = useNavigate()
@@ -39,6 +40,10 @@ const AdminRooms = () => {
       })
       setIsDeleting(null)
     }, 500)
+  }
+
+  const handleEdit = (id: number) => {
+    navigate(`/admin/rooms/edit/${id}`)
   }
 
   return (
@@ -81,7 +86,17 @@ const AdminRooms = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredRooms.length === 0 ? (
+              {!rooms || rooms.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6}>
+                    <div className="flex flex-col space-y-2">
+                      <Skeleton className="h-6 w-full" />
+                      <Skeleton className="h-6 w-full" />
+                      <Skeleton className="h-6 w-full" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : filteredRooms.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8">
                     No se encontraron habitaciones
@@ -109,9 +124,7 @@ const AdminRooms = () => {
                       <Badge
                         variant="outline"
                         className={`${
-                          room.available
-                            ? "bg-green-50 text-green-700 border-green-200"
-                            : "bg-red-50 text-red-700 border-red-200"
+                          room.available ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"
                         }`}
                       >
                         {room.available ? "Disponible" : "No disponible"}
@@ -125,7 +138,7 @@ const AdminRooms = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => navigate(`/admin/rooms/edit/${room.id}`)}>
+                          <DropdownMenuItem onClick={() => handleEdit(room.id)}>
                             <Pencil className="mr-2 h-4 w-4" />
                             Editar
                           </DropdownMenuItem>

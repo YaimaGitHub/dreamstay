@@ -1,45 +1,28 @@
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Bed, Wifi, Coffee, Star } from "lucide-react";
 import { Link } from "react-router-dom";
-
-// Datos de muestra para las habitaciones destacadas
-const featuredRooms = [
-  {
-    id: 1,
-    title: "Suite Premium",
-    location: "Centro de la ciudad",
-    price: 120,
-    rating: 4.9,
-    reviews: 124,
-    image: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
-    features: ["Baño privado", "WiFi gratis", "Desayuno incluido"]
-  },
-  {
-    id: 2,
-    title: "Habitación Confort",
-    location: "Zona Turística",
-    price: 85,
-    rating: 4.7,
-    reviews: 95,
-    image: "https://images.unsplash.com/photo-1566665797739-1674de7a421a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80",
-    features: ["Baño privado", "WiFi gratis", "TV de pantalla plana"]
-  },
-  {
-    id: 3,
-    title: "Suite Ejecutiva",
-    location: "Distrito Financiero",
-    price: 150,
-    rating: 5.0,
-    reviews: 87,
-    image: "https://images.unsplash.com/photo-1590490360182-c33d57733427?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80",
-    features: ["Baño de lujo", "WiFi de alta velocidad", "Desayuno gourmet"]
-  }
-];
+import { useDataStore } from "@/hooks/use-data-store";
+import { Room } from "@/types/room";
 
 const FeaturedRooms = () => {
+  const { rooms } = useDataStore();
+  const [featuredRooms, setFeaturedRooms] = useState<Room[]>([]);
+
+  // Seleccionar las 3 habitaciones más destacadas (con mayor rating)
+  useEffect(() => {
+    if (rooms && rooms.length > 0) {
+      const sortedRooms = [...rooms]
+        .filter(room => room.available)
+        .sort((a, b) => b.rating - a.rating)
+        .slice(0, 3);
+      setFeaturedRooms(sortedRooms);
+    }
+  }, [rooms]);
+
   return (
     <section className="py-16 container mx-auto">
       <div className="text-center mb-12">
@@ -72,7 +55,7 @@ const FeaturedRooms = () => {
             </CardHeader>
             <CardContent className="pb-4">
               <div className="flex flex-wrap gap-2 mb-4">
-                {room.features.map((feature) => (
+                {room.features.slice(0, 3).map((feature) => (
                   <div key={feature} className="flex items-center text-sm">
                     {feature.includes("Baño") && <Bed className="h-3 w-3 mr-1" />}
                     {feature.includes("WiFi") && <Wifi className="h-3 w-3 mr-1" />}

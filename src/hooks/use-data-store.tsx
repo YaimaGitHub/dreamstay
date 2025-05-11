@@ -49,7 +49,7 @@ interface DataStoreContextType {
   rooms: Room[]
   services: Service[]
   addRoom: (room: Omit<Room, "id">) => void
-  updateRoom: (id: number, room: Partial<Room>) => void
+  updateRoom: (roomData: Room) => void
   deleteRoom: (id: number) => void
   addService: (service: Omit<Service, "id">) => void
   updateService: (id: number, service: Partial<Service>) => void
@@ -298,8 +298,8 @@ export const allServices = [\n`
     autoExportSourceFiles()
   }
 
-  const updateRoom = (id: number, roomUpdate: Partial<Room>) => {
-    const newRooms = rooms.map((room) => (room.id === id ? { ...room, ...roomUpdate } : room))
+  const updateRoom = (roomData: Room) => {
+    const newRooms = rooms.map((room) => (room.id === roomData.id ? { ...roomData } : room))
     setRooms(newRooms)
     updateLastModified()
     autoExportSourceFiles()

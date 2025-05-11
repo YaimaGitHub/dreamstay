@@ -10,26 +10,91 @@ import RoomDetails from "./pages/RoomDetails";
 import ServicePage from "./pages/ServicePage";
 import ContactPage from "./pages/ContactPage";
 import NotFound from "./pages/NotFound";
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminRooms from "./pages/AdminRooms";
+import AdminProtectedRoute from "./components/AdminProtectedRoute";
+import { AdminAuthProvider } from "./hooks/use-admin-auth";
+import { DataStoreProvider } from "./hooks/use-data-store";
+import AdminConfig from "./pages/AdminConfig";
+import AdminAddEditRoom from "./pages/AdminAddEditRoom";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/habitaciones" element={<RoomsList />} />
-          <Route path="/habitacion/:id" element={<RoomDetails />} />
-          <Route path="/servicios" element={<ServicePage />} />
-          <Route path="/contacto" element={<ContactPage />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AdminAuthProvider>
+      <DataStoreProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Index />} />
+              <Route path="/habitaciones" element={<RoomsList />} />
+              <Route path="/habitacion/:id" element={<RoomDetails />} />
+              <Route path="/servicios" element={<ServicePage />} />
+              <Route path="/contacto" element={<ContactPage />} />
+              
+              {/* Admin Routes */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route 
+                path="/admin/dashboard" 
+                element={
+                  <AdminProtectedRoute>
+                    <AdminDashboard />
+                  </AdminProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/rooms" 
+                element={
+                  <AdminProtectedRoute>
+                    <AdminRooms />
+                  </AdminProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/rooms/new" 
+                element={
+                  <AdminProtectedRoute>
+                    <AdminAddEditRoom mode="add" />
+                  </AdminProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/rooms/edit/:id" 
+                element={
+                  <AdminProtectedRoute>
+                    <AdminAddEditRoom mode="edit" />
+                  </AdminProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/services" 
+                element={
+                  <AdminProtectedRoute>
+                    <AdminDashboard />
+                  </AdminProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/config" 
+                element={
+                  <AdminProtectedRoute>
+                    <AdminConfig />
+                  </AdminProtectedRoute>
+                } 
+              />
+              
+              {/* Catch-all route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </DataStoreProvider>
+    </AdminAuthProvider>
   </QueryClientProvider>
 );
 

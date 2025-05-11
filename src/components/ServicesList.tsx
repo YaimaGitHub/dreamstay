@@ -1,55 +1,38 @@
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plane, Car, Wifi, Coffee, Utensils, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
-
-const services = [
-  {
-    id: 1,
-    title: "Traslado desde el aeropuerto",
-    description: "Te recogemos en el aeropuerto y te llevamos directamente a tu habitación.",
-    icon: <Plane className="h-8 w-8 text-terracotta" />,
-    price: 25,
-  },
-  {
-    id: 2,
-    title: "Alquiler de vehículos",
-    description: "Contamos con una flota de vehículos disponibles para que explores la ciudad.",
-    icon: <Car className="h-8 w-8 text-terracotta" />,
-    price: 45,
-  },
-  {
-    id: 3,
-    title: "WiFi de alta velocidad",
-    description: "Conexión premium para que puedas trabajar o entretenerte sin interrupciones.",
-    icon: <Wifi className="h-8 w-8 text-terracotta" />,
-    price: 10,
-  },
-  {
-    id: 4,
-    title: "Desayuno gourmet",
-    description: "Disfruta de un desayuno completo preparado con ingredientes locales y frescos.",
-    icon: <Coffee className="h-8 w-8 text-terracotta" />,
-    price: 15,
-  },
-  {
-    id: 5,
-    title: "Tours guiados",
-    description: "Conoce los mejores lugares de la ciudad con nuestros guías expertos.",
-    icon: <MapPin className="h-8 w-8 text-terracotta" />,
-    price: 30,
-  },
-  {
-    id: 6,
-    title: "Servicio de restaurante",
-    description: "Saborea la gastronomía local en nuestro restaurante o en la comodidad de tu habitación.",
-    icon: <Utensils className="h-8 w-8 text-terracotta" />,
-    price: 20,
-  },
-];
+import { useDataStore } from "@/hooks/use-data-store";
 
 const ServicesList = () => {
+  const { services } = useDataStore();
+  const [featuredServices, setFeaturedServices] = useState([]);
+  
+  useEffect(() => {
+    if (services && services.length > 0) {
+      // Mostrar solo los primeros 6 servicios
+      setFeaturedServices(services.slice(0, 6));
+    }
+  }, [services]);
+
+  // Función para obtener el icono según la categoría
+  const getServiceIcon = (category) => {
+    switch (category.toLowerCase()) {
+      case "transporte":
+        return <Car className="h-8 w-8 text-terracotta" />;
+      case "gastronomía":
+        return <Utensils className="h-8 w-8 text-terracotta" />;
+      case "comodidades":
+        return <Wifi className="h-8 w-8 text-terracotta" />;
+      case "experiencias":
+        return <MapPin className="h-8 w-8 text-terracotta" />;
+      default:
+        return <Plane className="h-8 w-8 text-terracotta" />;
+    }
+  };
+
   return (
     <section className="py-16 bg-muted">
       <div className="container mx-auto">
@@ -61,10 +44,10 @@ const ServicesList = () => {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {services.map((service) => (
+          {featuredServices.map((service) => (
             <Card key={service.id} className="card-hover border border-border/50 bg-card">
               <CardHeader>
-                <div className="mb-3">{service.icon}</div>
+                <div className="mb-3">{getServiceIcon(service.category)}</div>
                 <CardTitle>{service.title}</CardTitle>
                 <CardDescription>{service.description}</CardDescription>
               </CardHeader>

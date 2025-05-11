@@ -28,6 +28,9 @@ const Navbar = () => {
           <Link to="/contacto" className="font-medium hover:text-terracotta transition-colors">
             Contacto
           </Link>
+          <Link to="/admin/login" className="font-medium hover:text-terracotta transition-colors text-muted-foreground">
+            Administración
+          </Link>
         </nav>
 
         {/* User Actions */}
@@ -84,6 +87,13 @@ const Navbar = () => {
               onClick={() => setIsMenuOpen(false)}
             >
               Contacto
+            </Link>
+            <Link
+              to="/admin/login"
+              className="px-4 py-2 hover:bg-muted rounded-md text-muted-foreground"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Administración
             </Link>
             <Button className="bg-terracotta hover:bg-terracotta/90">
               Reservar Ahora

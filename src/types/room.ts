@@ -12,6 +12,7 @@ export interface Room {
   area: number;
   description?: string;
   isAvailable: boolean;
+  available?: boolean; // Para compatibilidad con use-data-store.tsx
   reservedDates: {
     start: string;
     end: string;
@@ -22,19 +23,20 @@ export interface Room {
     alt: string;
   }[];
   lastModified?: string;
+  lastUpdated?: string; // Propiedad añadida para tracking de cambios
 }
 
 export interface Amenity {
   id: number;
   name: string;
-  icon: string | JSX.Element;  // Updated to support both string and JSX.Element
-  description: string; // Description is required for RoomAmenities component
+  icon: string | JSX.Element;
+  description: string;
 }
 
 export interface RoomStore {
   rooms: Room[];
   addRoom: (room: Omit<Room, "id">) => void;
-  updateRoom: (room: Room) => void;
+  updateRoom: (id: number, room: Partial<Room>) => void;
   deleteRoom: (id: number) => void;
   toggleRoomAvailability: (id: number) => void;
   addReservedDates: (id: number, startDate: Date, endDate: Date) => void;

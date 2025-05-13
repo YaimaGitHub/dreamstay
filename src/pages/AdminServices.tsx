@@ -9,14 +9,14 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Search, MoreHorizontal, Pencil, Trash } from "lucide-react"
+import { Plus, Search, MoreHorizontal, Pencil, Trash, Download } from "lucide-react"
 import { useDataStore } from "@/hooks/use-data-store"
 import { useToast } from "@/hooks/use-toast"
 
 const AdminServices = () => {
   const navigate = useNavigate()
   const { toast } = useToast()
-  const { services, deleteService } = useDataStore()
+  const { services, deleteService, generateTypeScriptFiles } = useDataStore()
   const [searchTerm, setSearchTerm] = useState("")
   const [isDeleting, setIsDeleting] = useState<number | null>(null)
 
@@ -62,9 +62,23 @@ const AdminServices = () => {
           <h1 className="text-3xl font-bold">Gestión de Servicios</h1>
           <p className="text-muted-foreground">Administra todos los servicios disponibles en tu plataforma</p>
         </div>
-        <Button onClick={() => navigate("/admin/services/new")} className="bg-terracotta hover:bg-terracotta/90">
-          <Plus className="mr-2 h-4 w-4" /> Nuevo servicio
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => navigate("/admin/services/new")} className="bg-terracotta hover:bg-terracotta/90">
+            <Plus className="mr-2 h-4 w-4" /> Nuevo servicio
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              // Llamar a la función de generación de archivos TypeScript
+              generateTypeScriptFiles()
+            }}
+            className="flex items-center"
+            title="Descarga los archivos TypeScript actualizados para reemplazarlos en tu proyecto"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Generar archivos TS
+          </Button>
+        </div>
       </div>
 
       <Card className="mb-6">

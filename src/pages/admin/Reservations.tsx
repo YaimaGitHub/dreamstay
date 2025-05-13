@@ -33,7 +33,7 @@ const reservationsData = [
     id: 2,
     roomId: 2,
     roomName: "Habitación Confort",
-    guestName: "María González",
+    guestName: "Eliecer",
     guestEmail: "maria@example.com",
     checkIn: new Date("2025-05-13"),
     checkOut: new Date("2025-05-15"),

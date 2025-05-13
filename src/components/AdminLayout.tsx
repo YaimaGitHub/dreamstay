@@ -4,7 +4,7 @@ import type { ReactNode } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Bed, Settings, FileJson, Home, LogOut } from "lucide-react"
+import { Bed, Settings, FileJson, Home, LogOut, PlusCircle } from "lucide-react"
 import { useAdminAuth } from "@/hooks/use-admin-auth"
 
 interface AdminLayoutProps {
@@ -68,6 +68,30 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             </Link>
           ))}
         </nav>
+        <Separator />
+        <div className="px-3 py-2">
+          <h3 className="mb-2 px-4 text-xs font-semibold text-muted-foreground">Accesos rápidos</h3>
+          <ul className="grid gap-1">
+            <li>
+              <Link
+                to="/admin/rooms/new"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+              >
+                <PlusCircle className="h-4 w-4" />
+                <span>Nueva habitación</span>
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/admin/services/new"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+              >
+                <PlusCircle className="h-4 w-4" />
+                <span>Nuevo servicio</span>
+              </Link>
+            </li>
+          </ul>
+        </div>
         <Separator />
         <div className="p-4">
           <Button

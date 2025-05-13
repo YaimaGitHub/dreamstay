@@ -1,3 +1,4 @@
+
 "use client"
 
 import type React from "react"
@@ -14,15 +15,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
-import { useDataStore, type Room } from "@/hooks/use-data-store"
-import { ArrowLeft, Plus, X, Save } from "lucide-react"
+import { useDataStore } from "@/hooks/use-data-store"
+import { ArrowLeft, Plus, X, Save, Download, Loader2 } from "lucide-react"
+import type { Room } from "@/types/room"
 
 const AdminRoomForm = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { toast } = useToast()
-  const { rooms, addRoom, updateRoom } = useDataStore()
+  const { rooms, addRoom, updateRoom, generateTypeScriptFiles } = useDataStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isGeneratingFiles, setIsGeneratingFiles] = useState(false)
+  const [saveCompleted, setSaveCompleted] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(true)
 
   const isEditMode = id !== undefined && id !== "new"
   const roomToEdit = isEditMode ? rooms.find((r) => r.id === Number.parseInt(id as string)) : null
@@ -46,6 +51,19 @@ const AdminRoomForm = () => {
   const [newImageUrl, setNewImageUrl] = useState("")
   const [newImageAlt, setNewImageAlt] = useState("")
 
+  // Check authentication status on mount
+  useEffect(() => {
+    // Verify authentication on component mount
+    const checkAuth = () => {
+      const adminSession = localStorage.getItem("adminAuth")
+      if (adminSession !== "true") {
+        setIsAuthenticated(false)
+      }
+    }
+    
+    checkAuth()
+  }, [])
+
   useEffect(() => {
     if (roomToEdit) {
       setFormData({
@@ -64,6 +82,13 @@ const AdminRoomForm = () => {
       })
     }
   }, [roomToEdit])
+
+  // Protect against session expiration during form submission
+  useEffect(() => {
+    if (!isAuthenticated && !isSubmitting && !isGeneratingFiles) {
+      navigate("/admin/login")
+    }
+  }, [isAuthenticated, isSubmitting, isGeneratingFiles, navigate])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -136,28 +161,81 @@ const AdminRoomForm = () => {
     e.preventDefault()
     setIsSubmitting(true)
 
-    // Asegurarse de que la primera imagen sea la imagen principal
+    // Ensure the first image is the main image
     if (formData.images && formData.images.length > 0 && !formData.image) {
       formData.image = formData.images[0].url
     }
 
+    // Add timestamp for tracking changes
+    const now = new Date()
+    const formDataWithTimestamp = {
+      ...formData,
+      lastModified: now.toISOString(),
+    }
+
     setTimeout(() => {
       if (isEditMode && roomToEdit) {
-        updateRoom(Number.parseInt(id as string), formData)
+        updateRoom({
+          ...formDataWithTimestamp,
+          id: Number.parseInt(id as string)
+        })
         toast({
           title: "Habitación actualizada",
           description: "Los cambios han sido guardados correctamente",
         })
+
+        // No redirection in edit mode
+        setSaveCompleted(true)
       } else {
-        addRoom(formData)
+        addRoom(formDataWithTimestamp)
         toast({
           title: "Habitación creada",
           description: "La nueva habitación ha sido añadida correctamente",
         })
+
+        // No immediate redirection
+        setSaveCompleted(true)
       }
       setIsSubmitting(false)
-      navigate("/admin/rooms")
     }, 1000)
+  }
+
+  const handleGenerateFiles = async () => {
+    setIsGeneratingFiles(true)
+    try {
+      // Use await to wait for file generation to complete
+      const success = await generateTypeScriptFiles()
+      
+      if (success) {
+        toast({
+          title: "Archivos TypeScript generados",
+          description: "Los archivos se han descargado correctamente",
+        })
+      } else {
+        toast({
+          title: "Error",
+          description: "No se pudieron generar los archivos TypeScript",
+          variant: "destructive",
+        })
+      }
+      
+      // Only navigate away after files are generated
+      navigate("/admin/rooms")
+    } catch (error) {
+      console.error("Error al generar archivos:", error)
+      toast({
+        title: "Error",
+        description: "Ocurrió un error al generar los archivos",
+        variant: "destructive",
+      })
+    } finally {
+      setIsGeneratingFiles(false)
+    }
+  }
+
+  // If session is already expired and we're not in the middle of an operation, redirect
+  if (!isAuthenticated && !isSubmitting && !isGeneratingFiles) {
+    return null // Navigate effect will handle redirection
   }
 
   return (
@@ -416,16 +494,40 @@ const AdminRoomForm = () => {
                 <CardTitle>Acciones</CardTitle>
               </CardHeader>
               <CardFooter className="flex flex-col gap-4">
-                <Button type="submit" className="w-full bg-terracotta hover:bg-terracotta/90" disabled={isSubmitting}>
-                  <Save className="mr-2 h-4 w-4" />
-                  {isSubmitting
-                    ? isEditMode
-                      ? "Guardando cambios..."
-                      : "Creando habitación..."
-                    : isEditMode
-                      ? "Guardar cambios"
-                      : "Crear habitación"}
-                </Button>
+                {!saveCompleted ? (
+                  <Button type="submit" className="w-full bg-terracotta hover:bg-terracotta/90" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {isEditMode ? "Guardando cambios..." : "Creando habitación..."}
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        {isEditMode ? "Guardar cambios" : "Crear habitación"}
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button 
+                    type="button" 
+                    className="w-full bg-green-600 hover:bg-green-700" 
+                    onClick={handleGenerateFiles}
+                    disabled={isGeneratingFiles}
+                  >
+                    {isGeneratingFiles ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generando archivos...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="mr-2 h-4 w-4" />
+                        Generar archivos TypeScript
+                      </>
+                    )}
+                  </Button>
+                )}
                 <Button type="button" variant="outline" className="w-full" onClick={() => navigate("/admin/rooms")}>
                   Cancelar
                 </Button>

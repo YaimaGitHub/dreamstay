@@ -1,40 +1,19 @@
 import * as z from "zod"
 
 export const roomFormSchema = z.object({
-  title: z.string().min(3, {
-    message: "El título debe tener al menos 3 caracteres",
-  }),
-  location: z.string().min(3, {
-    message: "La ubicación debe tener al menos 3 caracteres",
-  }),
-  price: z.coerce.number().positive({
-    message: "El precio debe ser un número positivo",
-  }),
-  rating: z.coerce.number().min(0).max(5),
-  reviews: z.coerce.number().int().nonnegative(),
-  image: z
-    .string()
-    .url({
-      message: "Debe ser una URL de imagen válida",
-    })
-    .optional(),
-  type: z.string().min(1, {
-    message: "Seleccione un tipo de habitación",
-  }),
-  area: z.coerce.number().positive({
-    message: "El área debe ser un número positivo",
-  }),
-  description: z.string().min(10, {
-    message: "La descripción debe tener al menos 10 caracteres",
-  }),
+  title: z.string().min(1, "El título es obligatorio"),
+  location: z.string().min(1, "La ubicación es obligatoria"),
+  province: z.string().min(1, "La provincia es obligatoria"),
+  price: z.number().min(0, "El precio debe ser mayor o igual a 0"),
+  rating: z.number().min(1, "La calificación debe ser entre 1 y 5").max(5, "La calificación debe ser entre 1 y 5"),
+  reviews: z.number().min(0, "El número de reseñas debe ser mayor o igual a 0"),
+  image: z.string().optional(),
+  type: z.string().min(1, "El tipo de habitación es obligatorio"),
+  area: z.number().min(1, "El área debe ser mayor a 0"),
+  description: z.string().optional(),
   isAvailable: z.boolean().default(true),
-  features: z.array(z.string()).min(1, {
-    message: "Agregue al menos una característica",
-  }),
-  lastModified: z
-    .date()
-    .optional()
-    .default(() => new Date()),
+  features: z.array(z.string()).optional(),
+  lastModified: z.date().optional(),
 })
 
 export type RoomFormValues = z.infer<typeof roomFormSchema>

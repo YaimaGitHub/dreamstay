@@ -1,35 +1,16 @@
+
 "use client"
 
 import type React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
 import type { Room, RoomStore } from "../types/room"
 import { toast } from "@/components/ui/use-toast"
+import { generateTypeScriptFiles } from "@/utils/ts-generation-utils"
 
 // Sample initial rooms data
-import { featuredRooms as initialRooms } from "../data/sampleRooms"
+import { roomsData } from "../data/rooms"
 import { allServices } from "../data/services"
-
-const FILE_NAME = "salva.json"
-
-// Define FileSystem API types
-interface FileSystemFileHandle {
-  getFile: () => Promise<File>
-  createWritable: () => Promise<FileSystemWritableFileStream>
-}
-
-interface FileSystemWritableFileStream {
-  write: (content: any) => Promise<void>
-  close: () => Promise<void>
-}
-
-// Declare the File System Access API types
-declare global {
-  interface Window {
-    showDirectoryPicker?: () => Promise<any>
-    showOpenFilePicker?: (options: any) => Promise<FileSystemFileHandle[]>
-    showSaveFilePicker?: (options: any) => Promise<FileSystemFileHandle>
-  }
-}
+import { FILE_NAME } from "@/utils/file-system-utils"
 
 const RoomStoreContext = createContext<RoomStore | undefined>(undefined)
 
@@ -44,89 +25,38 @@ export const useRoomStore = () => {
 export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [rooms, setRooms] = useState<Room[]>([])
   const [isLoaded, setIsLoaded] = useState(false)
-  const [fileHandle, setFileHandle] = useState<FileSystemFileHandle | null>(null)
+  const [fileHandle, setFileHandle] = useState<any | null>(null)
 
   // Load rooms from local file or use initial data
   useEffect(() => {
     const loadRooms = async () => {
       try {
-        // Check if the File System Access API is available
-        if (window.showOpenFilePicker) {
-          try {
-            // Ask user to select a file to open
-            const handles = await window.showOpenFilePicker({
-              types: [
-                {
-                  description: "Archivo de datos",
-                  accept: {
-                    "application/json": [".json"],
-                  },
-                },
-              ],
-              suggestedName: FILE_NAME,
-            })
+        // Siempre usar los datos de roomsData (fuente de verdad)
+        const roomsWithModifiedDate = roomsData.map((room) => ({
+          ...room,
+          // Asegurar que todos los campos necesarios estén presentes
+          lastModified: room.lastUpdated || new Date().toISOString(),
+          available: room.available !== undefined ? room.available : true,
+          isAvailable: room.available !== undefined ? room.available : true,
+          // Asegurar que las fechas reservadas se mantengan y estén en el formato correcto
+          reservedDates: room.reservedDates ? [...room.reservedDates] : [],
+        }))
 
-            if (handles && handles.length > 0) {
-              // Keep reference to the file handle for saving later
-              setFileHandle(handles[0] as FileSystemFileHandle)
+        setRooms(roomsWithModifiedDate as Room[])
+        console.log(`Habitaciones cargadas desde archivo fuente:`, roomsWithModifiedDate.length)
 
-              const file = await handles[0].getFile()
-              const content = await file.text()
-              const parsedRooms = JSON.parse(content)
-              setRooms(parsedRooms)
-              toast({
-                title: "Datos cargados",
-                description: `${parsedRooms.length} habitaciones cargadas desde archivo local`,
-              })
-              console.log(`Habitaciones cargadas desde archivo local:`, parsedRooms.length)
-
-              // Generate TypeScript files after loading data
-              generateTypeScriptFiles(parsedRooms)
-            } else {
-              throw new Error("No se seleccionó ningún archivo")
-            }
-          } catch (fileErr) {
-            console.log("No se encontró el archivo o no se seleccionó, usando datos iniciales")
-            // If no file was selected, use initial data
-            const roomsWithModifiedDate = initialRooms.map((room) => ({
-              ...room,
-              lastModified: new Date().toISOString(),
-            }))
-            setRooms(roomsWithModifiedDate as Room[])
-            toast({
-              title: "Datos iniciales",
-              description: "Utilizando datos de muestra. Los cambios se guardarán en un nuevo archivo.",
-            })
+        // Verificar y registrar las fechas reservadas cargadas
+        roomsWithModifiedDate.forEach((room) => {
+          if (room.reservedDates && room.reservedDates.length > 0) {
+            console.log(
+              `Habitación ${room.id} - ${room.title}: ${room.reservedDates.length} fechas reservadas cargadas`,
+            )
           }
-        } else {
-          // Fallback if File System Access API is not available
-          console.warn("File System Access API no disponible en este navegador, usando localStorage como alternativa")
-          const savedRooms = localStorage.getItem("hotel-rooms-data")
-          if (savedRooms) {
-            const parsedRooms = JSON.parse(savedRooms)
-            setRooms(parsedRooms)
-            console.log("Fallback: Habitaciones cargadas desde almacenamiento local:", parsedRooms.length)
-            toast({
-              title: "Datos cargados",
-              description: `${parsedRooms.length} habitaciones cargadas desde almacenamiento local`,
-            })
-          } else {
-            // No saved data, use initial data
-            const roomsWithModifiedDate = initialRooms.map((room) => ({
-              ...room,
-              lastModified: new Date().toISOString(),
-            }))
-            setRooms(roomsWithModifiedDate as Room[])
-            toast({
-              title: "Datos iniciales",
-              description: "Utilizando datos de muestra iniciales.",
-            })
-          }
-        }
+        })
       } catch (error) {
         console.error("Error al cargar habitaciones:", error)
-        // In case of error, use initial data
-        setRooms(initialRooms as Room[])
+        // En caso de error, usar datos iniciales
+        setRooms(roomsData as Room[])
         toast({
           title: "Error al cargar",
           description: "Se produjo un error al cargar los datos. Utilizando datos de muestra.",
@@ -141,113 +71,19 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, [])
 
   // Generate TypeScript files
-  const generateTypeScriptFiles = (roomsData: Room[]) => {
-    try {
-      // Generate rooms.ts file content
-      const roomsFileContent = generateRoomsFileContent(roomsData)
-      const servicesFileContent = generateServicesFileContent()
-
-      // Download as TypeScript files
-      downloadTypeScriptFile(roomsFileContent, "rooms.ts")
-      downloadTypeScriptFile(servicesFileContent, "services.ts")
-
-      toast({
-        title: "Archivos generados",
-        description: "Los archivos rooms.ts y services.ts han sido generados correctamente.",
-      })
-    } catch (error) {
-      console.error("Error al generar archivos TypeScript:", error)
-      toast({
-        title: "Error",
-        description: "No se pudieron generar los archivos TypeScript.",
-        variant: "destructive",
-      })
-    }
+  const generateTypeScriptFilesWrapper = (roomsData: Room[] = rooms) => {
+    return generateTypeScriptFiles(roomsData, allServices, [])
   }
 
-  // Helper function to generate rooms.ts file content
-  const generateRoomsFileContent = (roomsData: Room[]) => {
-    return `export const roomsData = ${JSON.stringify(roomsData, null, 2)}\n`
-  }
-
-  // Helper function to generate services.ts file content
-  const generateServicesFileContent = () => {
-    return `export const allServices = ${JSON.stringify(allServices, null, 2)}\n`
-  }
-
-  // Helper function to download TypeScript file
-  const downloadTypeScriptFile = (content: string, filename: string) => {
-    const blob = new Blob([content], { type: "text/typescript" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = filename
-    a.style.display = "none"
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
-
-  // Save rooms to local file whenever they change
+  // Save rooms to source files whenever they change
   useEffect(() => {
     const saveRooms = async () => {
-      if (isLoaded) {
+      if (isLoaded && rooms.length > 0) {
         try {
-          // Check if the File System Access API is available
-          if (window.showSaveFilePicker) {
-            try {
-              let handle = fileHandle
+          // Generate TypeScript files after saving data
+          generateTypeScriptFilesWrapper(rooms)
 
-              // If we don't have a handle yet, ask user to select where to save
-              if (!handle) {
-                handle = (await window.showSaveFilePicker({
-                  types: [
-                    {
-                      description: "Archivo de datos",
-                      accept: {
-                        "application/json": [".json"],
-                      },
-                    },
-                  ],
-                  suggestedName: FILE_NAME,
-                })) as FileSystemFileHandle
-
-                setFileHandle(handle)
-              }
-
-              // Write to the file
-              const writable = await handle.createWritable()
-              await writable.write(JSON.stringify(rooms, null, 2))
-              await writable.close()
-
-              // Generate TypeScript files after saving data
-              generateTypeScriptFiles(rooms)
-
-              toast({
-                title: "Datos guardados",
-                description: `Los cambios han sido guardados en el archivo local`,
-              })
-              console.log(`Habitaciones guardadas en archivo local`)
-            } catch (err) {
-              console.error("Error al guardar en el sistema de archivos:", err)
-              // Fallback to localStorage if file system access fails
-              localStorage.setItem("hotel-rooms-data", JSON.stringify(rooms))
-              toast({
-                title: "Guardado alternativo",
-                description:
-                  "No se pudo guardar en archivo. Los datos se guardaron en almacenamiento local del navegador.",
-                variant: "destructive",
-              })
-            }
-          } else {
-            // Fallback if File System Access API is not available
-            localStorage.setItem("hotel-rooms-data", JSON.stringify(rooms))
-            toast({
-              title: "Guardado local",
-              description: "Los datos se guardaron en el almacenamiento local del navegador.",
-            })
-          }
+          console.log(`Habitaciones guardadas en archivos fuente`)
         } catch (error) {
           console.error("Error al guardar habitaciones:", error)
           toast({
@@ -263,63 +99,114 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (isLoaded && rooms.length > 0) {
       saveRooms()
     }
-  }, [rooms, isLoaded, fileHandle])
-
-  const addRoom = (room: Omit<Room, "id">) => {
-    const newRoom = {
-      ...room,
-      id: rooms.length > 0 ? Math.max(...rooms.map((r) => r.id)) + 1 : 1,
-      lastModified: new Date().toISOString(),
-    }
-    setRooms([...rooms, newRoom as Room])
-  }
+  }, [rooms, isLoaded])
 
   const updateRoom = (updatedRoom: Room) => {
+    const now = new Date().toISOString()
     const roomWithTimestamp = {
       ...updatedRoom,
-      lastModified: new Date().toISOString(),
+      lastModified: now,
+      lastUpdated: now,
+      // Ensure both availability fields are synchronized
+      available: updatedRoom.available !== undefined ? updatedRoom.available : updatedRoom.isAvailable,
+      isAvailable: updatedRoom.isAvailable !== undefined ? updatedRoom.isAvailable : updatedRoom.available,
     }
 
-    setRooms(rooms.map((room) => (room.id === updatedRoom.id ? roomWithTimestamp : room)))
+    // Update the room in the rooms array
+    const updatedRooms = rooms.map((room) => (room.id === updatedRoom.id ? roomWithTimestamp : room))
+    setRooms(updatedRooms)
+
+    // Force immediate generation of TypeScript files
+    setTimeout(() => {
+      generateTypeScriptFilesWrapper(updatedRooms)
+      console.log(`Room ${updatedRoom.id} updated at ${now}`)
+    }, 100)
   }
 
   const deleteRoom = (id: number) => {
-    setRooms(rooms.filter((room) => room.id !== id))
+    const updatedRooms = rooms.filter((room) => room.id !== id)
+    setRooms(updatedRooms)
+
+    // Force immediate generation of TypeScript files
+    setTimeout(() => {
+      generateTypeScriptFilesWrapper(updatedRooms)
+      console.log(`Room ${id} deleted`)
+    }, 100)
   }
 
   const toggleRoomAvailability = (id: number) => {
-    setRooms(
-      rooms.map((room) =>
-        room.id === id
-          ? {
-              ...room,
-              isAvailable: !room.isAvailable,
-              lastModified: new Date().toISOString(),
-            }
-          : room,
-      ),
+    const now = new Date().toISOString()
+    const updatedRooms = rooms.map((room) =>
+      room.id === id
+        ? {
+            ...room,
+            available: !room.available,
+            isAvailable: !room.available,
+            lastModified: now,
+            lastUpdated: now,
+          }
+        : room,
     )
+
+    setRooms(updatedRooms)
+
+    // Generate TypeScript files after toggling availability
+    setTimeout(() => {
+      generateTypeScriptFilesWrapper(updatedRooms)
+      console.log(`Room ${id} availability toggled`)
+    }, 100)
   }
 
   const addReservedDates = (id: number, startDate: Date, endDate: Date) => {
-    setRooms(
-      rooms.map((room) => {
-        if (room.id === id) {
-          return {
-            ...room,
-            reservedDates: [
-              ...room.reservedDates,
-              {
-                start: startDate.toISOString(),
-                end: endDate.toISOString(),
-              },
-            ],
-            lastModified: new Date().toISOString(),
-          }
+    const now = new Date().toISOString()
+    const updatedRooms = rooms.map((room) => {
+      if (room.id === id) {
+        const reservedDates = room.reservedDates || []
+        return {
+          ...room,
+          reservedDates: [
+            ...reservedDates,
+            {
+              start: startDate.toISOString(),
+              end: endDate.toISOString(),
+            },
+          ],
+          lastModified: now,
+          lastUpdated: now,
         }
-        return room
-      }),
-    )
+      }
+      return room
+    })
+
+    setRooms(updatedRooms)
+
+    // Generate TypeScript files after adding reserved dates
+    setTimeout(() => {
+      generateTypeScriptFilesWrapper(updatedRooms)
+      console.log(`Reserved dates added to room ${id}`)
+    }, 100)
+  }
+
+  const addRoom = (room: Omit<Room, "id">) => {
+    const newId = rooms.length > 0 ? Math.max(...rooms.map((r) => r.id)) + 1 : 1
+    const now = new Date().toISOString()
+    const newRoom = {
+      ...room,
+      id: newId,
+      lastModified: now,
+      lastUpdated: now,
+      available: room.available !== undefined ? room.available : true,
+      isAvailable: room.isAvailable !== undefined ? room.isAvailable : room.available !== undefined ? room.available : true,
+    }
+
+    const updatedRooms = [...rooms, newRoom as Room]
+    setRooms(updatedRooms)
+
+    // Generate TypeScript files after adding a new room
+    setTimeout(() => {
+      generateTypeScriptFilesWrapper(updatedRooms)
+      console.log(`New room added with id ${newId}`)
+    }, 100)
   }
 
   const value: RoomStore = {

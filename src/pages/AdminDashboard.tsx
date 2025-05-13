@@ -93,6 +93,10 @@ const AdminDashboard = () => {
                 Guardado automático activado
               </Badge>
             </div>
+            <p className="text-sm text-muted-foreground mt-2">
+              Los cambios realizados se guardan automáticamente en la sesión actual. Para hacerlos permanentes, exporta
+              los archivos de código fuente desde la sección de Configuración.
+            </p>
           </CardContent>
         </Card>
       </div>

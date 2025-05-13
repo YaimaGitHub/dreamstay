@@ -1,3 +1,4 @@
+
 "use client"
 
 import type React from "react"
@@ -13,15 +14,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
-import { useDataStore, type Service } from "@/hooks/use-data-store"
-import { ArrowLeft, Plus, X, Save } from "lucide-react"
+import { useDataStore } from "@/hooks/use-data-store"
+import { type Service } from "@/types/service"
+import { ArrowLeft, Plus, X, Save, Download, Loader2 } from "lucide-react"
 
 const AdminServiceForm = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { toast } = useToast()
-  const { services, addService, updateService } = useDataStore()
+  const { services, addService, updateService, generateTypeScriptFiles } = useDataStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isGeneratingFiles, setIsGeneratingFiles] = useState(false)
+  const [saveCompleted, setSaveCompleted] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(true)
 
   const isEditMode = id !== undefined && id !== "new"
   const serviceToEdit = isEditMode ? services.find((s) => s.id === Number.parseInt(id as string)) : null
@@ -37,6 +42,19 @@ const AdminServiceForm = () => {
 
   const [newFeature, setNewFeature] = useState("")
 
+  // Check authentication status on mount
+  useEffect(() => {
+    // Verify authentication on component mount
+    const checkAuth = () => {
+      const adminSession = localStorage.getItem("adminAuth")
+      if (adminSession !== "true") {
+        setIsAuthenticated(false)
+      }
+    }
+    
+    checkAuth()
+  }, [])
+
   useEffect(() => {
     if (serviceToEdit) {
       setFormData({
@@ -49,6 +67,13 @@ const AdminServiceForm = () => {
       })
     }
   }, [serviceToEdit])
+
+  // Protect against session expiration during form submission
+  useEffect(() => {
+    if (!isAuthenticated && !isSubmitting && !isGeneratingFiles) {
+      navigate("/admin/login")
+    }
+  }, [isAuthenticated, isSubmitting, isGeneratingFiles, navigate])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -101,8 +126,50 @@ const AdminServiceForm = () => {
         })
       }
       setIsSubmitting(false)
-      navigate("/admin/services")
+      setSaveCompleted(true)
     }, 1000)
+  }
+
+  const handleGenerateFiles = async () => {
+    setIsGeneratingFiles(true)
+    try {
+      // Use await to wait for file generation to complete
+      const success = await generateTypeScriptFiles()
+      
+      if (success) {
+        toast({
+          title: "Archivos TypeScript generados",
+          description: "Los archivos se han descargado correctamente",
+        })
+      } else {
+        toast({
+          title: "Error",
+          description: "No se pudieron generar los archivos TypeScript",
+          variant: "destructive",
+        })
+      }
+      
+      // Only navigate away after files are generated
+      navigate("/admin/services")
+    } catch (error) {
+      console.error("Error al generar archivos:", error)
+      toast({
+        title: "Error",
+        description: "Ocurrió un error al generar los archivos",
+        variant: "destructive",
+      })
+    } finally {
+      setIsGeneratingFiles(false)
+    }
+  }
+
+  const handleCancel = () => {
+    navigate("/admin/services")
+  }
+
+  // If session is already expired and we're not in the middle of an operation, redirect
+  if (!isAuthenticated && !isSubmitting && !isGeneratingFiles) {
+    return null // Navigate effect will handle redirection
   }
 
   return (
@@ -272,17 +339,41 @@ const AdminServiceForm = () => {
                 <CardTitle>Acciones</CardTitle>
               </CardHeader>
               <CardFooter className="flex flex-col gap-4">
-                <Button type="submit" className="w-full bg-terracotta hover:bg-terracotta/90" disabled={isSubmitting}>
-                  <Save className="mr-2 h-4 w-4" />
-                  {isSubmitting
-                    ? isEditMode
-                      ? "Guardando cambios..."
-                      : "Creando servicio..."
-                    : isEditMode
-                      ? "Guardar cambios"
-                      : "Crear servicio"}
-                </Button>
-                <Button type="button" variant="outline" className="w-full" onClick={() => navigate("/admin/services")}>
+                {!saveCompleted ? (
+                  <Button type="submit" className="w-full bg-terracotta hover:bg-terracotta/90" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {isEditMode ? "Guardando cambios..." : "Creando servicio..."}
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        {isEditMode ? "Guardar cambios" : "Crear servicio"}
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button 
+                    type="button" 
+                    className="w-full bg-green-600 hover:bg-green-700" 
+                    onClick={handleGenerateFiles}
+                    disabled={isGeneratingFiles}
+                  >
+                    {isGeneratingFiles ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generando archivos...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="mr-2 h-4 w-4" />
+                        Generar archivos TypeScript
+                      </>
+                    )}
+                  </Button>
+                )}
+                <Button type="button" variant="outline" className="w-full" onClick={handleCancel}>
                   Cancelar
                 </Button>
               </CardFooter>

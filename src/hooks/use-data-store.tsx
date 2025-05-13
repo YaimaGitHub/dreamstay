@@ -1,64 +1,51 @@
+
 "use client"
 
-import type React from "react"
-
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import { roomsData } from "@/data/rooms"
-import { allServices } from "@/data/services"
+import { roomsData as initialRoomsData } from "@/data/rooms"
+import { allServices as initialServicesData } from "@/data/services"
+import { cubanProvinces } from "@/data/provinces"
 import { toast } from "@/components/ui/sonner"
-
-// Tipos de datos
-export interface Room {
-  id: number
-  title: string
-  location: string
-  price: number
-  rating: number
-  reviews: number
-  image: string
-  features: string[]
-  type: string
-  area: number
-  description?: string
-  available?: boolean
-  images?: Array<{
-    id: number
-    url: string
-    alt: string
-  }>
-  amenities?: Array<{
-    id: number
-    name: string
-    description: string
-    icon?: React.ReactNode
-  }>
-}
-
-export interface Service {
-  id: number
-  title: string
-  description: string
-  longDescription?: string
-  price: number
-  category: string
-  icon?: React.ReactNode
-  features?: string[]
-}
+import { Room } from "@/types/room"
+import { Service } from "@/types/service"
+import { 
+  addRoom, 
+  updateRoom, 
+  deleteRoom, 
+  toggleRoomAvailability 
+} from "@/utils/room-operations"
+import { 
+  addService, 
+  updateService, 
+  deleteService 
+} from "@/utils/service-operations"
+import { 
+  exportDataAsJson, 
+  importDataFromJson 
+} from "@/utils/data-export-utils"
+import { 
+  generateTypeScriptFiles as generateFiles, 
+  autoExportSourceFiles as autoExport 
+} from "@/utils/ts-file-export"
 
 interface DataStoreContextType {
   rooms: Room[]
   services: Service[]
+  provinces: string[]
   addRoom: (room: Omit<Room, "id">) => void
   updateRoom: (roomData: Room) => void
   deleteRoom: (id: number) => void
+  toggleRoomAvailability: (id: number) => void
   addService: (service: Omit<Service, "id">) => void
   updateService: (id: number, service: Partial<Service>) => void
   deleteService: (id: number) => void
   exportData: () => string
   importData: (jsonData: string) => boolean
   resetToDefault: () => void
-  exportSourceFiles: () => void
+  exportSourceFiles: () => Promise<boolean>
   lastUpdated: Date | null
+  generateTypeScriptFiles: () => Promise<boolean>
+  previewRoom: (id: number) => Room | undefined
 }
 
 const DataStoreContext = createContext<DataStoreContextType | undefined>(undefined)
@@ -66,304 +53,236 @@ const DataStoreContext = createContext<DataStoreContextType | undefined>(undefin
 export const DataStoreProvider = ({ children }: { children: ReactNode }) => {
   const [rooms, setRooms] = useState<Room[]>([])
   const [services, setServices] = useState<Service[]>([])
+  const [provinces] = useState<string[]>(cubanProvinces)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)
+  const [pendingChanges, setPendingChanges] = useState<Record<string, any>>({})
 
-  // Inicializar con datos por defecto
+  // Initialize with default data
   useEffect(() => {
-    resetToDefault()
-    setIsInitialized(true)
+    const loadRooms = async () => {
+      try {
+        // Always load data from the imported module files
+        // This ensures we're using the most recent data from the TypeScript files
+        setRooms(
+          initialRoomsData.map((room) => ({
+            ...room,
+            // Ensure all required fields are present
+            lastModified: room.lastUpdated || new Date().toISOString(),
+            available: room.available !== undefined ? room.available : true,
+            isAvailable: room.available !== undefined ? room.available : true,
+            // Ensure reserved dates are maintained and in the correct format
+            reservedDates: room.reservedDates ? [...room.reservedDates] : [],
+          })),
+        )
+
+        setServices(
+          initialServicesData.map((service) => ({
+            ...service,
+            icon: undefined, // Remove React icons for storage
+          })),
+        )
+
+        console.log(
+          `Datos cargados desde archivos fuente: ${initialRoomsData.length} habitaciones, ${initialServicesData.length} servicios`,
+        )
+
+        // Verify and log loaded reserved dates
+        initialRoomsData.forEach((room) => {
+          if (room.reservedDates && room.reservedDates.length > 0) {
+            console.log(
+              `Habitación ${room.id} - ${room.title}: ${room.reservedDates.length} fechas reservadas cargadas`,
+            )
+          }
+        })
+
+        // Set last updated date based on loaded data
+        const lastUpdatedRoom = initialRoomsData.reduce(
+          (latest, room) => {
+            if (!room.lastUpdated) return latest
+            const roomDate = new Date(room.lastUpdated)
+            return !latest || roomDate > latest ? roomDate : latest
+          },
+          null as Date | null,
+        )
+
+        if (lastUpdatedRoom) {
+          setLastUpdated(lastUpdatedRoom)
+        } else {
+          updateLastModified()
+        }
+      } catch (error) {
+        console.error("Error al cargar datos:", error)
+        toast.error("Error al cargar los datos. Utilizando datos de muestra.")
+        resetToDefault()
+      } finally {
+        setIsInitialized(true)
+      }
+    }
+
+    loadRooms()
   }, [])
 
-  // Función para actualizar la fecha de última modificación
+  // Function to update the last modified date
   const updateLastModified = () => {
     const now = new Date()
     setLastUpdated(now)
     return now
   }
 
-  // Función para generar el código fuente de rooms.ts con el formato exacto requerido
-  const generateRoomsSourceCode = (roomsData: Room[]) => {
-    // Convertir las habitaciones a un formato que preserve la estructura original
-    const formattedRooms = roomsData.map((room) => {
-      // Crear una copia para no modificar el original
-      const formattedRoom = { ...room }
-
-      // Formatear las características como strings con comillas
-      if (formattedRoom.features) {
-        formattedRoom.features = formattedRoom.features.map((feature) => `"${feature}"`)
-      }
-
-      return formattedRoom
-    })
-
-    // Generar el código con el formato adecuado
-    let code = `// Archivo generado automáticamente por el panel de administración
-// Última actualización: ${new Date().toLocaleString()}
-
-export const roomsData = [\n`
-
-    formattedRooms.forEach((room, index) => {
-      code += `  {\n`
-      code += `    id: ${room.id},\n`
-      code += `    title: "${room.title}",\n`
-      code += `    location: "${room.location}",\n`
-      code += `    price: ${room.price},\n`
-      code += `    rating: ${room.rating},\n`
-      code += `    reviews: ${room.reviews},\n`
-      code += `    image: "${room.image}",\n`
-      code += `    features: [${room.features?.join(", ") || ""}],\n`
-      code += `    type: "${room.type}",\n`
-      code += `    area: ${room.area},\n`
-
-      if (room.description !== undefined) {
-        code += `    description: "${room.description.replace(/"/g, '\\"')}",\n`
-      }
-
-      if (room.available !== undefined) {
-        code += `    available: ${room.available},\n`
-      }
-
-      if (room.images && room.images.length > 0) {
-        code += `    images: [\n`
-        room.images.forEach((image, imgIndex) => {
-          code += `      {\n`
-          code += `        id: ${image.id},\n`
-          code += `        url: "${image.url}",\n`
-          code += `        alt: "${image.alt.replace(/"/g, '\\"')}"\n`
-          code += `      }${imgIndex < room.images!.length - 1 ? "," : ""}\n`
-        })
-        code += `    ],\n`
-      }
-
-      if (room.amenities && room.amenities.length > 0) {
-        code += `    amenities: [\n`
-        room.amenities.forEach((amenity, amenityIndex) => {
-          code += `      {\n`
-          code += `        id: ${amenity.id},\n`
-          code += `        name: "${amenity.name}",\n`
-          code += `        description: "${amenity.description.replace(/"/g, '\\"')}"\n`
-          code += `      }${amenityIndex < room.amenities!.length - 1 ? "," : ""}\n`
-        })
-        code += `    ],\n`
-      }
-
-      code += `  }${index < formattedRooms.length - 1 ? "," : ""}\n`
-    })
-
-    code += `];\n`
-    return code
-  }
-
-  // Función para generar el código fuente de services.ts con el formato exacto requerido
-  const generateServicesSourceCode = (servicesData: Service[]) => {
-    // Convertir los servicios a un formato que preserve la estructura original
-    const formattedServices = servicesData.map((service) => {
-      // Crear una copia para no modificar el original
-      const formattedService = { ...service }
-
-      // Formatear las características como strings con comillas
-      if (formattedService.features) {
-        formattedService.features = formattedService.features.map((feature) => `"${feature}"`)
-      }
-
-      return formattedService
-    })
-
-    // Generar el código con el formato adecuado
-    let code = `// Archivo generado automáticamente por el panel de administración
-// Última actualización: ${new Date().toLocaleString()}
-
-import { Utensils, Car, Wifi, MapPin } from 'lucide-react';
-
-export const allServices = [\n`
-
-    formattedServices.forEach((service, index) => {
-      code += `  {\n`
-      code += `    id: ${service.id},\n`
-      code += `    title: "${service.title}",\n`
-      code += `    description: "${service.description.replace(/"/g, '\\"')}",\n`
-
-      if (service.longDescription !== undefined) {
-        code += `    longDescription: "${service.longDescription.replace(/"/g, '\\"')}",\n`
-      }
-
-      code += `    price: ${service.price},\n`
-      code += `    category: "${service.category}",\n`
-
-      // Asignar un icono basado en la categoría
-      code += `    icon: ${getIconForCategory(service.category)},\n`
-
-      if (service.features && service.features.length > 0) {
-        code += `    features: [${service.features.join(", ")}],\n`
-      }
-
-      code += `  }${index < formattedServices.length - 1 ? "," : ""}\n`
-    })
-
-    code += `];\n`
-    return code
-  }
-
-  // Función auxiliar para asignar iconos basados en la categoría
-  const getIconForCategory = (category: string) => {
-    switch (category.toLowerCase()) {
-      case "gastronomía":
-        return "Utensils"
-      case "transporte":
-        return "Car"
-      case "comodidades":
-        return "Wifi"
-      case "experiencias":
-        return "MapPin"
-      default:
-        return "Wifi"
-    }
-  }
-
-  // Función para exportar archivos de código fuente
-  const exportSourceFiles = () => {
-    try {
-      // Generar código fuente para rooms.ts
-      const roomsSourceCode = generateRoomsSourceCode(rooms)
-      const roomsBlob = new Blob([roomsSourceCode], { type: "text/plain" })
-      const roomsUrl = URL.createObjectURL(roomsBlob)
-
-      // Generar código fuente para services.ts
-      const servicesSourceCode = generateServicesSourceCode(services)
-      const servicesBlob = new Blob([servicesSourceCode], { type: "text/plain" })
-      const servicesUrl = URL.createObjectURL(servicesBlob)
-
-      // Crear enlaces para descargar los archivos
-      const roomsLink = document.createElement("a")
-      roomsLink.href = roomsUrl
-      roomsLink.download = "rooms.ts"
-      roomsLink.style.display = "none"
-
-      const servicesLink = document.createElement("a")
-      servicesLink.href = servicesUrl
-      servicesLink.download = "services.ts"
-      servicesLink.style.display = "none"
-
-      // Añadir enlaces al DOM y hacer clic en ellos
-      document.body.appendChild(roomsLink)
-      document.body.appendChild(servicesLink)
-
-      roomsLink.click()
-      setTimeout(() => {
-        servicesLink.click()
-
-        // Limpiar
-        document.body.removeChild(roomsLink)
-        document.body.removeChild(servicesLink)
-        URL.revokeObjectURL(roomsUrl)
-        URL.revokeObjectURL(servicesUrl)
-      }, 100)
-
-      toast.success("Archivos de código fuente exportados correctamente")
-    } catch (error) {
-      console.error("Error al exportar archivos de código fuente:", error)
-      toast.error("Error al exportar los archivos de código fuente")
-    }
-  }
-
-  // Función para exportar y actualizar archivos de código fuente automáticamente
-  const autoExportSourceFiles = () => {
-    try {
-      exportSourceFiles()
-      toast.success("Cambios guardados y archivos de código fuente actualizados")
-    } catch (error) {
-      console.error("Error al actualizar archivos de código fuente:", error)
-      toast.error("Error al actualizar los archivos de código fuente")
-    }
+  const autoExportSourceFilesWrapper = async () => {
+    return await autoExport(rooms, services, provinces, () => 
+      generateFiles(rooms, services, provinces)
+    )
   }
 
   const resetToDefault = () => {
-    setRooms(roomsData)
+    setRooms(initialRoomsData)
     setServices(
-      allServices.map((service) => ({
+      initialServicesData.map((service) => ({
         ...service,
-        icon: undefined, // Eliminar los iconos React para el almacenamiento
+        icon: undefined, // Remove React icons for storage
       })),
     )
     updateLastModified()
   }
 
-  // Funciones para gestionar habitaciones
-  const addRoom = (room: Omit<Room, "id">) => {
-    const newId = rooms.length > 0 ? Math.max(...rooms.map((r) => r.id)) + 1 : 1
-    const newRooms = [...rooms, { ...room, id: newId }]
-    setRooms(newRooms)
-    updateLastModified()
-    autoExportSourceFiles()
-  }
+  // Function to get a preview of a room
+  const previewRoom = (id: number) => {
+    const room = rooms.find((r) => r.id === id)
+    if (!room) return undefined
 
-  const updateRoom = (roomData: Room) => {
-    const newRooms = rooms.map((room) => (room.id === roomData.id ? { ...roomData } : room))
-    setRooms(newRooms)
-    updateLastModified()
-    autoExportSourceFiles()
-  }
-
-  const deleteRoom = (id: number) => {
-    const newRooms = rooms.filter((room) => room.id !== id)
-    setRooms(newRooms)
-    updateLastModified()
-    autoExportSourceFiles()
-  }
-
-  // Funciones para gestionar servicios
-  const addService = (service: Omit<Service, "id">) => {
-    const newId = services.length > 0 ? Math.max(...services.map((s) => s.id)) + 1 : 1
-    const newServices = [...services, { ...service, id: newId }]
-    setServices(newServices)
-    updateLastModified()
-    autoExportSourceFiles()
-  }
-
-  const updateService = (id: number, serviceUpdate: Partial<Service>) => {
-    const newServices = services.map((service) => (service.id === id ? { ...service, ...serviceUpdate } : service))
-    setServices(newServices)
-    updateLastModified()
-    autoExportSourceFiles()
-  }
-
-  const deleteService = (id: number) => {
-    const newServices = services.filter((service) => service.id !== id)
-    setServices(newServices)
-    updateLastModified()
-    autoExportSourceFiles()
-  }
-
-  // Exportar todos los datos como JSON
-  const exportData = () => {
-    const data = {
-      rooms,
-      services,
-      lastUpdated: lastUpdated?.toISOString(),
+    // If there are pending changes for this room, apply them to the preview
+    if (pendingChanges[`room-${id}`]) {
+      return { ...room, ...pendingChanges[`room-${id}`] }
     }
-    return JSON.stringify(data, null, 2)
+
+    return room
   }
 
-  // Importar datos desde JSON
+  const handleAddRoom = (room: Omit<Room, "id">) => {
+    addRoom(
+      room, 
+      rooms, 
+      setRooms, 
+      updateLastModified, 
+      autoExportSourceFilesWrapper
+    )
+  }
+
+  const handleUpdateRoom = (roomData: Room) => {
+    updateRoom(
+      roomData, 
+      rooms, 
+      setRooms, 
+      updateLastModified, 
+      setPendingChanges, 
+      autoExportSourceFilesWrapper
+    )
+  }
+
+  const handleDeleteRoom = (id: number) => {
+    deleteRoom(
+      id, 
+      rooms, 
+      setRooms, 
+      updateLastModified, 
+      setPendingChanges, 
+      autoExportSourceFilesWrapper
+    )
+  }
+
+  const handleToggleRoomAvailability = (id: number) => {
+    toggleRoomAvailability(
+      id, 
+      rooms, 
+      setRooms, 
+      updateLastModified, 
+      setPendingChanges, 
+      autoExportSourceFilesWrapper
+    )
+  }
+
+  const handleAddService = (service: Omit<Service, "id">) => {
+    addService(
+      service, 
+      services, 
+      setServices, 
+      updateLastModified, 
+      autoExportSourceFilesWrapper
+    )
+  }
+
+  const handleUpdateService = (id: number, service: Partial<Service>) => {
+    updateService(
+      id, 
+      service, 
+      services, 
+      setServices, 
+      updateLastModified, 
+      autoExportSourceFilesWrapper
+    )
+  }
+
+  const handleDeleteService = (id: number) => {
+    deleteService(
+      id, 
+      services, 
+      setServices, 
+      updateLastModified, 
+      autoExportSourceFilesWrapper
+    )
+  }
+
+  // Export all data as JSON
+  const exportData = () => {
+    return exportDataAsJson(rooms, services, lastUpdated)
+  }
+
+  // Import data from JSON
   const importData = (jsonData: string) => {
+    return importDataFromJson(
+      jsonData, 
+      setRooms, 
+      setServices, 
+      updateLastModified, 
+      autoExportSourceFilesWrapper
+    )
+  }
+
+  // Function to export source files
+  const exportSourceFiles = async (): Promise<boolean> => {
     try {
-      const data = JSON.parse(jsonData)
-      if (data.rooms && Array.isArray(data.rooms)) {
-        setRooms(data.rooms)
-      }
-      if (data.services && Array.isArray(data.services)) {
-        setServices(data.services)
+      // Generate TypeScript files
+      const success = await generateFiles(rooms, services, provinces)
+
+      if (success) {
+        toast.success("Archivos de código fuente exportados correctamente", {
+          description:
+            "Los cambios se han guardado en los archivos TypeScript. Estos archivos deben reemplazar los originales en tu proyecto.",
+        })
+
+        // Show additional instructions
+        setTimeout(() => {
+          toast.info("Importante: Para que los cambios sean permanentes", {
+            description:
+              "Reemplaza los archivos originales en tu proyecto con los archivos descargados y reinicia la aplicación.",
+            duration: 8000,
+          })
+        }, 1000)
       }
 
-      updateLastModified()
-      autoExportSourceFiles()
-
-      return true
+      return success
     } catch (error) {
-      console.error("Error al importar datos:", error)
+      console.error("Error al exportar archivos de código fuente:", error)
+      toast.error("Error al exportar los archivos de código fuente")
       return false
     }
+  }
+
+  // Generate TypeScript files
+  const generateTypeScriptFiles = async (): Promise<boolean> => {
+    return await generateFiles(rooms, services, provinces)
   }
 
   return (
@@ -371,17 +290,21 @@ export const allServices = [\n`
       value={{
         rooms,
         services,
-        addRoom,
-        updateRoom,
-        deleteRoom,
-        addService,
-        updateService,
-        deleteService,
+        provinces,
+        addRoom: handleAddRoom,
+        updateRoom: handleUpdateRoom,
+        deleteRoom: handleDeleteRoom,
+        toggleRoomAvailability: handleToggleRoomAvailability,
+        addService: handleAddService,
+        updateService: handleUpdateService,
+        deleteService: handleDeleteService,
         exportData,
         importData,
         resetToDefault,
         exportSourceFiles,
         lastUpdated,
+        generateTypeScriptFiles,
+        previewRoom,
       }}
     >
       {children}

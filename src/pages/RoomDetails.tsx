@@ -10,6 +10,7 @@ import RoomAmenities, { sampleAmenities } from "@/components/RoomAmenities"
 import { Star, User, MapPin } from "lucide-react"
 import { useDataStore } from "@/hooks/use-data-store"
 import type { Room } from "@/types/room"
+import { Badge } from "@/components/ui/badge"
 
 const RoomDetails = () => {
   const { id } = useParams<{ id: string }>()
@@ -57,6 +58,11 @@ const RoomDetails = () => {
           <div className="flex items-center text-muted-foreground">
             <MapPin className="h-4 w-4 mr-1" />
             <span>{room.location}</span>
+            {room.province && (
+              <Badge variant="outline" className="ml-2">
+                {room.province}
+              </Badge>
+            )}
           </div>
         </div>
 
@@ -81,14 +87,24 @@ const RoomDetails = () => {
                     <User className="h-6 w-6" />
                   </div>
                   <div className="ml-2">
-                    <p className="font-medium">Eliezer</p>
-                    <p className="text-sm text-muted-foreground">Anfitrión desde 2019</p>
+                    <p className="font-medium">Eliecer</p>
+                    <p className="text-sm text-muted-foreground">Anfitrión desde 2007</p>
                   </div>
                 </div>
               </div>
 
               <div className="mb-8">
                 <p className="text-lg mb-4">{room.description || "Sin descripción disponible"}</p>
+
+                {room.province && (
+                  <div className="mt-4 p-4 bg-muted rounded-lg">
+                    <h3 className="font-medium mb-2">Ubicación</h3>
+                    <p>
+                      Esta habitación se encuentra en la provincia de <strong>{room.province}</strong>, en{" "}
+                      {room.location}.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="mb-10">

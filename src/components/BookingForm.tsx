@@ -27,14 +27,13 @@ export interface SelectedService {
 }
 
 const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: new Date(),
-    to: new Date(new Date().setDate(new Date().getDate() + 3)),
-  })
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
   const [guests, setGuests] = useState("2")
   const [isProcessing, setIsProcessing] = useState(false)
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([])
   const [showReservationForm, setShowReservationForm] = useState(false)
+  const [isDateAvailable, setIsDateAvailable] = useState<boolean | null>(null)
+  const [showAvailabilityMessage, setShowAvailabilityMessage] = useState(false)
 
   // Calcular la duración de la estancia en días
   const getStayDuration = () => {
@@ -44,6 +43,38 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
   }
 
   const duration = getStayDuration()
+
+  const checkDateAvailability = (range: DateRange | undefined) => {
+    if (!range?.from || !range?.to) {
+      setIsDateAvailable(null)
+      return
+    }
+
+    // Get the reserved dates from the room data
+    const reservedDates = room.reservedDates || []
+
+    // Check if selected dates overlap with any reserved dates
+    const isOverlapping = reservedDates.some((reservedRange) => {
+      const reservedStart = new Date(reservedRange.start)
+      const reservedEnd = new Date(reservedRange.end)
+
+      // Check for overlap
+      return (
+        (range.from <= reservedEnd && range.from >= reservedStart) ||
+        (range.to <= reservedEnd && range.to >= reservedStart) ||
+        (range.from <= reservedStart && range.to >= reservedEnd)
+      )
+    })
+
+    // Set availability status (true if NOT overlapping with reserved dates)
+    setIsDateAvailable(!isOverlapping)
+    setShowAvailabilityMessage(true)
+
+    // Hide message after 5 seconds
+    setTimeout(() => {
+      setShowAvailabilityMessage(false)
+    }, 5000)
+  }
 
   // Calcular el precio total de la habitación
   const roomTotalPrice = price * duration
@@ -130,7 +161,12 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
                 mode="range"
                 defaultMonth={dateRange?.from}
                 selected={dateRange}
-                onSelect={setDateRange}
+                onSelect={(range) => {
+                  setDateRange(range)
+                  if (range?.from && range?.to) {
+                    checkDateAvailability(range)
+                  }
+                }}
                 numberOfMonths={2}
                 locale={es}
                 className="pointer-events-auto"
@@ -158,14 +194,102 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
           <AdditionalServices services={sampleServices} onServiceToggle={handleServiceToggle} />
         </div>
 
+        {showAvailabilityMessage && dateRange?.from && dateRange?.to && (
+          <div
+            className={`mt-4 p-3 rounded-lg transition-all duration-500 transform ${
+              isDateAvailable
+                ? "bg-green-50 border border-green-200 text-green-700"
+                : "bg-red-50 border border-red-200 text-red-700"
+            } ${showAvailabilityMessage ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
+          >
+            <div className="flex items-center">
+              {isDateAvailable ? (
+                <>
+                  <div className="mr-2 flex-shrink-0 rounded-full p-1 bg-green-100">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 text-green-600"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-medium">¡Habitación disponible para las fechas seleccionadas!</p>
+                </>
+              ) : (
+                <>
+                  <div className="mr-2 flex-shrink-0 rounded-full p-1 bg-red-100">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 text-red-600"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-medium">
+                    Lo sentimos, la habitación no está disponible para las fechas seleccionadas.
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
         <Dialog open={showReservationForm} onOpenChange={setShowReservationForm}>
           <DialogTrigger asChild>
             <Button
               className="w-full bg-terracotta hover:bg-terracotta/90 mt-6"
               onClick={handleBooking}
-              disabled={isProcessing}
+              disabled={isProcessing || !dateRange?.from || !dateRange?.to || isDateAvailable === false}
             >
-              {isProcessing ? "Verificando disponibilidad..." : "Reservar ahora"}
+              {isProcessing ? (
+                "Verificando disponibilidad..."
+              ) : !dateRange?.from || !dateRange?.to ? (
+                <span className="flex items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 mr-2"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  Seleccione fechas
+                </span>
+              ) : isDateAvailable === false ? (
+                <span className="flex items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 mr-2"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  No disponible
+                </span>
+              ) : (
+                "Reservar ahora"
+              )}
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">

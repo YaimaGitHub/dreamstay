@@ -96,8 +96,11 @@ const AdminLogin = () => {
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="flex justify-center">
+        <CardFooter className="flex flex-col items-center space-y-4">
           <p className="text-sm text-muted-foreground">Acceso restringido solo para personal autorizado</p>
+          <Button variant="outline" className="w-full" onClick={() => navigate("/")}>
+            Volver a la página de inicio
+          </Button>
         </CardFooter>
       </Card>
     </div>

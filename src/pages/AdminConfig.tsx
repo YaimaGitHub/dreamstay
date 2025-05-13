@@ -92,7 +92,26 @@ const AdminConfig = () => {
   }
 
   const handleExportSourceFiles = () => {
-    exportSourceFiles()
+    try {
+      exportSourceFiles()
+
+      // Mostrar instrucciones adicionales después de la exportación
+      setTimeout(() => {
+        toast({
+          title: "Instrucciones importantes",
+          description:
+            "Para que los cambios sean permanentes, debes reemplazar los archivos originales en tu proyecto con los archivos descargados.",
+          duration: 8000,
+        })
+      }, 1000)
+    } catch (error) {
+      console.error("Error al exportar archivos fuente:", error)
+      toast({
+        title: "Error",
+        description: "No se pudieron exportar los archivos fuente.",
+        variant: "destructive",
+      })
+    }
   }
 
   return (
@@ -190,6 +209,20 @@ const AdminConfig = () => {
                         <li>Exporta los archivos de código fuente haciendo clic en el botón de arriba.</li>
                         <li>Localiza los archivos descargados en tu dispositivo.</li>
                         <li>Reemplaza los archivos originales en tu proyecto con los archivos descargados.</li>
+                        <li>
+                          <strong>Importante:</strong> Los archivos deben reemplazar exactamente a:
+                          <ul className="mt-1 space-y-1 list-disc pl-5">
+                            <li>
+                              <code className="bg-muted-foreground/20 px-1 rounded">src/data/rooms.ts</code>
+                            </li>
+                            <li>
+                              <code className="bg-muted-foreground/20 px-1 rounded">src/data/services.ts</code>
+                            </li>
+                            <li>
+                              <code className="bg-muted-foreground/20 px-1 rounded">src/data/provinces.ts</code>
+                            </li>
+                          </ul>
+                        </li>
                         <li>Reinicia la aplicación para que los cambios surtan efecto.</li>
                       </ol>
                     </div>

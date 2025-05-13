@@ -1,5 +1,5 @@
 // Archivo generado automáticamente por el panel de administración
-// Última actualización: 11/5/2025, 5:23:35
+// Última actualización: 13/5/2025, 4:29:12
 
 import { Utensils, Car, Wifi, MapPin } from 'lucide-react';
 

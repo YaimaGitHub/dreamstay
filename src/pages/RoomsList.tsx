@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Link } from "react-router-dom"
+import { useState, useEffect } from "react"
+import { Link, useLocation } from "react-router-dom"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
@@ -11,106 +11,97 @@ import { Input } from "@/components/ui/input"
 import { Slider } from "@/components/ui/slider"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Bed, Wifi, Coffee, Star, SlidersHorizontal } from "lucide-react"
-
-// Datos de muestra para las habitaciones
-const roomsData = [
-  {
-    id: 1,
-    title: "Suite Premium",
-    location: "Centro de la ciudad",
-    price: 120,
-    rating: 4.9,
-    reviews: 124,
-    image:
-      "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
-    features: ["Baño privado", "WiFi gratis", "Desayuno incluido"],
-    type: "Suite",
-    area: 35,
-  },
-  {
-    id: 2,
-    title: "Habitación Confort",
-    location: "Zona Turística",
-    price: 85,
-    rating: 4.7,
-    reviews: 95,
-    image:
-      "https://images.unsplash.com/photo-1566665797739-1674de7a421a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80",
-    features: ["Baño privado", "WiFi gratis", "TV de pantalla plana"],
-    type: "Estándar",
-    area: 25,
-  },
-  {
-    id: 3,
-    title: "Suite Ejecutiva",
-    location: "Distrito Financiero",
-    price: 150,
-    rating: 5.0,
-    reviews: 87,
-    image:
-      "https://images.unsplash.com/photo-1590490360182-c33d57733427?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80",
-    features: ["Baño de lujo", "WiFi de alta velocidad", "Desayuno gourmet"],
-    type: "Suite",
-    area: 40,
-  },
-  {
-    id: 4,
-    title: "Habitación Familiar",
-    location: "Zona Residencial",
-    price: 110,
-    rating: 4.6,
-    reviews: 72,
-    image:
-      "https://images.unsplash.com/photo-1505692952047-9e5ddd7c1664?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
-    features: ["2 camas dobles", "WiFi gratis", "TV por cable"],
-    type: "Familiar",
-    area: 38,
-  },
-  {
-    id: 5,
-    title: "Habitación Económica",
-    location: "Cerca del centro",
-    price: 65,
-    rating: 4.3,
-    reviews: 58,
-    image:
-      "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
-    features: ["Baño compartido", "WiFi gratis", "Escritorio"],
-    type: "Económica",
-    area: 18,
-  },
-  {
-    id: 6,
-    title: "Junior Suite",
-    location: "Zona Comercial",
-    price: 130,
-    rating: 4.8,
-    reviews: 103,
-    image:
-      "https://images.unsplash.com/photo-1618773928121-c32242e63f39?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
-    features: ["Minibar", "WiFi gratis", "Desayuno buffet"],
-    type: "Suite",
-    area: 32,
-  },
-]
+import { Bed, Wifi, Coffee, Star, SlidersHorizontal, MapPin } from "lucide-react"
+import { useDataStore } from "@/hooks/use-data-store"
+import { cubanProvinces } from "@/data/provinces"
 
 const RoomsList = () => {
+  const location = useLocation()
+  const { rooms } = useDataStore()
   const [priceRange, setPriceRange] = useState<number[]>([50, 200])
   const [roomType, setRoomType] = useState<string>("all")
   const [searchTerm, setSearchTerm] = useState<string>("")
   const [showFilters, setShowFilters] = useState<boolean>(false)
+  const [selectedProvince, setSelectedProvince] = useState<string>("")
+
+  // Agregar esta línea para definir el estilo de animación personalizado
+  useEffect(() => {
+    const style = document.createElement("style")
+    style.innerHTML = `
+    @keyframes pulse-slow {
+      0%, 100% { opacity: 0.9; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.05); }
+    }
+    .animate-pulse-slow {
+      animation: pulse-slow 3s ease-in-out infinite;
+    }
+  `
+    document.head.appendChild(style)
+    return () => {
+      document.head.removeChild(style)
+    }
+  }, [])
+
+  // Parse URL parameters for search
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+
+    // Set province from URL if available
+    const provinceParam = params.get("province")
+    if (provinceParam) {
+      setSelectedProvince(provinceParam)
+    }
+
+    // Set date range from URL if available
+    const fromParam = params.get("from")
+    const toParam = params.get("to")
+
+    // Set guests from URL if available
+    const guestsParam = params.get("guests")
+
+    // Show filters if any search parameters are present
+    if (provinceParam || fromParam || toParam || guestsParam) {
+      setShowFilters(true)
+    }
+  }, [location.search])
 
   // Filtrar habitaciones
-  const filteredRooms = roomsData.filter((room) => {
+  const filteredRooms = rooms.filter((room) => {
     const matchesPrice = room.price >= priceRange[0] && room.price <= priceRange[1]
     const matchesType = roomType === "all" || room.type === roomType
     const matchesSearch =
       searchTerm === "" ||
       room.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       room.location.toLowerCase().includes(searchTerm.toLowerCase())
+    const isAvailable = room.available !== false // Consider undefined as available
 
-    return matchesPrice && matchesType && matchesSearch
+    // Filter by province if selected
+    const matchesProvince = selectedProvince === "" || room.province === selectedProvince
+
+    // Filter by URL parameters for dates if present
+    const params = new URLSearchParams(location.search)
+    const fromParam = params.get("from")
+    const toParam = params.get("to")
+
+    let matchesDates = true
+    if (fromParam && toParam && room.reservedDates && room.reservedDates.length > 0) {
+      const searchStart = new Date(fromParam).getTime()
+      const searchEnd = new Date(toParam).getTime()
+
+      // Check if any reserved dates overlap with search dates
+      matchesDates = !room.reservedDates.some((reservation) => {
+        const reservationStart = new Date(reservation.start).getTime()
+        const reservationEnd = new Date(reservation.end).getTime()
+
+        return (
+          (searchStart >= reservationStart && searchStart <= reservationEnd) || // Start within reservation
+          (searchEnd >= reservationStart && searchEnd <= reservationEnd) || // End within reservation
+          (searchStart <= reservationStart && searchEnd >= reservationEnd) // Reservation within search range
+        )
+      })
+    }
+
+    return matchesPrice && matchesType && matchesSearch && isAvailable && matchesProvince && matchesDates
   })
 
   return (
@@ -176,6 +167,23 @@ const RoomsList = () => {
               </div>
 
               <div>
+                <label className="block text-sm font-medium mb-2">Provincia</label>
+                <Select value={selectedProvince} onValueChange={setSelectedProvince}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todas las provincias" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas las provincias</SelectItem>
+                    {cubanProvinces.map((province) => (
+                      <SelectItem key={province} value={province}>
+                        {province}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium mb-2">Servicios</label>
                 <div className="space-y-2">
                   <div className="flex items-center">
@@ -205,18 +213,33 @@ const RoomsList = () => {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredRooms.map((room) => (
             <Card key={room.id} className="overflow-hidden card-hover border border-border/50">
-              <div className="aspect-[16/10] overflow-hidden">
+              <div className="aspect-[16/10] overflow-hidden relative">
                 <img
-                  src={room.image}
+                  src={room.image || "/placeholder.svg"}
                   alt={room.title}
                   className="w-full h-full object-cover transition-transform hover:scale-105 duration-500"
                 />
+                {room.province && (
+                  <div className="absolute top-3 right-3 z-10">
+                    <div
+                      className="bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-full font-medium text-sm shadow-lg 
+                 animate-pulse-slow hover:scale-105 transition-all duration-300 
+                 border border-white/20 flex items-center"
+                    >
+                      <span className="inline-block w-2 h-2 rounded-full bg-terracotta mr-2 animate-ping"></span>
+                      {room.province}
+                    </div>
+                  </div>
+                )}
               </div>
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="text-xl font-semibold">{room.title}</h3>
-                    <p className="text-muted-foreground text-sm">{room.location}</p>
+                    <div className="flex items-center text-muted-foreground text-sm">
+                      <MapPin className="h-3 w-3 mr-1" />
+                      {room.location}
+                    </div>
                   </div>
                   <Badge variant="outline" className="bg-accent text-accent-foreground">
                     <Star className="h-3 w-3 fill-accent-foreground mr-1" /> {room.rating}

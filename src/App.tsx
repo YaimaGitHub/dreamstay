@@ -17,6 +17,8 @@ import { AdminAuthProvider } from "./hooks/use-admin-auth"
 import { DataStoreProvider } from "./hooks/use-data-store"
 import AdminConfig from "./pages/AdminConfig"
 import AdminAddEditRoom from "./pages/AdminAddEditRoom"
+import AdminServices from "./pages/AdminServices"
+import AdminServiceForm from "./pages/AdminServiceForm"
 
 const queryClient = new QueryClient()
 
@@ -74,7 +76,23 @@ const App = () => (
                 path="/admin/services"
                 element={
                   <AdminProtectedRoute>
-                    <AdminDashboard />
+                    <AdminServices />
+                  </AdminProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/services/new"
+                element={
+                  <AdminProtectedRoute>
+                    <AdminServiceForm />
+                  </AdminProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/services/edit/:id"
+                element={
+                  <AdminProtectedRoute>
+                    <AdminServiceForm />
                   </AdminProtectedRoute>
                 }
               />

@@ -1,4 +1,3 @@
-
 "use client"
 
 import type React from "react"
@@ -60,7 +59,7 @@ const AdminRoomForm = () => {
         setIsAuthenticated(false)
       }
     }
-    
+
     checkAuth()
   }, [])
 
@@ -177,7 +176,7 @@ const AdminRoomForm = () => {
       if (isEditMode && roomToEdit) {
         updateRoom({
           ...formDataWithTimestamp,
-          id: Number.parseInt(id as string)
+          id: Number.parseInt(id as string),
         })
         toast({
           title: "Habitación actualizada",
@@ -205,7 +204,7 @@ const AdminRoomForm = () => {
     try {
       // Use await to wait for file generation to complete
       const success = await generateTypeScriptFiles()
-      
+
       if (success) {
         toast({
           title: "Archivos TypeScript generados",
@@ -218,7 +217,7 @@ const AdminRoomForm = () => {
           variant: "destructive",
         })
       }
-      
+
       // Only navigate away after files are generated
       navigate("/admin/rooms")
     } catch (error) {
@@ -509,9 +508,9 @@ const AdminRoomForm = () => {
                     )}
                   </Button>
                 ) : (
-                  <Button 
-                    type="button" 
-                    className="w-full bg-green-600 hover:bg-green-700" 
+                  <Button
+                    type="button"
+                    className="w-full bg-green-600 hover:bg-green-700"
                     onClick={handleGenerateFiles}
                     disabled={isGeneratingFiles}
                   >

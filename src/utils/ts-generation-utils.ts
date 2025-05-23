@@ -1,3 +1,4 @@
+import type React from "react"
 
 import { toast } from "@/components/ui/use-toast"
 import { generateRoomsFileContent, generateServicesFileContent } from "./file-system-utils"
@@ -34,48 +35,48 @@ export const getIconForCategory = (category: string) => {
 export const generateTypeScriptFiles = (rooms: Room[], services: any[], provinces: string[]) => {
   try {
     // Process services to replace React nodes with string names
-    const processedServices = services.map(service => {
+    const processedServices = services.map((service) => {
       // Create a copy to avoid modifying the original
       const processedService = { ...service }
-      
+
       // Assign icon based on category
       processedService.icon = getIconForCategory(service.category)
-      
+
       // Format features as strings with quotes
       if (processedService.features) {
         processedService.features = processedService.features.map((feature: string) => `"${feature}"`)
       }
-      
+
       return processedService
     })
-    
+
     // Generate code for rooms.ts
     const roomsSourceCode = generateRoomsFileContent(rooms)
-    
+
     // Generate code for services.ts
     const servicesSourceCode = generateServicesFileContent(processedServices)
-    
+
     // Generate code for provinces.ts
     const provincesSourceCode = generateProvincesSourceCode(provinces)
-    
+
     // Create blobs and download links
     downloadFile(roomsSourceCode, "rooms.ts")
-    
+
     setTimeout(() => {
       downloadFile(servicesSourceCode, "services.ts")
-      
+
       setTimeout(() => {
         downloadFile(provincesSourceCode, "provinces.ts")
-        
+
         toast({
           title: "Archivos TypeScript generados",
           description: "Los archivos se han descargado correctamente",
         })
-        
+
         console.log("Archivos TypeScript generados y descargados")
       }, 100)
     }, 100)
-    
+
     return true
   } catch (error) {
     console.error("Error al generar archivos TypeScript:", error)
@@ -108,15 +109,15 @@ export const cubanProvinces = [\n`
 const downloadFile = (content: string, filename: string) => {
   const blob = new Blob([content], { type: "text/plain" })
   const url = URL.createObjectURL(blob)
-  
+
   const link = document.createElement("a")
   link.href = url
   link.download = filename
   link.style.display = "none"
-  
+
   document.body.appendChild(link)
   link.click()
-  
+
   setTimeout(() => {
     document.body.removeChild(link)
     URL.revokeObjectURL(url)

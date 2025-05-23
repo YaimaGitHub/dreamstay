@@ -1,16 +1,13 @@
-
-import { Room } from "@/types/room"
-import { toast } from "@/components/ui/sonner"
+import type { Room } from "@/types/room"
 import { generateRoomsSourceCode } from "./source-code-generator"
-import { autoExportSourceFiles } from "./ts-file-export" 
 
 // Operations for managing rooms
 export const addRoom = (
-  room: Omit<Room, "id">, 
-  rooms: Room[], 
+  room: Omit<Room, "id">,
+  rooms: Room[],
   setRooms: (rooms: Room[]) => void,
   updateLastModified: () => Date,
-  autoExportSourceFilesWrapper: () => boolean
+  autoExportSourceFilesWrapper: () => boolean,
 ) => {
   const newId = rooms.length > 0 ? Math.max(...rooms.map((r) => r.id)) + 1 : 1
   const now = new Date().toISOString()
@@ -33,12 +30,12 @@ export const addRoom = (
 }
 
 export const updateRoom = (
-  roomData: Room, 
-  rooms: Room[], 
+  roomData: Room,
+  rooms: Room[],
   setRooms: (rooms: Room[]) => void,
   updateLastModified: () => Date,
   setPendingChanges: (setter: (prev: Record<string, any>) => Record<string, any>) => void,
-  autoExportSourceFilesWrapper: () => boolean
+  autoExportSourceFilesWrapper: () => boolean,
 ) => {
   const now = new Date().toISOString()
   const newRooms = rooms.map((room) => {
@@ -90,7 +87,7 @@ export const deleteRoom = (
   setRooms: (rooms: Room[]) => void,
   updateLastModified: () => Date,
   setPendingChanges: (setter: (prev: Record<string, any>) => Record<string, any>) => void,
-  autoExportSourceFilesWrapper: () => boolean
+  autoExportSourceFilesWrapper: () => boolean,
 ) => {
   const newRooms = rooms.filter((room) => room.id !== id)
   setRooms(newRooms)
@@ -117,7 +114,7 @@ export const toggleRoomAvailability = (
   setRooms: (rooms: Room[]) => void,
   updateLastModified: () => Date,
   setPendingChanges: (setter: (prev: Record<string, any>) => Record<string, any>) => void,
-  autoExportSourceFilesWrapper: () => boolean
+  autoExportSourceFilesWrapper: () => boolean,
 ) => {
   const newRooms = rooms.map((room) => {
     if (room.id === id) {

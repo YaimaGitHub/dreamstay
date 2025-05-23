@@ -1,7 +1,5 @@
-
-import { Room } from "@/types/room"
-import { Service } from "@/types/service"
-import { toast } from "@/components/ui/sonner"
+import type { Room } from "@/types/room"
+import type { Service } from "@/types/service"
 
 // Function to export all data as JSON
 export const exportDataAsJson = (rooms: Room[], services: Service[], lastUpdated: Date | null) => {
@@ -19,7 +17,7 @@ export const importDataFromJson = (
   setRooms: (rooms: Room[]) => void,
   setServices: (services: Service[]) => void,
   updateLastModified: () => Date,
-  autoExportSourceFiles: () => boolean
+  autoExportSourceFiles: () => boolean,
 ): boolean => {
   try {
     const data = JSON.parse(jsonData)

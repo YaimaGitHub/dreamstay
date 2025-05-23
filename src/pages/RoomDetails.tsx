@@ -6,7 +6,7 @@ import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import RoomGallery from "@/components/RoomGallery"
 import BookingForm from "@/components/BookingForm"
-import RoomAmenities, { sampleAmenities } from "@/components/RoomAmenities"
+import RoomAmenities from "@/components/RoomAmenities"
 import { Star, User, MapPin } from "lucide-react"
 import { useDataStore } from "@/hooks/use-data-store"
 import type { Room } from "@/types/room"
@@ -87,8 +87,8 @@ const RoomDetails = () => {
                     <User className="h-6 w-6" />
                   </div>
                   <div className="ml-2">
-                    <p className="font-medium">Eliecer</p>
-                    <p className="text-sm text-muted-foreground">Anfitrión desde 2007</p>
+                    <p className="font-medium">Eliezer</p>
+                    <p className="text-sm text-muted-foreground">Anfitrión desde 2017</p>
                   </div>
                 </div>
               </div>
@@ -108,7 +108,7 @@ const RoomDetails = () => {
               </div>
 
               <div className="mb-10">
-                <RoomAmenities amenities={sampleAmenities} />
+                <RoomAmenities amenities={room.features} />
               </div>
             </div>
           </div>

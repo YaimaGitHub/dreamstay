@@ -1,5 +1,5 @@
 // Archivo generado automáticamente por el panel de administración
-// Última actualización: 13/5/2025, 4:29:12
+// Última actualización: 23/5/2025, 1:27:43
 
 // Lista de provincias de Cuba
 export const cubanProvinces = [

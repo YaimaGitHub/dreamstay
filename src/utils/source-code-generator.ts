@@ -1,7 +1,5 @@
-
-import { Room } from "@/types/room"
-import { Service } from "@/types/service"
-import { toast } from "@/components/ui/sonner"
+import type { Room } from "@/types/room"
+import type { Service } from "@/types/service"
 
 // Helper function to assign icons based on service category
 export const getIconForCategory = (category: string) => {

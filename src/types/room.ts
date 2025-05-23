@@ -1,4 +1,3 @@
-
 import type React from "react"
 export interface Room {
   id: number
@@ -41,4 +40,11 @@ export interface RoomStore {
   deleteRoom: (id: number) => void
   toggleRoomAvailability: (id: number) => void
   addReservedDates: (id: number, startDate: Date, endDate: Date) => void
+}
+
+export interface Amenity {
+  id?: number
+  title: string
+  description: string
+  icon?: string
 }

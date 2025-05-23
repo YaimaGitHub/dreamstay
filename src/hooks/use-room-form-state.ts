@@ -1,3 +1,4 @@
+"use client"
 
 import { useState, useEffect } from "react"
 import type { DateRange } from "react-day-picker"

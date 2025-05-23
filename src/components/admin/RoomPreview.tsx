@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
@@ -55,7 +54,10 @@ const RoomPreview = ({ room }: RoomPreviewProps) => {
                     {room.province && `, ${room.province}`}
                   </CardDescription>
                 </div>
-                <Badge variant={room.available !== false ? "default" : "destructive"} className={room.available !== false ? "bg-green-500 hover:bg-green-600" : ""}>
+                <Badge
+                  variant={room.available !== false ? "default" : "destructive"}
+                  className={room.available !== false ? "bg-green-500 hover:bg-green-600" : ""}
+                >
                   {room.available !== false ? "Disponible" : "No disponible"}
                 </Badge>
               </div>

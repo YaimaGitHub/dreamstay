@@ -1,19 +1,14 @@
-
-import { Room } from "@/types/room"
-import { Service } from "@/types/service"
+import type { Room } from "@/types/room"
+import type { Service } from "@/types/service"
 import { toast } from "@/components/ui/sonner"
-import { 
-  generateRoomsSourceCode, 
-  generateServicesSourceCode, 
-  generateProvincesSourceCode 
+import {
+  generateRoomsSourceCode,
+  generateServicesSourceCode,
+  generateProvincesSourceCode,
 } from "./source-code-generator"
 
 // Function to generate and download TypeScript files
-export const generateTypeScriptFiles = (
-  rooms: Room[], 
-  services: Service[], 
-  provinces: string[]
-): Promise<boolean> => {
+export const generateTypeScriptFiles = (rooms: Room[], services: Service[], provinces: string[]): Promise<boolean> => {
   return new Promise((resolve) => {
     try {
       // Generate source code for rooms.ts
@@ -71,10 +66,10 @@ export const generateTypeScriptFiles = (
           URL.revokeObjectURL(roomsUrl)
           URL.revokeObjectURL(servicesUrl)
           URL.revokeObjectURL(provincesUrl)
-          
+
           toast.success("Archivos TypeScript generados y descargados correctamente")
           console.log("Archivos TypeScript generados y descargados")
-          
+
           resolve(true)
         }, 500) // Increased timeout
       }, 500) // Increased timeout
@@ -91,7 +86,7 @@ export const autoExportSourceFiles = (
   rooms: Room[],
   services: Service[],
   provinces: string[],
-  generateTypeScriptFiles: () => Promise<boolean>
+  generateTypeScriptFiles: () => Promise<boolean>,
 ): Promise<boolean> => {
   return new Promise((resolve) => {
     try {
@@ -102,24 +97,24 @@ export const autoExportSourceFiles = (
         action: {
           label: "Descargar",
           onClick: async () => {
-            const result = await generateTypeScriptFiles();
-            resolve(result);
+            const result = await generateTypeScriptFiles()
+            resolve(result)
           },
         },
         duration: 5000,
-      });
+      })
 
       console.log(
-        "Cambios guardados temporalmente. Se requiere descargar los archivos TypeScript para hacerlos permanentes."
-      );
-      
+        "Cambios guardados temporalmente. Se requiere descargar los archivos TypeScript para hacerlos permanentes.",
+      )
+
       // We'll resolve this in the action onClick callback
       // If the user doesn't click, we should resolve after some time
-      setTimeout(() => resolve(true), 5500);
+      setTimeout(() => resolve(true), 5500)
     } catch (error) {
-      console.error("Error al preparar la actualización de archivos:", error);
-      toast.error("Error al preparar la actualización de archivos");
-      resolve(false);
+      console.error("Error al preparar la actualización de archivos:", error)
+      toast.error("Error al preparar la actualización de archivos")
+      resolve(false)
     }
-  });
-};
+  })
+}

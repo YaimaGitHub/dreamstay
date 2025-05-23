@@ -1,4 +1,3 @@
-
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
@@ -6,27 +5,12 @@ import { roomsData as initialRoomsData } from "@/data/rooms"
 import { allServices as initialServicesData } from "@/data/services"
 import { cubanProvinces } from "@/data/provinces"
 import { toast } from "@/components/ui/sonner"
-import { Room } from "@/types/room"
-import { Service } from "@/types/service"
-import { 
-  addRoom, 
-  updateRoom, 
-  deleteRoom, 
-  toggleRoomAvailability 
-} from "@/utils/room-operations"
-import { 
-  addService, 
-  updateService, 
-  deleteService 
-} from "@/utils/service-operations"
-import { 
-  exportDataAsJson, 
-  importDataFromJson 
-} from "@/utils/data-export-utils"
-import { 
-  generateTypeScriptFiles as generateFiles, 
-  autoExportSourceFiles as autoExport 
-} from "@/utils/ts-file-export"
+import type { Room } from "@/types/room"
+import type { Service } from "@/types/service"
+import { addRoom, updateRoom, deleteRoom, toggleRoomAvailability } from "@/utils/room-operations"
+import { addService, updateService, deleteService } from "@/utils/service-operations"
+import { exportDataAsJson, importDataFromJson } from "@/utils/data-export-utils"
+import { generateTypeScriptFiles as generateFiles, autoExportSourceFiles as autoExport } from "@/utils/ts-file-export"
 
 interface DataStoreContextType {
   rooms: Room[]
@@ -131,9 +115,7 @@ export const DataStoreProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const autoExportSourceFilesWrapper = async () => {
-    return await autoExport(rooms, services, provinces, () => 
-      generateFiles(rooms, services, provinces)
-    )
+    return await autoExport(rooms, services, provinces, () => generateFiles(rooms, services, provinces))
   }
 
   const resetToDefault = () => {
@@ -161,77 +143,31 @@ export const DataStoreProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const handleAddRoom = (room: Omit<Room, "id">) => {
-    addRoom(
-      room, 
-      rooms, 
-      setRooms, 
-      updateLastModified, 
-      autoExportSourceFilesWrapper
-    )
+    addRoom(room, rooms, setRooms, updateLastModified, autoExportSourceFilesWrapper)
   }
 
   const handleUpdateRoom = (roomData: Room) => {
-    updateRoom(
-      roomData, 
-      rooms, 
-      setRooms, 
-      updateLastModified, 
-      setPendingChanges, 
-      autoExportSourceFilesWrapper
-    )
+    updateRoom(roomData, rooms, setRooms, updateLastModified, setPendingChanges, autoExportSourceFilesWrapper)
   }
 
   const handleDeleteRoom = (id: number) => {
-    deleteRoom(
-      id, 
-      rooms, 
-      setRooms, 
-      updateLastModified, 
-      setPendingChanges, 
-      autoExportSourceFilesWrapper
-    )
+    deleteRoom(id, rooms, setRooms, updateLastModified, setPendingChanges, autoExportSourceFilesWrapper)
   }
 
   const handleToggleRoomAvailability = (id: number) => {
-    toggleRoomAvailability(
-      id, 
-      rooms, 
-      setRooms, 
-      updateLastModified, 
-      setPendingChanges, 
-      autoExportSourceFilesWrapper
-    )
+    toggleRoomAvailability(id, rooms, setRooms, updateLastModified, setPendingChanges, autoExportSourceFilesWrapper)
   }
 
   const handleAddService = (service: Omit<Service, "id">) => {
-    addService(
-      service, 
-      services, 
-      setServices, 
-      updateLastModified, 
-      autoExportSourceFilesWrapper
-    )
+    addService(service, services, setServices, updateLastModified, autoExportSourceFilesWrapper)
   }
 
   const handleUpdateService = (id: number, service: Partial<Service>) => {
-    updateService(
-      id, 
-      service, 
-      services, 
-      setServices, 
-      updateLastModified, 
-      autoExportSourceFilesWrapper
-    )
+    updateService(id, service, services, setServices, updateLastModified, autoExportSourceFilesWrapper)
   }
 
   const handleDeleteService = (id: number) => {
-    deleteService(
-      id, 
-      services, 
-      setServices, 
-      updateLastModified, 
-      autoExportSourceFilesWrapper
-    )
+    deleteService(id, services, setServices, updateLastModified, autoExportSourceFilesWrapper)
   }
 
   // Export all data as JSON
@@ -241,13 +177,7 @@ export const DataStoreProvider = ({ children }: { children: ReactNode }) => {
 
   // Import data from JSON
   const importData = (jsonData: string) => {
-    return importDataFromJson(
-      jsonData, 
-      setRooms, 
-      setServices, 
-      updateLastModified, 
-      autoExportSourceFilesWrapper
-    )
+    return importDataFromJson(jsonData, setRooms, setServices, updateLastModified, autoExportSourceFilesWrapper)
   }
 
   // Function to export source files

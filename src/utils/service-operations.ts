@@ -1,6 +1,4 @@
-
-import { Service } from "@/types/service"
-import { toast } from "@/components/ui/sonner"
+import type { Service } from "@/types/service"
 import { generateServicesSourceCode } from "./source-code-generator"
 
 // Functions for managing services
@@ -9,7 +7,7 @@ export const addService = (
   services: Service[],
   setServices: (services: Service[]) => void,
   updateLastModified: () => Date,
-  autoExportSourceFiles: () => boolean
+  autoExportSourceFiles: () => boolean,
 ) => {
   const newId = services.length > 0 ? Math.max(...services.map((s) => s.id)) + 1 : 1
   const newServices = [...services, { ...service, id: newId }]
@@ -25,12 +23,12 @@ export const addService = (
 }
 
 export const updateService = (
-  id: number, 
+  id: number,
   serviceUpdate: Partial<Service>,
   services: Service[],
   setServices: (services: Service[]) => void,
   updateLastModified: () => Date,
-  autoExportSourceFiles: () => boolean
+  autoExportSourceFiles: () => boolean,
 ) => {
   const newServices = services.map((service) => (service.id === id ? { ...service, ...serviceUpdate } : service))
   setServices(newServices)
@@ -49,7 +47,7 @@ export const deleteService = (
   services: Service[],
   setServices: (services: Service[]) => void,
   updateLastModified: () => Date,
-  autoExportSourceFiles: () => boolean
+  autoExportSourceFiles: () => boolean,
 ) => {
   const newServices = services.filter((service) => service.id !== id)
   setServices(newServices)

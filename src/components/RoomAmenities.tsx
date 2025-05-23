@@ -1,29 +1,82 @@
 import { Card } from "@/components/ui/card"
-import { Bed, Wifi, Coffee, Tv, Bath, Wind } from "lucide-react"
+import { Wifi, Tv, Coffee, Wind, Droplet, BedDouble } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface Amenity {
-  id: number
-  name: string
+  id?: number
+  title: string
   description: string
-  icon: JSX.Element
+  icon?: string
 }
 
 interface RoomAmenitiesProps {
-  amenities: Amenity[]
+  amenities: Amenity[] | string[]
+}
+
+// Función para obtener el icono basado en el título
+const getIconByTitle = (title: string) => {
+  const lowerTitle = title.toLowerCase()
+
+  if (lowerTitle.includes("wifi")) return <Wifi className="h-5 w-5" />
+  if (lowerTitle.includes("tv") || lowerTitle.includes("television")) return <Tv className="h-5 w-5" />
+  if (lowerTitle.includes("desayuno") || lowerTitle.includes("comida")) return <Coffee className="h-5 w-5" />
+  if (lowerTitle.includes("aire") || lowerTitle.includes("clima")) return <Wind className="h-5 w-5" />
+  if (lowerTitle.includes("baño") || lowerTitle.includes("ducha")) return <Droplet className="h-5 w-5" />
+  if (lowerTitle.includes("cama") || lowerTitle.includes("king") || lowerTitle.includes("queen"))
+    return <BedDouble className="h-5 w-5" />
+
+  // Icono por defecto
+  return <BedDouble className="h-5 w-5" />
+}
+
+// Función para convertir strings a objetos de amenidad
+const formatAmenities = (amenities: string[] | Amenity[]): Amenity[] => {
+  if (!amenities || amenities.length === 0) return []
+
+  if (typeof amenities[0] === "string") {
+    // Si son strings, convertirlos a objetos
+    return (amenities as string[]).map((item, index) => {
+      // Intentar dividir por líneas o por un delimitador específico
+      const parts = item.split("\n")
+      if (parts.length > 1) {
+        return {
+          id: index,
+          title: parts[0].trim(),
+          description: parts.slice(1).join(" ").trim(),
+        }
+      }
+
+      // Si no hay delimitador claro, usar todo como título
+      return {
+        id: index,
+        title: item,
+        description: "",
+      }
+    })
+  }
+
+  // Ya son objetos de amenidad
+  return amenities as Amenity[]
 }
 
 const RoomAmenities = ({ amenities }: RoomAmenitiesProps) => {
+  const formattedAmenities = formatAmenities(amenities)
+
+  if (formattedAmenities.length === 0) {
+    return null
+  }
+
   return (
     <div>
       <h3 className="text-2xl font-semibold mb-4">Lo que ofrece esta habitación</h3>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {amenities.map((amenity) => (
-          <Card key={amenity.id} className="p-4 flex items-start">
-            <div className="mr-3 text-terracotta">{amenity.icon}</div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {formattedAmenities.map((amenity, index) => (
+          <Card key={index} className={cn("p-4 flex items-start hover:shadow-md transition-shadow")}>
+            <div className="mr-4 text-terracotta">{getIconByTitle(amenity.title)}</div>
             <div>
-              <h4 className="font-medium">{amenity.name}</h4>
-              <p className="text-sm text-muted-foreground">{amenity.description}</p>
+              <h4 className="font-medium">{amenity.title}</h4>
+              {amenity.description && <p className="text-muted-foreground text-sm mt-1">{amenity.description}</p>}
             </div>
           </Card>
         ))}
@@ -31,45 +84,5 @@ const RoomAmenities = ({ amenities }: RoomAmenitiesProps) => {
     </div>
   )
 }
-
-// Datos de muestra para usar en las páginas
-export const sampleAmenities: Amenity[] = [
-  {
-    id: 1,
-    name: "Cama king size",
-    description: "Cama de alta calidad con ropa de cama premium",
-    icon: <Bed className="h-5 w-5" />,
-  },
-  {
-    id: 2,
-    name: "WiFi de alta velocidad",
-    description: "Conexión de Internet rápida y confiable",
-    icon: <Wifi className="h-5 w-5" />,
-  },
-  {
-    id: 3,
-    name: "Desayuno incluido",
-    description: "Desayuno buffet con opciones frescas y locales",
-    icon: <Coffee className="h-5 w-5" />,
-  },
-  {
-    id: 4,
-    name: "Smart TV",
-    description: "TV de 55 pulgadas con Netflix y Amazon Prime",
-    icon: <Tv className="h-5 w-5" />,
-  },
-  {
-    id: 5,
-    name: "Baño de lujo",
-    description: "Con ducha de lluvia y productos orgánicos",
-    icon: <Bath className="h-5 w-5" />,
-  },
-  {
-    id: 6,
-    name: "Aire acondicionado",
-    description: "Control de temperatura individual",
-    icon: <Wind className="h-5 w-5" />,
-  },
-]
 
 export default RoomAmenities

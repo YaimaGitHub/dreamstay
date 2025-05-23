@@ -1,4 +1,3 @@
-
 "use client"
 
 import type React from "react"
@@ -10,7 +9,6 @@ import { generateTypeScriptFiles } from "@/utils/ts-generation-utils"
 // Sample initial rooms data
 import { roomsData } from "../data/rooms"
 import { allServices } from "../data/services"
-import { FILE_NAME } from "@/utils/file-system-utils"
 
 const RoomStoreContext = createContext<RoomStore | undefined>(undefined)
 
@@ -196,7 +194,8 @@ export const RoomStoreProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       lastModified: now,
       lastUpdated: now,
       available: room.available !== undefined ? room.available : true,
-      isAvailable: room.isAvailable !== undefined ? room.isAvailable : room.available !== undefined ? room.available : true,
+      isAvailable:
+        room.isAvailable !== undefined ? room.isAvailable : room.available !== undefined ? room.available : true,
     }
 
     const updatedRooms = [...rooms, newRoom as Room]

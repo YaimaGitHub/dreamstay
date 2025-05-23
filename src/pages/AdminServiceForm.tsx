@@ -1,4 +1,3 @@
-
 "use client"
 
 import type React from "react"
@@ -15,7 +14,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
 import { useDataStore } from "@/hooks/use-data-store"
-import { type Service } from "@/types/service"
+import type { Service } from "@/types/service"
 import { ArrowLeft, Plus, X, Save, Download, Loader2 } from "lucide-react"
 
 const AdminServiceForm = () => {
@@ -51,7 +50,7 @@ const AdminServiceForm = () => {
         setIsAuthenticated(false)
       }
     }
-    
+
     checkAuth()
   }, [])
 
@@ -135,7 +134,7 @@ const AdminServiceForm = () => {
     try {
       // Use await to wait for file generation to complete
       const success = await generateTypeScriptFiles()
-      
+
       if (success) {
         toast({
           title: "Archivos TypeScript generados",
@@ -148,7 +147,7 @@ const AdminServiceForm = () => {
           variant: "destructive",
         })
       }
-      
+
       // Only navigate away after files are generated
       navigate("/admin/services")
     } catch (error) {
@@ -354,9 +353,9 @@ const AdminServiceForm = () => {
                     )}
                   </Button>
                 ) : (
-                  <Button 
-                    type="button" 
-                    className="w-full bg-green-600 hover:bg-green-700" 
+                  <Button
+                    type="button"
+                    className="w-full bg-green-600 hover:bg-green-700"
                     onClick={handleGenerateFiles}
                     disabled={isGeneratingFiles}
                   >

@@ -1,4 +1,3 @@
-
 import RoomCard from "./RoomCard"
 import type { Room } from "@/types/room"
 

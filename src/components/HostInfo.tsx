@@ -1,35 +1,55 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Card, CardContent } from "@/components/ui/card"
+import { User, Mail, Calendar } from "lucide-react"
 
 interface HostInfoProps {
-  name: string
-  since: number
-  photo?: string
+  host?: {
+    name: string
+    bio: string
+    photo: string
+    experience?: number
+    contact?: string
+  }
 }
 
-const HostInfo = ({ name, since, photo }: HostInfoProps) => {
-  const yearsAsHost = new Date().getFullYear() - since
-  const initials = name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .substring(0, 2)
+const HostInfo = ({ host }: HostInfoProps) => {
+  if (!host || !host.name) return null
 
   return (
-    <div className="flex items-center space-x-4 p-5 bg-white rounded-lg shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-md animate-fadeIn">
-      <div className="transition-transform duration-300 hover:scale-110">
-        <Avatar className="h-16 w-16 border-2 border-terracotta/20">
-          <AvatarImage src={photo || "/placeholder.svg"} alt={name} />
-          <AvatarFallback className="bg-terracotta/10 text-terracotta">{initials}</AvatarFallback>
-        </Avatar>
-      </div>
-      <div>
-        <h3 className="text-lg font-medium">Anfitrión: {name}</h3>
-        <p className="text-sm text-muted-foreground opacity-0 animate-fadeIn">
-          Anfitrión desde {since} {yearsAsHost > 0 && `(${yearsAsHost} ${yearsAsHost === 1 ? "año" : "años"})`}
-        </p>
-      </div>
-    </div>
+    <Card className="overflow-hidden">
+      <CardContent className="p-6">
+        <div className="flex flex-col md:flex-row gap-6 items-start">
+          <Avatar className="w-24 h-24 border-2 border-terracotta">
+            <AvatarImage src={host.photo || "/placeholder.svg"} alt={`Foto de ${host.name}`} />
+            <AvatarFallback className="bg-terracotta/20 text-terracotta">
+              <User className="w-12 h-12" />
+            </AvatarFallback>
+          </Avatar>
+
+          <div className="space-y-3 flex-1">
+            <div>
+              <h3 className="text-xl font-semibold">Tu anfitrión: {host.name}</h3>
+              {host.experience && host.experience > 0 && (
+                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  {host.experience} {host.experience === 1 ? "año" : "años"} como anfitrión
+                </p>
+              )}
+              {host.contact && (
+                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <Mail className="h-4 w-4" />
+                  {host.contact}
+                </p>
+              )}
+            </div>
+
+            <div className="text-sm">
+              <p className="leading-relaxed">{host.bio}</p>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 

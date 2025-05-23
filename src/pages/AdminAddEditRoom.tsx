@@ -1,4 +1,3 @@
-
 "use client"
 
 import AdminLayout from "@/components/AdminLayout"

@@ -1,4 +1,3 @@
-
 // Define FileSystem API types
 export interface FileSystemFileHandle {
   getFile: () => Promise<File>

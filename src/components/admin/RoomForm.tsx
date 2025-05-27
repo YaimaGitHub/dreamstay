@@ -8,12 +8,14 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { useEffect } from "react"
 
 // Import refactored components and hooks
 import BasicInfoFields from "@/components/admin/BasicInfoFields"
 import FeatureManager from "@/components/admin/FeatureManager"
 import ImageManager from "@/components/admin/ImageManager"
 import ReservedDatesManager from "@/components/admin/ReservedDatesManager"
+import HostInfoFields from "@/components/admin/HostInfoFields"
 import { roomFormSchema, type RoomFormValues } from "@/components/admin/RoomFormSchema"
 import { useRoomFormState } from "@/hooks/use-room-form-state"
 import { useRoomFormSubmission } from "@/hooks/use-room-form-submission"
@@ -23,12 +25,37 @@ type RoomFormProps = {
 }
 
 const RoomForm = ({ mode }: RoomFormProps) => {
-  const { rooms } = useDataStore()
+  const { rooms, updateRoom } = useDataStore()
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
 
   const roomId = id ? Number.parseInt(id) : undefined
   const currentRoom = roomId ? rooms.find((room) => room.id === roomId) : undefined
+
+  // Log detallado de la habitación cargada
+  useEffect(() => {
+    if (currentRoom && mode === "edit") {
+      console.log("🏠 Habitación cargada para edición:", {
+        id: currentRoom.id,
+        title: currentRoom.title,
+        whatsappNumber: currentRoom.whatsappNumber,
+        reservedDatesCount: currentRoom.reservedDates?.length || 0,
+        available: currentRoom.available,
+        isAvailable: currentRoom.isAvailable,
+      })
+
+      if (currentRoom.whatsappNumber) {
+        console.log(`📱 WhatsApp cargado: ${currentRoom.whatsappNumber}`)
+      }
+
+      if (currentRoom.reservedDates && currentRoom.reservedDates.length > 0) {
+        console.log(`📅 Fechas reservadas cargadas: ${currentRoom.reservedDates.length}`)
+        currentRoom.reservedDates.forEach((date, index) => {
+          console.log(`  📅 Fecha ${index + 1}: ${date.start} - ${date.end}`)
+        })
+      }
+    }
+  }, [currentRoom, mode])
 
   const form = useForm<RoomFormValues>({
     resolver: zodResolver(roomFormSchema),
@@ -48,6 +75,8 @@ const RoomForm = ({ mode }: RoomFormProps) => {
             isAvailable: currentRoom.available !== false,
             features: currentRoom.features,
             lastModified: currentRoom.lastUpdated ? new Date(currentRoom.lastUpdated) : new Date(),
+            // CAMPOS CRÍTICOS que deben cargarse
+            whatsappNumber: currentRoom.whatsappNumber || "", // WhatsApp del anfitrión
           }
         : {
             title: "",
@@ -63,6 +92,7 @@ const RoomForm = ({ mode }: RoomFormProps) => {
             isAvailable: true,
             features: [],
             lastModified: new Date(),
+            whatsappNumber: "", // WhatsApp del anfitrión
           },
   })
 
@@ -87,6 +117,10 @@ const RoomForm = ({ mode }: RoomFormProps) => {
   })
 
   function onSubmit(values: RoomFormValues) {
+    console.log("🚀 Enviando formulario con valores:", values)
+    console.log("📱 WhatsApp del formulario:", values.whatsappNumber)
+    console.log("📅 Fechas reservadas del formulario:", dateRange)
+
     handleSubmit(values)
   }
 
@@ -103,6 +137,9 @@ const RoomForm = ({ mode }: RoomFormProps) => {
           {/* Basic Information Fields */}
           <BasicInfoFields />
 
+          {/* Host Information Fields - INCLUYE WhatsApp */}
+          <HostInfoFields />
+
           <div className="space-y-4">
             {/* Image Manager */}
             <ImageManager roomImages={roomImages} setRoomImages={setRoomImages} />
@@ -110,7 +147,7 @@ const RoomForm = ({ mode }: RoomFormProps) => {
             {/* Feature Manager */}
             <FeatureManager features={features} setFeatures={setFeatures} />
 
-            {/* Reserved Dates Manager */}
+            {/* Reserved Dates Manager - INCLUYE fechas reservadas */}
             <ReservedDatesManager
               reservedDates={dateRange}
               setReservedDates={setDateRange}

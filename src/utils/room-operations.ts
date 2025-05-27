@@ -1,32 +1,48 @@
 import type { Room } from "@/types/room"
-import { generateRoomsSourceCode } from "./source-code-generator"
+import { toast } from "@/components/ui/sonner"
 
-// Operations for managing rooms
 export const addRoom = (
   room: Omit<Room, "id">,
   rooms: Room[],
   setRooms: (rooms: Room[]) => void,
   updateLastModified: () => Date,
-  autoExportSourceFilesWrapper: () => boolean,
+  autoExportSourceFiles: () => Promise<boolean>,
 ) => {
-  const newId = rooms.length > 0 ? Math.max(...rooms.map((r) => r.id)) + 1 : 1
-  const now = new Date().toISOString()
-  const newRoom = {
-    ...room,
-    id: newId,
-    lastUpdated: now,
+  try {
+    // Generate new ID
+    const newId = Math.max(...rooms.map((r) => r.id), 0) + 1
+
+    const newRoom: Room = {
+      ...room,
+      id: newId,
+      lastUpdated: new Date().toISOString(),
+      available: true,
+      isAvailable: true,
+      reservedDates: room.reservedDates || [],
+      // Asegurar que whatsappNumber esté presente
+      whatsappNumber: room.whatsappNumber || "",
+    }
+
+    const updatedRooms = [...rooms, newRoom]
+    setRooms(updatedRooms)
+    updateLastModified()
+
+    console.log("Habitación agregada:", newRoom)
+
+    // Auto-export source files
+    autoExportSourceFiles().then((success) => {
+      if (success) {
+        console.log("Archivos TypeScript actualizados automáticamente")
+      }
+    })
+
+    toast.success("Habitación agregada correctamente", {
+      description: `La habitación "${newRoom.title}" ha sido agregada con ID ${newId}`,
+    })
+  } catch (error) {
+    console.error("Error al agregar habitación:", error)
+    toast.error("Error al agregar la habitación")
   }
-
-  const newRooms = [...rooms, newRoom]
-  setRooms(newRooms)
-  updateLastModified()
-
-  // Update the source code directly
-  const roomsSourceCode = generateRoomsSourceCode(newRooms)
-  console.log("Código fuente actualizado con nueva habitación:", newId)
-  console.log(roomsSourceCode.substring(0, 200) + "...")
-
-  autoExportSourceFilesWrapper()
 }
 
 export const updateRoom = (
@@ -34,51 +50,44 @@ export const updateRoom = (
   rooms: Room[],
   setRooms: (rooms: Room[]) => void,
   updateLastModified: () => Date,
-  setPendingChanges: (setter: (prev: Record<string, any>) => Record<string, any>) => void,
-  autoExportSourceFilesWrapper: () => boolean,
+  setPendingChanges: (changes: Record<string, any>) => void,
+  autoExportSourceFiles: () => Promise<boolean>,
 ) => {
-  const now = new Date().toISOString()
-  const newRooms = rooms.map((room) => {
-    if (room.id === roomData.id) {
-      // Ensure all properties are properly updated
-      const updatedRoom = {
-        ...room,
-        ...roomData,
-        // Make sure these critical fields are always present
-        available: roomData.available !== undefined ? roomData.available : roomData.isAvailable,
-        isAvailable: roomData.isAvailable !== undefined ? roomData.isAvailable : roomData.available,
-        lastUpdated: now,
-        // Ensure province and reservedDates are preserved
-        province: roomData.province || room.province,
-        reservedDates: roomData.reservedDates || room.reservedDates,
-      }
-
-      // Save pending changes
-      setPendingChanges((prev) => ({
-        ...prev,
-        [`room-${room.id}`]: updatedRoom,
-      }))
-
-      return updatedRoom
+  try {
+    const updatedRoom: Room = {
+      ...roomData,
+      lastUpdated: new Date().toISOString(),
+      // Asegurar que whatsappNumber esté presente
+      whatsappNumber: roomData.whatsappNumber || "",
     }
-    return room
-  })
 
-  setRooms(newRooms)
-  const timestamp = updateLastModified()
+    const updatedRooms = rooms.map((room) => (room.id === roomData.id ? updatedRoom : room))
+    setRooms(updatedRooms)
+    updateLastModified()
 
-  // Update source code directly
-  const roomsSourceCode = generateRoomsSourceCode(newRooms)
-  console.log(`Código fuente actualizado para habitación ${roomData.id} a las ${timestamp.toISOString()}`)
-  console.log(roomsSourceCode.substring(0, 200) + "...")
+    // Clear pending changes for this room
+    setPendingChanges((prev) => {
+      const newChanges = { ...prev }
+      delete newChanges[`room-${roomData.id}`]
+      return newChanges
+    })
 
-  // Force immediate export of source files
-  setTimeout(() => {
-    autoExportSourceFilesWrapper()
+    console.log("Habitación actualizada:", updatedRoom)
 
-    // Log confirmation of update
-    console.log(`Room ${roomData.id} updated at ${timestamp.toISOString()}`)
-  }, 100)
+    // Auto-export source files
+    autoExportSourceFiles().then((success) => {
+      if (success) {
+        console.log("Archivos TypeScript actualizados automáticamente")
+      }
+    })
+
+    toast.success("Habitación actualizada correctamente", {
+      description: `Los cambios en "${updatedRoom.title}" han sido guardados`,
+    })
+  } catch (error) {
+    console.error("Error al actualizar habitación:", error)
+    toast.error("Error al actualizar la habitación")
+  }
 }
 
 export const deleteRoom = (
@@ -86,26 +95,43 @@ export const deleteRoom = (
   rooms: Room[],
   setRooms: (rooms: Room[]) => void,
   updateLastModified: () => Date,
-  setPendingChanges: (setter: (prev: Record<string, any>) => Record<string, any>) => void,
-  autoExportSourceFilesWrapper: () => boolean,
+  setPendingChanges: (changes: Record<string, any>) => void,
+  autoExportSourceFiles: () => Promise<boolean>,
 ) => {
-  const newRooms = rooms.filter((room) => room.id !== id)
-  setRooms(newRooms)
-  updateLastModified()
+  try {
+    const roomToDelete = rooms.find((room) => room.id === id)
+    if (!roomToDelete) {
+      toast.error("Habitación no encontrada")
+      return
+    }
 
-  // Update source code directly
-  const roomsSourceCode = generateRoomsSourceCode(newRooms)
-  console.log(`Código fuente actualizado después de eliminar habitación ${id}`)
-  console.log(roomsSourceCode.substring(0, 200) + "...")
+    const updatedRooms = rooms.filter((room) => room.id !== id)
+    setRooms(updatedRooms)
+    updateLastModified()
 
-  autoExportSourceFilesWrapper()
+    // Clear pending changes for this room
+    setPendingChanges((prev) => {
+      const newChanges = { ...prev }
+      delete newChanges[`room-${id}`]
+      return newChanges
+    })
 
-  // Remove pending changes for this room
-  setPendingChanges((prev) => {
-    const newPending = { ...prev }
-    delete newPending[`room-${id}`]
-    return newPending
-  })
+    console.log("Habitación eliminada:", roomToDelete)
+
+    // Auto-export source files
+    autoExportSourceFiles().then((success) => {
+      if (success) {
+        console.log("Archivos TypeScript actualizados automáticamente")
+      }
+    })
+
+    toast.success("Habitación eliminada correctamente", {
+      description: `La habitación "${roomToDelete.title}" ha sido eliminada`,
+    })
+  } catch (error) {
+    console.error("Error al eliminar habitación:", error)
+    toast.error("Error al eliminar la habitación")
+  }
 }
 
 export const toggleRoomAvailability = (
@@ -113,37 +139,50 @@ export const toggleRoomAvailability = (
   rooms: Room[],
   setRooms: (rooms: Room[]) => void,
   updateLastModified: () => Date,
-  setPendingChanges: (setter: (prev: Record<string, any>) => Record<string, any>) => void,
-  autoExportSourceFilesWrapper: () => boolean,
+  setPendingChanges: (changes: Record<string, any>) => void,
+  autoExportSourceFiles: () => Promise<boolean>,
 ) => {
-  const newRooms = rooms.map((room) => {
-    if (room.id === id) {
-      const now = new Date().toISOString()
-      const updatedRoom = {
-        ...room,
-        available: room.available === false ? true : false,
-        isAvailable: room.available === false ? true : false,
-        lastUpdated: now,
+  try {
+    const updatedRooms = rooms.map((room) => {
+      if (room.id === id) {
+        const updatedRoom = {
+          ...room,
+          available: !room.available,
+          isAvailable: !room.available,
+          lastUpdated: new Date().toISOString(),
+        }
+        return updatedRoom
       }
+      return room
+    })
 
-      // Save pending changes
-      setPendingChanges((prev) => ({
-        ...prev,
-        [`room-${room.id}`]: updatedRoom,
-      }))
+    setRooms(updatedRooms)
+    updateLastModified()
 
-      return updatedRoom
-    }
-    return room
-  })
+    const room = updatedRooms.find((r) => r.id === id)
+    const status = room?.available ? "disponible" : "no disponible"
 
-  setRooms(newRooms)
-  updateLastModified()
+    // Clear pending changes for this room
+    setPendingChanges((prev) => {
+      const newChanges = { ...prev }
+      delete newChanges[`room-${id}`]
+      return newChanges
+    })
 
-  // Update source code directly
-  const roomsSourceCode = generateRoomsSourceCode(newRooms)
-  console.log(`Código fuente actualizado después de cambiar disponibilidad de habitación ${id}`)
-  console.log(roomsSourceCode.substring(0, 200) + "...")
+    console.log(`Disponibilidad de habitación ${id} cambiada a: ${status}`)
 
-  autoExportSourceFilesWrapper()
+    // Auto-export source files
+    autoExportSourceFiles().then((success) => {
+      if (success) {
+        console.log("Archivos TypeScript actualizados automáticamente")
+      }
+    })
+
+    toast.success("Disponibilidad actualizada", {
+      description: `La habitación ahora está ${status}`,
+    })
+  } catch (error) {
+    console.error("Error al cambiar disponibilidad:", error)
+    toast.error("Error al cambiar la disponibilidad")
+  }
 }

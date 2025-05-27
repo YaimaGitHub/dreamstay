@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { WhatsAppInput } from "@/components/ui/whatsapp-input"
 import { useFormContext } from "react-hook-form"
 import { useDataStore } from "@/hooks/use-data-store"
 
@@ -175,6 +176,26 @@ const BasicInfoFields = () => {
               />
             </FormControl>
             <FormDescription>Descripción detallada de la habitación</FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="whatsappNumber"
+        render={({ field }) => (
+          <FormItem>
+            <FormControl>
+              <WhatsAppInput
+                value={field.value || ""}
+                onChange={field.onChange}
+                label="Número de WhatsApp del Anfitrión"
+                description="Número donde se enviarán las solicitudes de reserva para esta habitación"
+                placeholder="+1809555123"
+                required
+              />
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}

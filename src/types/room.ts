@@ -1,4 +1,5 @@
 import type React from "react"
+
 export interface Room {
   id: number
   title: string
@@ -16,6 +17,7 @@ export interface Room {
   isAvailable?: boolean
   lastModified?: string
   lastUpdated?: string
+  whatsappNumber?: string
   images?: Array<{
     id: number
     url: string
@@ -47,4 +49,9 @@ export interface Amenity {
   title: string
   description: string
   icon?: string
+}
+
+export interface ReservedDateRange {
+  start: string
+  end: string
 }

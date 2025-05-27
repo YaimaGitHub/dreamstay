@@ -12,11 +12,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { CalendarIcon, ChevronDown, Check, Loader2 } from "lucide-react"
+import { CalendarIcon, ChevronDown, Check, Loader2, AlertTriangle } from "lucide-react"
 import type { DateRange } from "react-day-picker"
 import type { SelectedService } from "./BookingForm"
 import type { Room } from "@/types/room"
 import { useToast } from "@/components/ui/use-toast"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface ReservationFormProps {
   room: Room
@@ -141,6 +142,17 @@ const ReservationForm = ({
       return
     }
 
+    // Validar que la habitación tenga número de WhatsApp
+    if (!room.whatsappNumber || room.whatsappNumber.trim() === "") {
+      toast({
+        title: "Error de configuración",
+        description: "Esta habitación no tiene configurado un número de WhatsApp. Contacta al administrador.",
+        variant: "destructive",
+      })
+      setIsSubmitting(false)
+      return
+    }
+
     // Simulación de envío
     setTimeout(() => {
       setIsSubmitting(false)
@@ -148,7 +160,8 @@ const ReservationForm = ({
 
       // Preparar mensaje para WhatsApp
       const message = formatWhatsAppMessage()
-      const phoneNumber = "1234567890" // Número del dueño del sitio
+      // Usar el número de WhatsApp específico de la habitación
+      const phoneNumber = room.whatsappNumber.replace(/\D/g, "") // Remover caracteres no numéricos
       const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`
 
       // Abrir WhatsApp en una nueva pestaña
@@ -156,7 +169,7 @@ const ReservationForm = ({
 
       toast({
         title: "¡Reserva solicitada!",
-        description: "Tu solicitud ha sido enviada. Te contactaremos pronto para confirmar.",
+        description: `Tu solicitud ha sido enviada al anfitrión. Te contactaremos pronto para confirmar.`,
       })
 
       // Cerrar el formulario después de 2 segundos
@@ -164,6 +177,26 @@ const ReservationForm = ({
         onClose()
       }, 2000)
     }, 1500)
+  }
+
+  // Verificar si la habitación tiene WhatsApp configurado
+  if (!room.whatsappNumber || room.whatsappNumber.trim() === "") {
+    return (
+      <div className="py-4">
+        <Alert className="border-red-200 bg-red-50">
+          <AlertTriangle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-800">
+            Esta habitación no tiene configurado un número de WhatsApp. Por favor, contacta al administrador para
+            completar la configuración.
+          </AlertDescription>
+        </Alert>
+        <div className="pt-4 flex justify-end">
+          <Button variant="outline" onClick={onClose}>
+            Cerrar
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -177,6 +210,7 @@ const ReservationForm = ({
         <div>
           <h3 className="font-medium">{room.title}</h3>
           <p className="text-sm text-muted-foreground">{room.location}</p>
+          <p className="text-xs text-green-600">WhatsApp: {room.whatsappNumber}</p>
         </div>
       </div>
 

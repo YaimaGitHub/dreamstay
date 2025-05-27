@@ -28,6 +28,7 @@ export interface Room {
   amenities?: Amenity[]
   services?: Service[]
   images?: RoomImage[]
+  whatsappNumber?: string // Campo obligatorio para WhatsApp del anfitrión
 }
 
 export interface Amenity {
@@ -77,7 +78,7 @@ export interface AppConfig {
   }
 }
 
-// Configuración por defecto
+// Configuración por defecto con números de WhatsApp preconfigurados
 const defaultConfig: AppConfig = {
   rooms: [
     {
@@ -92,6 +93,7 @@ const defaultConfig: AppConfig = {
       features: ["Baño privado", "WiFi gratis", "Desayuno incluido"],
       type: "Suite",
       area: 35,
+      whatsappNumber: "+1809555123", // WhatsApp preconfigurado
     },
     {
       id: 2,
@@ -105,6 +107,7 @@ const defaultConfig: AppConfig = {
       features: ["Baño privado", "WiFi gratis", "TV de pantalla plana"],
       type: "Estándar",
       area: 25,
+      whatsappNumber: "+1829555456", // WhatsApp preconfigurado
     },
     {
       id: 3,
@@ -118,6 +121,7 @@ const defaultConfig: AppConfig = {
       features: ["Baño de lujo", "WiFi de alta velocidad", "Desayuno gourmet"],
       type: "Suite",
       area: 40,
+      whatsappNumber: "+1849555789", // WhatsApp preconfigurado
     },
     {
       id: 4,
@@ -131,6 +135,7 @@ const defaultConfig: AppConfig = {
       features: ["2 camas dobles", "WiFi gratis", "TV por cable"],
       type: "Familiar",
       area: 38,
+      whatsappNumber: "+34666123456", // WhatsApp preconfigurado
     },
     {
       id: 5,
@@ -144,6 +149,7 @@ const defaultConfig: AppConfig = {
       features: ["Baño compartido", "WiFi gratis", "Escritorio"],
       type: "Económica",
       area: 18,
+      whatsappNumber: "+52555987654", // WhatsApp preconfigurado
     },
     {
       id: 6,
@@ -157,6 +163,7 @@ const defaultConfig: AppConfig = {
       features: ["Minibar", "WiFi gratis", "Desayuno buffet"],
       type: "Suite",
       area: 32,
+      whatsappNumber: "+57300123456", // WhatsApp preconfigurado
     },
   ],
   services: [

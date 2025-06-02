@@ -1,5 +1,6 @@
 "use client"
 
+import type React from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -7,12 +8,15 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { CalendarIcon, ChevronDown } from "lucide-react"
+import { CalendarIcon, ChevronDown, Clock, Globe, MapPin } from "lucide-react"
 import type { DateRange } from "react-day-picker"
 import AdditionalServices, { sampleServices } from "@/components/AdditionalServices"
 import ReservationForm from "@/components/ReservationForm"
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import type { Room } from "@/types/room"
+import PricingBreakdownDetailed from "@/components/PricingBreakdownDetailed"
+import { Badge } from "@/components/ui/badge"
+import { toast } from "sonner"
 
 interface BookingFormProps {
   roomId: number
@@ -26,6 +30,15 @@ export interface SelectedService {
   price: number
 }
 
+type TourismOption = {
+  id: string
+  label: string
+  type: "national" | "international"
+  mode: "nightly" | "hourly"
+  price: number
+  icon: React.ReactNode
+}
+
 const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
   const [guests, setGuests] = useState("2")
@@ -34,6 +47,66 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
   const [showReservationForm, setShowReservationForm] = useState(false)
   const [isDateAvailable, setIsDateAvailable] = useState<boolean | null>(null)
   const [showAvailabilityMessage, setShowAvailabilityMessage] = useState(false)
+  const [selectedTourismOption, setSelectedTourismOption] = useState<string>("")
+  const [hours, setHours] = useState("24")
+
+  // Obtener opciones de turismo disponibles
+  const getTourismOptions = (): TourismOption[] => {
+    const options: TourismOption[] = []
+
+    // Turismo Internacional (solo por noche)
+    if (
+      room.pricing?.internationalTourism?.enabled &&
+      room.pricing.internationalTourism.nightlyRate?.enabled &&
+      room.pricing.internationalTourism.nightlyRate.price > 0
+    ) {
+      options.push({
+        id: "international-nightly",
+        label: "Turismo Internacional - Por Noche",
+        type: "international",
+        mode: "nightly",
+        price: room.pricing.internationalTourism.nightlyRate.price,
+        icon: <Globe className="h-4 w-4" />,
+      })
+    }
+
+    // Turismo Nacional por noche
+    if (
+      room.pricing?.nationalTourism?.enabled &&
+      room.pricing.nationalTourism.nightlyRate?.enabled &&
+      room.pricing.nationalTourism.nightlyRate.price > 0
+    ) {
+      options.push({
+        id: "national-nightly",
+        label: "Turismo Nacional - Por Noche",
+        type: "national",
+        mode: "nightly",
+        price: room.pricing.nationalTourism.nightlyRate.price,
+        icon: <MapPin className="h-4 w-4" />,
+      })
+    }
+
+    // Turismo Nacional por hora
+    if (
+      room.pricing?.nationalTourism?.enabled &&
+      room.pricing.nationalTourism.hourlyRate?.enabled &&
+      room.pricing.nationalTourism.hourlyRate.price > 0
+    ) {
+      options.push({
+        id: "national-hourly",
+        label: "Turismo Nacional - Por Hora",
+        type: "national",
+        mode: "hourly",
+        price: room.pricing.nationalTourism.hourlyRate.price,
+        icon: <Clock className="h-4 w-4" />,
+      })
+    }
+
+    return options
+  }
+
+  const tourismOptions = getTourismOptions()
+  const selectedOption = tourismOptions.find((opt) => opt.id === selectedTourismOption)
 
   // Calcular la duración de la estancia en días
   const getStayDuration = () => {
@@ -50,15 +123,11 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
       return
     }
 
-    // Get the reserved dates from the room data
     const reservedDates = room.reservedDates || []
-
-    // Check if selected dates overlap with any reserved dates
     const isOverlapping = reservedDates.some((reservedRange) => {
       const reservedStart = new Date(reservedRange.start)
       const reservedEnd = new Date(reservedRange.end)
 
-      // Check for overlap
       return (
         (range.from <= reservedEnd && range.from >= reservedStart) ||
         (range.to <= reservedEnd && range.to >= reservedStart) ||
@@ -66,24 +135,28 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
       )
     })
 
-    // Set availability status (true if NOT overlapping with reserved dates)
     setIsDateAvailable(!isOverlapping)
     setShowAvailabilityMessage(true)
 
-    // Hide message after 5 seconds
     setTimeout(() => {
       setShowAvailabilityMessage(false)
     }, 5000)
   }
 
-  // Calcular el precio total de la habitación
-  const roomTotalPrice = price * duration
+  // Calcular el precio total de la habitación según la opción seleccionada
+  const getRoomTotalPrice = () => {
+    if (!selectedOption) return 0
 
-  // Calcular el precio total de los servicios adicionales
+    if (selectedOption.mode === "nightly") {
+      return selectedOption.price * duration
+    } else {
+      return selectedOption.price * Number.parseInt(hours)
+    }
+  }
+
+  const roomTotalPrice = getRoomTotalPrice()
   const servicesTotalPrice = selectedServices.reduce((total, service) => total + service.price, 0)
-
-  // Calcular el precio total (habitación + servicios)
-  const totalPrice = roomTotalPrice + servicesTotalPrice + 40 // 40 = tarifas fijas (limpieza + servicio)
+  const totalPrice = roomTotalPrice + servicesTotalPrice + 40
 
   const handleServiceToggle = (serviceId: number, isSelected: boolean) => {
     const service = sampleServices.find((s) => s.id === serviceId)
@@ -105,9 +178,22 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
   }
 
   const handleBooking = () => {
-    setIsProcessing(true)
+    // Verificar si WhatsApp está habilitado para esta habitación
+    if (!room.hostWhatsApp?.enabled) {
+      toast.error("Esta habitación no tiene WhatsApp configurado para reservas")
+      return
+    }
 
-    // Verificar disponibilidad (simulado)
+    // Verificar que al menos un número esté configurado
+    const canSendToPrimary = room.hostWhatsApp.sendToPrimary && room.hostWhatsApp.primary
+    const canSendToSecondary = room.hostWhatsApp.sendToSecondary && room.hostWhatsApp.secondary
+
+    if (!canSendToPrimary && !canSendToSecondary) {
+      toast.error("No hay números de WhatsApp configurados para recibir reservas")
+      return
+    }
+
+    setIsProcessing(true)
     setTimeout(() => {
       setIsProcessing(false)
       setShowReservationForm(true)
@@ -121,10 +207,6 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
   return (
     <div className="bg-white rounded-lg border border-border p-6 sticky top-24">
       <div className="mb-6">
-        <div className="flex items-baseline mb-2">
-          <span className="text-2xl font-bold">${price}</span>
-          <span className="text-muted-foreground ml-1">/ noche</span>
-        </div>
         <div className="flex items-center">
           <div className="flex items-center text-sm">
             <span className="text-terracotta">★★★★★</span>
@@ -136,6 +218,45 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
       </div>
 
       <div className="space-y-4">
+        {/* Selector de tipo de turismo */}
+        {tourismOptions.length > 0 && (
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Tipo de Turismo</label>
+            <Select value={selectedTourismOption} onValueChange={setSelectedTourismOption}>
+              <SelectTrigger className="w-full border-border">
+                <SelectValue placeholder="Seleccionar tipo de turismo" />
+              </SelectTrigger>
+              <SelectContent>
+                {tourismOptions.map((option) => (
+                  <SelectItem key={option.id} value={option.id}>
+                    <div className="flex items-center gap-2">
+                      {option.icon}
+                      <span>{option.label}</span>
+                      <Badge variant="outline" className="ml-auto">
+                        ${option.price}
+                      </Badge>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {selectedOption && (
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {selectedOption.icon}
+                    <span className="text-sm font-medium">{selectedOption.label}</span>
+                  </div>
+                  <Badge variant="default">
+                    ${selectedOption.price} / {selectedOption.mode === "nightly" ? "noche" : "hora"}
+                  </Badge>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="space-y-2">
           <label className="block text-sm font-medium">Fechas</label>
           <Popover>
@@ -174,6 +295,25 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
             </PopoverContent>
           </Popover>
         </div>
+
+        {/* Selector de horas si está en modo por hora */}
+        {selectedOption?.mode === "hourly" && (
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Número de horas</label>
+            <Select value={hours} onValueChange={setHours}>
+              <SelectTrigger className="w-full border-border">
+                <SelectValue placeholder="Seleccionar horas" />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 24 }, (_, i) => i + 1).map((hour) => (
+                  <SelectItem key={hour} value={hour.toString()}>
+                    {hour} hora{hour > 1 ? "s" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <div className="space-y-2">
           <label className="block text-sm font-medium">Huéspedes</label>
@@ -251,10 +391,32 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
             <Button
               className="w-full bg-terracotta hover:bg-terracotta/90 mt-6"
               onClick={handleBooking}
-              disabled={isProcessing || !dateRange?.from || !dateRange?.to || isDateAvailable === false}
+              disabled={
+                isProcessing ||
+                !selectedTourismOption ||
+                !dateRange?.from ||
+                !dateRange?.to ||
+                isDateAvailable === false
+              }
             >
               {isProcessing ? (
                 "Verificando disponibilidad..."
+              ) : !selectedTourismOption ? (
+                <span className="flex items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 mr-2"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  Seleccione tipo de turismo
+                </span>
               ) : !dateRange?.from || !dateRange?.to ? (
                 <span className="flex items-center justify-center">
                   <svg
@@ -300,7 +462,10 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
               selectedServices={selectedServices}
               onClose={closeReservationForm}
               duration={duration}
-              roomPrice={price}
+              roomPrice={selectedOption?.price || room.price}
+              pricingMode={selectedOption?.mode || "nightly"}
+              hours={selectedOption?.mode === "hourly" ? Number.parseInt(hours) : undefined}
+              selectedTourismType={selectedOption?.type}
             />
           </DialogContent>
         </Dialog>
@@ -308,41 +473,18 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
         <p className="text-center text-sm text-muted-foreground">No se te cobrará nada todavía</p>
       </div>
 
-      <div className="border-t border-border mt-6 pt-4 space-y-2">
-        <div className="flex justify-between">
-          <span>
-            ${price} x {duration} noches
-          </span>
-          <span>${roomTotalPrice}</span>
-        </div>
-        <div className="flex justify-between">
-          <span>Tarifa de limpieza</span>
-          <span>$25</span>
-        </div>
-        <div className="flex justify-between">
-          <span>Tarifa de servicio</span>
-          <span>$15</span>
-        </div>
-
-        {selectedServices.length > 0 && (
-          <>
-            <div className="pt-2 border-t border-border">
-              <h4 className="font-medium mb-2">Servicios adicionales:</h4>
-              {selectedServices.map((service) => (
-                <div key={service.id} className="flex justify-between text-sm">
-                  <span>{service.title}</span>
-                  <span>${service.price}</span>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-
-        <div className="flex justify-between font-bold border-t border-border pt-4 mt-4">
-          <span>Total</span>
-          <span>${totalPrice}</span>
-        </div>
-      </div>
+      {/* Desglose de precios */}
+      {selectedOption && (
+        <PricingBreakdownDetailed
+          room={room}
+          selectedTourismType={selectedOption.type}
+          pricingMode={selectedOption.mode}
+          nights={duration}
+          hours={Number.parseInt(hours)}
+          selectedServices={selectedServices}
+          showAllOptions={false}
+        />
+      )}
     </div>
   )
 }

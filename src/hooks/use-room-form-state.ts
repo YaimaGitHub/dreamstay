@@ -1,10 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import type { DateRange } from "react-day-picker"
-import type { Room } from "@/types/room"
 import type { UseFormReturn } from "react-hook-form"
+import type { Room } from "@/types/room"
 import type { RoomFormValues } from "@/components/admin/RoomFormSchema"
+import type { DateRange } from "react-day-picker"
 
 interface UseRoomFormStateProps {
   mode: "add" | "edit"
@@ -12,59 +12,63 @@ interface UseRoomFormStateProps {
   form: UseFormReturn<RoomFormValues>
 }
 
-export function useRoomFormState({ mode, currentRoom, form }: UseRoomFormStateProps) {
+export const useRoomFormState = ({ mode, currentRoom, form }: UseRoomFormStateProps) => {
   const [features, setFeatures] = useState<string[]>([])
-  const [reservedDates, setReservedDates] = useState<DateRange | undefined>()
-  const [roomImages, setRoomImages] = useState<{ id: number; url: string; alt: string }[]>([])
+  const [roomImages, setRoomImages] = useState<Array<{ id: number; url: string; alt: string }>>([])
   const [lastModified, setLastModified] = useState<Date | null>(null)
-  const [initialReservedDates, setInitialReservedDates] = useState<Array<{ start: string; end: string }>>([])
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
+
+  // Preparar fechas reservadas iniciales
+  const initialReservedDates = currentRoom?.reservedDates || []
 
   useEffect(() => {
     if (mode === "edit" && currentRoom) {
-      // Set features
+      console.log("=== LOADING ROOM DATA FOR EDITING ===")
+      console.log("Current room:", currentRoom)
+      console.log("WhatsApp config:", currentRoom.hostWhatsApp)
+      console.log("Reserved dates:", currentRoom.reservedDates)
+
+      // Cargar características
       setFeatures(currentRoom.features || [])
 
-      // Set images
+      // Cargar imágenes
       if (currentRoom.images && currentRoom.images.length > 0) {
         setRoomImages(currentRoom.images)
       } else if (currentRoom.image) {
-        // Si no hay imágenes pero hay una imagen principal, la añadimos al array
         setRoomImages([
           {
             id: 1,
             url: currentRoom.image,
-            alt: currentRoom.title,
+            alt: `Imagen de ${currentRoom.title}`,
           },
         ])
       }
 
-      // Set last modified date
+      // Cargar fecha de última modificación
       if (currentRoom.lastUpdated) {
         setLastModified(new Date(currentRoom.lastUpdated))
       }
 
-      // Set reserved dates if they exist
-      if (currentRoom.reservedDates && currentRoom.reservedDates.length > 0) {
-        setInitialReservedDates(currentRoom.reservedDates)
+      // CRÍTICO: Cargar configuración de WhatsApp en el formulario
+      if (currentRoom.hostWhatsApp) {
+        console.log("Loading WhatsApp config into form:", currentRoom.hostWhatsApp)
+        form.setValue("hostWhatsApp.enabled", currentRoom.hostWhatsApp.enabled)
+        form.setValue("hostWhatsApp.primary", currentRoom.hostWhatsApp.primary || "")
+        form.setValue("hostWhatsApp.secondary", currentRoom.hostWhatsApp.secondary || "")
+        form.setValue("hostWhatsApp.sendToPrimary", currentRoom.hostWhatsApp.sendToPrimary ?? true)
+        form.setValue("hostWhatsApp.sendToSecondary", currentRoom.hostWhatsApp.sendToSecondary ?? false)
       }
 
-      // Set province field
-      if (currentRoom.province) {
-        form.setValue("province", currentRoom.province)
-      }
+      console.log("Form values after loading:", form.getValues())
     }
-  }, [currentRoom, mode, form])
+  }, [mode, currentRoom, form])
 
   return {
     features,
     setFeatures,
-    reservedDates,
-    setReservedDates,
     roomImages,
     setRoomImages,
     lastModified,
-    setLastModified,
     initialReservedDates,
     dateRange,
     setDateRange,

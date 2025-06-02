@@ -10,153 +10,163 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { format } from "date-fns"
-import { es } from "date-fns/locale"
-import { CalendarIcon, ArrowLeft } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { ArrowLeft, MessageCircle, Users, User } from "lucide-react"
 import { useConfig } from "@/contexts/ConfigContext"
 import type { Room } from "@/types/room"
-import { cn } from "@/lib/utils"
-import { v4 as uuidv4 } from "uuid"
+import { WhatsAppInput } from "@/components/ui/whatsapp-input"
 
 const RoomEdit = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { rooms, addRoom, updateRoom } = useConfig();
-  const isNewRoom = id === undefined;
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const { rooms, addRoom, updateRoom } = useConfig()
+  const isNewRoom = id === undefined
 
   // Estado para el formulario
   const [formData, setFormData] = useState<Room>({
-    id: '',
-    name: '',
-    description: '',
+    id: 0,
+    title: "",
+    description: "",
     price: 0,
-    currency: 'USD',
-    capacity: 2,
-    size: 30,
-    images: [],
-    amenities: [],
-    availableDates: {
-      start: new Date().toISOString(),
-      end: new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString(),
+    location: "",
+    province: "",
+    rating: 5,
+    reviews: 0,
+    image: "",
+    features: [],
+    type: "Estándar",
+    area: 30,
+    available: true,
+    hostWhatsApp: {
+      enabled: false,
+      primary: "",
+      secondary: "",
+      sendToPrimary: true,
+      sendToSecondary: false,
     },
-    featured: false,
-  });
+  })
+
+  // Estados para validación de WhatsApp
+  const [primaryValid, setPrimaryValid] = useState(false)
+  const [secondaryValid, setSecondaryValid] = useState(false)
 
   // Estado para nuevas imágenes y amenidades
-  const [newImage, setNewImage] = useState('');
-  const [newAmenity, setNewAmenity] = useState('');
+  const [newImage, setNewImage] = useState("")
+  const [newAmenity, setNewAmenity] = useState("")
 
   // Cargar datos de la habitación si estamos editando
   useEffect(() => {
     if (!isNewRoom && id) {
-      const room = rooms.find(r => r.id === id);
+      const room = rooms.find((r) => r.id === Number(id))
       if (room) {
-        setFormData(room);
+        setFormData(room)
       } else {
-        navigate('/admin/rooms');
+        navigate("/admin/rooms")
       }
     } else {
       // Si es una nueva habitación, generar un ID único
-      setFormData(prev => ({ ...prev, id: uuidv4() }));
+      setFormData((prev) => ({ ...prev, id: Math.floor(Math.random() * 10000) }))
     }
-  }, [id, rooms, isNewRoom, navigate]);
+  }, [id, rooms, isNewRoom, navigate])
 
   // Manejar cambios en los campos del formulario
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+  }
 
   // Manejar cambios en campos numéricos
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: Number.parseFloat(value) || 0 }));
-  };
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: Number.parseFloat(value) || 0 }))
+  }
 
   // Manejar cambios en el switch
   const handleSwitchChange = (checked: boolean) => {
-    setFormData(prev => ({ ...prev, featured: checked }));
-  };
+    setFormData((prev) => ({ ...prev, featured: checked }))
+  }
 
   // Manejar cambios en el select
   const handleSelectChange = (value: string) => {
-    setFormData(prev => ({ ...prev, currency: value }));
-  };
-
-  // Manejar cambios en las fechas
-  const handleDateChange = (field: 'start' | 'end', date: Date | undefined) => {
-    if (date) {
-      setFormData(prev => ({
-        ...prev,
-        availableDates: {
-          ...prev.availableDates,
-          [field]: date.toISOString()
-        }
-      }));
-    }
-  };
+    setFormData((prev) => ({ ...prev, currency: value }))
+  }
 
   // Añadir una nueva imagen
   const handleAddImage = () => {
-    if (newImage.trim() && !formData.images.includes(newImage.trim())) {
-      setFormData(prev => ({
+    if (newImage.trim() && !formData.images?.some((img) => img.url === newImage.trim())) {
+      setFormData((prev) => ({
         ...prev,
-        images: [...prev.images, newImage.trim()]
-      }));
-      setNewImage('');
+        images: [...(prev.images || []), { id: Date.now(), url: newImage.trim(), alt: "Imagen de habitación" }],
+      }))
+      setNewImage("")
     }
-  };
+  }
 
   // Eliminar una imagen
   const handleRemoveImage = (index: number) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
-  };
+      images: prev.images?.filter((_, i) => i !== index) || [],
+    }))
+  }
 
   // Añadir una nueva amenidad
   const handleAddAmenity = () => {
-    if (newAmenity.trim() && !formData.amenities.includes(newAmenity.trim())) {
-      setFormData(prev => ({
+    if (newAmenity.trim() && !formData.features.includes(newAmenity.trim())) {
+      setFormData((prev) => ({
         ...prev,
-        amenities: [...prev.amenities, newAmenity.trim()]
-      }));
-      setNewAmenity('');
+        features: [...prev.features, newAmenity.trim()],
+      }))
+      setNewAmenity("")
     }
-  };
+  }
 
   // Eliminar una amenidad
   const handleRemoveAmenity = (index: number) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      amenities: prev.amenities.filter((_, i) => i !== index)
-    }));
-  };
+      features: prev.features.filter((_, i) => i !== index),
+    }))
+  }
 
   // Guardar la habitación
   const handleSave = () => {
-    if (isNewRoom) {
-      addRoom(formData);
-    } else {
-      updateRoom(formData.id, formData);
+    // Validar que si WhatsApp está habilitado, al menos el número principal esté configurado
+    if (formData.hostWhatsApp?.enabled && !formData.hostWhatsApp.primary) {
+      alert("Si habilita WhatsApp, debe proporcionar al menos el número principal")
+      return
     }
-    navigate('/admin/rooms');
-  };
+
+    // Asegurarse de que los valores de sendToPrimary y sendToSecondary estén configurados
+    const updatedFormData = {
+      ...formData,
+      hostWhatsApp: formData.hostWhatsApp?.enabled
+        ? {
+            ...formData.hostWhatsApp,
+            sendToPrimary: formData.hostWhatsApp.sendToPrimary ?? true,
+            sendToSecondary: formData.hostWhatsApp.sendToSecondary ?? false,
+          }
+        : undefined,
+    }
+
+    if (isNewRoom) {
+      addRoom(updatedFormData)
+    } else {
+      updateRoom(updatedFormData.id, updatedFormData)
+    }
+    navigate("/admin/rooms")
+  }
 
   // Volver a la lista de habitaciones
   const handleBack = () => {
-    navigate('/admin/rooms');
-  };
+    navigate("/admin/rooms")
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold tracking-tight">
-          {isNewRoom ? 'Añadir Nueva Habitación' : 'Editar Habitación'}
+          {isNewRoom ? "Añadir Nueva Habitación" : "Editar Habitación"}
         </h1>
         <Button variant="outline" onClick={handleBack}>
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -167,35 +177,31 @@ const RoomEdit = () => {
       <Card>
         <CardHeader>
           <CardTitle>Información Básica</CardTitle>
-          <CardDescription>
-            Detalles principales de la habitación
-          </CardDescription>
+          <CardDescription>Detalles principales de la habitación</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nombre de la Habitación</Label>
+              <Label htmlFor="title">Nombre de la Habitación</Label>
               <Input
-                id="name"
-                name="name"
-                value={formData.name}
+                id="title"
+                name="title"
+                value={formData.title}
                 onChange={handleChange}
                 placeholder="Suite Deluxe"
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="featured">Destacada</Label>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="featured"
-                  checked={formData.featured}
-                  onCheckedChange={handleSwitchChange}
-                />
-                <Label htmlFor="featured">
-                  {formData.featured ? 'Sí' : 'No'}
-                </Label>
-              </div>
+              <Label htmlFor="location">Ubicación</Label>
+              <Input
+                id="location"
+                name="location"
+                value={formData.location}
+                onChange={handleChange}
+                placeholder="La Habana, Cuba"
+                required
+              />
             </div>
           </div>
 
@@ -225,96 +231,214 @@ const RoomEdit = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="currency">Moneda</Label>
-              <Select value={formData.currency} onValueChange={handleSelectChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar moneda" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="USD">USD - Dólar Estadounidense</SelectItem>
-                  <SelectItem value="EUR">EUR - Euro</SelectItem>
-                  <SelectItem value="GBP">GBP - Libra Esterlina</SelectItem>
-                  <SelectItem value="MXN">MXN - Peso Mexicano</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="capacity">Capacidad (personas)</Label>
+              <Label htmlFor="rating">Calificación</Label>
               <Input
-                id="capacity"
-                name="capacity"
+                id="rating"
+                name="rating"
                 type="number"
-                value={formData.capacity}
+                value={formData.rating}
                 onChange={handleNumberChange}
                 min={1}
-                max={10}
+                max={5}
+                step={0.1}
               />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="size">Tamaño (m²)</Label>
-            <Input
-              id="size"
-              name="size"
-              type="number"
-              value={formData.size}
-              onChange={handleNumberChange}
-              min={1}
-            />
+            <div className="space-y-2">
+              <Label htmlFor="area">Área (m²)</Label>
+              <Input id="area" name="area" type="number" value={formData.area} onChange={handleNumberChange} min={1} />
+            </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* Sección de WhatsApp de Anfitriones */}
       <Card>
         <CardHeader>
-          <CardTitle>Fechas de Disponibilidad</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <MessageCircle className="h-5 w-5 text-green-600" />
+            Configuración de WhatsApp de Anfitriones
+          </CardTitle>
           <CardDescription>
-            Establece el período en que la habitación estará disponible
+            Configure los números de WhatsApp de los anfitriones para recibir notificaciones de reservas
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Fecha de inicio</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.availableDates.start && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.availableDates.start ? (
-                      format(new Date(formData.availableDates.start), "PPP", { locale: es })
-                    ) : (
-                      <span>Seleccionar fecha</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={formData.availableDates.start ? new Date(formData.availableDates.start) : undefined}
-                    onSelect={(date) => handleDateChange('start', date)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+        <CardContent className="space-y-6">
+          {/* Switch principal para habilitar WhatsApp */}
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="whatsappEnabled"
+              checked={formData.hostWhatsApp?.enabled || false}
+              onCheckedChange={(checked) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  hostWhatsApp: {
+                    ...prev.hostWhatsApp,
+                    primary: prev.hostWhatsApp?.primary || "",
+                    secondary: prev.hostWhatsApp?.secondary || "",
+                    enabled: checked,
+                    sendToPrimary: prev.hostWhatsApp?.sendToPrimary ?? true,
+                    sendToSecondary: prev.hostWhatsApp?.sendToSecondary ?? false,
+                  },
+                }))
+              }
+            />
+            <Label htmlFor="whatsappEnabled" className="text-base font-medium">
+              Habilitar notificaciones por WhatsApp
+            </Label>
+          </div>
+
+          {formData.hostWhatsApp?.enabled && (
+            <div className="space-y-6 p-4 border rounded-lg bg-muted/30">
+              {/* Anfitrión Principal */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-blue-600" />
+                  <Label className="text-base font-medium">Anfitrión Principal</Label>
+                  <span className="text-red-500">*</span>
+                </div>
+                <WhatsAppInput
+                  value={formData.hostWhatsApp?.primary || ""}
+                  onChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      hostWhatsApp: {
+                        ...prev.hostWhatsApp,
+                        primary: value,
+                        secondary: prev.hostWhatsApp?.secondary || "",
+                        enabled: prev.hostWhatsApp?.enabled || false,
+                        sendToPrimary: prev.hostWhatsApp?.sendToPrimary ?? true,
+                        sendToSecondary: prev.hostWhatsApp?.sendToSecondary ?? false,
+                      },
+                    }))
+                  }
+                  onValidationChange={setPrimaryValid}
+                  placeholder="+53512345678"
+                  label=""
+                  description="Número principal que recibirá las notificaciones de reservas"
+                  required
+                />
+              </div>
+
+              {/* Anfitrión Secundario */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-green-600" />
+                  <Label className="text-base font-medium">Anfitrión Secundario</Label>
+                  <span className="text-muted-foreground text-sm">(Opcional)</span>
+                </div>
+                <WhatsAppInput
+                  value={formData.hostWhatsApp?.secondary || ""}
+                  onChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      hostWhatsApp: {
+                        ...prev.hostWhatsApp,
+                        primary: prev.hostWhatsApp?.primary || "",
+                        secondary: value,
+                        enabled: prev.hostWhatsApp?.enabled || false,
+                        sendToPrimary: prev.hostWhatsApp?.sendToPrimary ?? true,
+                        sendToSecondary: prev.hostWhatsApp?.sendToSecondary ?? false,
+                      },
+                    }))
+                  }
+                  onValidationChange={setSecondaryValid}
+                  placeholder="+53587654321"
+                  label=""
+                  description="Número secundario que también puede recibir notificaciones"
+                />
+              </div>
+
+              {/* Configuración de envío de mensajes */}
+              <div className="space-y-3 p-4 border rounded-lg bg-background">
+                <Label className="text-base font-medium">Configuración de Envío de Mensajes</Label>
+                <p className="text-sm text-muted-foreground">
+                  Seleccione a qué anfitriones se enviarán las notificaciones de reservas
+                </p>
+
+                <div className="space-y-3">
+                  {/* Enviar al anfitrión principal */}
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="sendToPrimary"
+                      checked={formData.hostWhatsApp?.sendToPrimary ?? true}
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          hostWhatsApp: {
+                            ...prev.hostWhatsApp,
+                            primary: prev.hostWhatsApp?.primary || "",
+                            secondary: prev.hostWhatsApp?.secondary || "",
+                            enabled: prev.hostWhatsApp?.enabled || false,
+                            sendToPrimary: checked as boolean,
+                            sendToSecondary: prev.hostWhatsApp?.sendToSecondary ?? false,
+                          },
+                        }))
+                      }
+                      disabled={!primaryValid || !formData.hostWhatsApp?.primary}
+                    />
+                    <Label htmlFor="sendToPrimary" className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-blue-600" />
+                      Enviar al Anfitrión Principal
+                      {primaryValid && formData.hostWhatsApp?.primary && (
+                        <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">✓ Válido</span>
+                      )}
+                    </Label>
+                  </div>
+
+                  {/* Enviar al anfitrión secundario */}
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="sendToSecondary"
+                      checked={formData.hostWhatsApp?.sendToSecondary ?? false}
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          hostWhatsApp: {
+                            ...prev.hostWhatsApp,
+                            primary: prev.hostWhatsApp?.primary || "",
+                            secondary: prev.hostWhatsApp?.secondary || "",
+                            enabled: prev.hostWhatsApp?.enabled || false,
+                            sendToPrimary: prev.hostWhatsApp?.sendToPrimary ?? true,
+                            sendToSecondary: checked as boolean,
+                          },
+                        }))
+                      }
+                      disabled={!secondaryValid || !formData.hostWhatsApp?.secondary}
+                    />
+                    <Label htmlFor="sendToSecondary" className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-green-600" />
+                      Enviar al Anfitrión Secundario
+                      {secondaryValid && formData.hostWhatsApp?.secondary && (
+                        <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">✓ Válido</span>
+                      )}
+                    </Label>
+                  </div>
+                </div>
+
+                {/* Mensaje de ayuda */}
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-700">
+                    <strong>💡 Consejo:</strong> Puede seleccionar uno o ambos anfitriones para recibir las
+                    notificaciones. Esto es útil para tener respaldo en caso de que un anfitrión no esté disponible.
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Fecha de fin</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.availableDates.end && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.availableDates.end ? (
-                      format(new Date(formData.availableDates.end), "PPP\
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Botones de acción */}
+      <div className="flex gap-4 justify-end">
+        <Button variant="outline" onClick={handleBack}>
+          Cancelar
+        </Button>
+        <Button onClick={handleSave} className="bg-terracotta hover:bg-terracotta/90">
+          {isNewRoom ? "Crear Habitación" : "Guardar Cambios"}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+export default RoomEdit

@@ -4,7 +4,6 @@ import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
 import type { Room } from "@/types/room"
 import { useToast } from "@/hooks/use-toast"
-import { useDataStore } from "@/hooks/use-data-store"
 
 // Definir la interfaz para el contexto de configuración
 interface ConfigContextType {
@@ -14,7 +13,7 @@ interface ConfigContextType {
   addRoom: (room: Room) => void
   updateRoom: (id: string, updatedRoom: Room) => void
   deleteRoom: (id: string) => void
-  saveChanges: () => Promise<void>
+  saveChanges: () => void
   exportConfig: () => void
   importConfig: (configData: string) => boolean
   lastSaved: Date | null
@@ -23,111 +22,112 @@ interface ConfigContextType {
 // Crear el contexto
 const ConfigContext = createContext<ConfigContextType | undefined>(undefined)
 
+// Datos iniciales de habitaciones (se pueden cargar desde un archivo estático si es necesario)
+const initialRooms: Room[] = [
+  {
+    id: "1",
+    name: "Suite Deluxe",
+    description: "Una habitación espaciosa con vistas al mar",
+    price: 200,
+    currency: "USD",
+    capacity: 2,
+    size: 40,
+    images: ["/images/rooms/deluxe-1.jpg", "/images/rooms/deluxe-2.jpg", "/images/rooms/deluxe-3.jpg"],
+    amenities: ["TV", "WiFi", "Minibar", "Aire acondicionado"],
+    availableDates: {
+      start: new Date().toISOString(),
+      end: new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString(),
+    },
+    featured: true,
+  },
+  {
+    id: "2",
+    name: "Habitación Estándar",
+    description: "Cómoda habitación con todas las comodidades básicas",
+    price: 120,
+    currency: "USD",
+    capacity: 2,
+    size: 30,
+    images: ["/images/rooms/standard-1.jpg", "/images/rooms/standard-2.jpg"],
+    amenities: ["TV", "WiFi", "Aire acondicionado"],
+    availableDates: {
+      start: new Date().toISOString(),
+      end: new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString(),
+    },
+    featured: false,
+  },
+]
+
+// Nombre del archivo de configuración en localStorage
+const CONFIG_STORAGE_KEY = "hotelRoomsConfig"
+
 // Proveedor del contexto de configuración
 export const ConfigProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const {
-    rooms: dataStoreRooms,
-    updateRoom: updateDataStoreRoom,
-    addRoom: addDataStoreRoom,
-    deleteRoom: deleteDataStoreRoom,
-    exportSourceFiles,
-    lastUpdated,
-  } = useDataStore()
-
-  const [rooms, setRoomsState] = useState<Room[]>([])
+  const [rooms, setRoomsState] = useState<Room[]>(initialRooms)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const { toast } = useToast()
 
-  // Sincronizar con el DataStore al cargar
+  // Cargar configuración guardada al iniciar
   useEffect(() => {
-    if (dataStoreRooms && dataStoreRooms.length > 0) {
-      console.log("Sincronizando habitaciones desde DataStore:", dataStoreRooms)
-      setRoomsState(dataStoreRooms)
-      setLastSaved(lastUpdated)
-      setHasUnsavedChanges(false)
+    const storedConfig = localStorage.getItem(CONFIG_STORAGE_KEY)
+    if (storedConfig) {
+      try {
+        const parsedConfig = JSON.parse(storedConfig)
+        if (parsedConfig.rooms && Array.isArray(parsedConfig.rooms)) {
+          setRoomsState(parsedConfig.rooms)
+          if (parsedConfig.lastSaved) {
+            setLastSaved(new Date(parsedConfig.lastSaved))
+          }
+          setHasUnsavedChanges(false)
+        }
+      } catch (error) {
+        console.error("Error parsing stored config:", error)
+      }
     }
-  }, [dataStoreRooms, lastUpdated])
+  }, [])
 
   // Función para actualizar las habitaciones
   const setRooms = (newRooms: Room[]) => {
-    console.log("Actualizando habitaciones:", newRooms)
     setRoomsState(newRooms)
     setHasUnsavedChanges(true)
   }
 
   // Función para añadir una habitación
   const addRoom = (room: Room) => {
-    console.log("Agregando habitación:", room)
-    const roomWithId = {
-      ...room,
-      id: typeof room.id === "string" ? Number.parseInt(room.id) : room.id,
-    }
-    addDataStoreRoom(roomWithId)
+    setRoomsState((prevRooms) => [...prevRooms, room])
     setHasUnsavedChanges(true)
   }
 
   // Función para actualizar una habitación
   const updateRoom = (id: string, updatedRoom: Room) => {
-    console.log("Actualizando habitación:", id, updatedRoom)
-    const roomWithCorrectId = {
-      ...updatedRoom,
-      id: typeof updatedRoom.id === "string" ? Number.parseInt(updatedRoom.id) : updatedRoom.id,
-    }
-    updateDataStoreRoom(roomWithCorrectId)
+    setRoomsState((prevRooms) => prevRooms.map((room) => (room.id === id ? updatedRoom : room)))
     setHasUnsavedChanges(true)
   }
 
   // Función para eliminar una habitación
   const deleteRoom = (id: string) => {
-    console.log("Eliminando habitación:", id)
-    const numericId = typeof id === "string" ? Number.parseInt(id) : id
-    deleteDataStoreRoom(numericId)
+    setRoomsState((prevRooms) => prevRooms.filter((room) => room.id !== id))
     setHasUnsavedChanges(true)
   }
 
-  // Función para guardar cambios en archivos TypeScript
-  const saveChanges = async () => {
-    try {
-      console.log("Guardando cambios en archivos TypeScript...")
-
-      // Exportar archivos TypeScript actualizados
-      const success = await exportSourceFiles()
-
-      if (success) {
-        const now = new Date()
-        setLastSaved(now)
-        setHasUnsavedChanges(false)
-
-        console.log("Cambios guardados en archivos TypeScript:", now)
-
-        toast({
-          title: "Cambios guardados",
-          description: `Configuración guardada en archivos TypeScript: ${now.toLocaleString()}`,
-        })
-      } else {
-        throw new Error("No se pudieron guardar los archivos TypeScript")
-      }
-    } catch (error) {
-      console.error("Error al guardar cambios:", error)
-      toast({
-        title: "Error al guardar",
-        description: "No se pudieron guardar los cambios en los archivos TypeScript",
-        variant: "destructive",
-      })
+  // Función para guardar cambios en localStorage
+  const saveChanges = () => {
+    const now = new Date()
+    const configData = {
+      rooms,
+      lastSaved: now.toISOString(),
     }
+
+    localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(configData))
+    setLastSaved(now)
+    setHasUnsavedChanges(false)
+
+    toast({
+      title: "Cambios guardados",
+      description: `Configuración guardada correctamente: ${now.toLocaleString()}`,
+    })
   }
-
-  // Auto-guardar cuando hay cambios (opcional)
-  useEffect(() => {
-    if (hasUnsavedChanges) {
-      const autoSaveTimer = setTimeout(async () => {
-        await saveChanges()
-      }, 10000) // Auto-guardar después de 10 segundos
-
-      return () => clearTimeout(autoSaveTimer)
-    }
-  }, [hasUnsavedChanges])
 
   // Función para exportar la configuración a un archivo
   const exportConfig = () => {
@@ -180,15 +180,19 @@ export const ConfigProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return false
       }
 
-      // Asegurar que cada habitación tenga whatsappNumber
-      const roomsWithWhatsApp = parsedConfig.rooms.map((room: any) => ({
-        ...room,
-        whatsappNumber: room.whatsappNumber || "",
-      }))
-
       // Actualizar las habitaciones
-      setRoomsState(roomsWithWhatsApp)
-      setHasUnsavedChanges(true)
+      setRoomsState(parsedConfig.rooms)
+
+      // Guardar inmediatamente la configuración importada
+      const now = new Date()
+      const newConfigData = {
+        rooms: parsedConfig.rooms,
+        lastSaved: now.toISOString(),
+      }
+
+      localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(newConfigData))
+      setLastSaved(now)
+      setHasUnsavedChanges(false)
 
       toast({
         title: "Importación exitosa",

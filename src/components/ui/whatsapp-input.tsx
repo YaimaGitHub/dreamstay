@@ -1,140 +1,110 @@
 "use client"
 
-import React from "react"
+import type React from "react"
+
+import { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { CheckCircle, XCircle, Loader2, Phone } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { useWhatsAppValidation } from "@/hooks/use-whatsapp-validation"
+import { MessageCircle } from "lucide-react"
 
 interface WhatsAppInputProps {
-  value?: string
-  onChange?: (value: string) => void
+  value: string
+  onChange: (value: string) => void
   onValidationChange?: (isValid: boolean) => void
   placeholder?: string
   label?: string
   description?: string
   required?: boolean
-  className?: string
-  disabled?: boolean
 }
 
-export const WhatsAppInput: React.FC<WhatsAppInputProps> = ({
-  value = "",
+export const WhatsAppInput = ({
+  value,
   onChange,
   onValidationChange,
-  placeholder = "+53512345678",
+  placeholder = "+53 55555555",
   label = "Número de WhatsApp",
-  description = "Ingrese el número con código de país",
+  description,
   required = false,
-  className,
-  disabled = false,
-}) => {
-  const { value: inputValue, setValue, isValid, isValidating, error, country } = useWhatsAppValidation(value)
+}: WhatsAppInputProps) => {
+  const [isValid, setIsValid] = useState(false)
+  const [isFocused, setIsFocused] = useState(false)
 
-  // Notificar cambios al componente padre
-  React.useEffect(() => {
-    if (onChange && inputValue !== value) {
-      onChange(inputValue)
-    }
-  }, [inputValue, onChange, value])
+  // Validar número de WhatsApp
+  const validateWhatsAppNumber = (number: string) => {
+    // Remover espacios y caracteres especiales excepto +
+    const cleanNumber = number.replace(/[^\d+]/g, "")
 
-  React.useEffect(() => {
-    if (onValidationChange) {
-      onValidationChange(isValid)
-    }
-  }, [isValid, onValidationChange])
-
-  const getStatusIcon = () => {
-    if (isValidating) {
-      return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-    }
-
-    if (!inputValue || inputValue === "+") {
-      return <Phone className="h-4 w-4 text-muted-foreground" />
-    }
-
-    if (isValid) {
-      return <CheckCircle className="h-4 w-4 text-green-500" />
-    }
-
-    if (error) {
-      return <XCircle className="h-4 w-4 text-red-500" />
-    }
-
-    return <Phone className="h-4 w-4 text-muted-foreground" />
+    // Debe empezar con + y tener al menos 10 dígitos
+    const regex = /^\+\d{10,15}$/
+    return regex.test(cleanNumber)
   }
 
-  const getInputClassName = () => {
-    if (!inputValue || inputValue === "+") return ""
-    if (isValidating) return "border-blue-300 focus:border-blue-500"
-    if (isValid) return "border-green-300 focus:border-green-500"
-    if (error) return "border-red-300 focus:border-red-500"
-    return ""
+  // Formatear número de WhatsApp
+  const formatWhatsAppNumber = (number: string) => {
+    // Si está vacío, no formatear
+    if (!number) return ""
+
+    // Remover todos los caracteres no numéricos excepto +
+    let cleaned = number.replace(/[^\d+]/g, "")
+
+    // Si no empieza con +, agregarlo
+    if (!cleaned.startsWith("+")) {
+      cleaned = "+" + cleaned
+    }
+
+    return cleaned
+  }
+
+  // Validar cuando cambia el valor
+  useEffect(() => {
+    const formattedValue = formatWhatsAppNumber(value)
+    const valid = validateWhatsAppNumber(formattedValue)
+    setIsValid(valid)
+
+    // Notificar al componente padre sobre la validación
+    if (onValidationChange) {
+      onValidationChange(valid)
+    }
+  }, [value, onValidationChange])
+
+  // Manejar cambio de valor
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value
+    onChange(formatWhatsAppNumber(newValue))
   }
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className="space-y-2">
       {label && (
-        <Label className="text-sm font-medium">
+        <Label htmlFor="whatsapp-input" className="flex items-center gap-2">
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
+          {required && <span className="text-red-500">*</span>}
         </Label>
       )}
-
       <div className="relative">
         <Input
+          id="whatsapp-input"
           type="tel"
-          value={inputValue}
-          onChange={(e) => setValue(e.target.value)}
+          value={value}
+          onChange={handleChange}
           placeholder={placeholder}
-          disabled={disabled}
-          className={cn("pr-10 transition-colors", getInputClassName())}
+          className={`pl-10 ${
+            value && !isValid ? "border-red-500 focus:ring-red-500" : isFocused ? "border-green-500" : ""
+          }`}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
         />
-
-        <div className="absolute inset-y-0 right-0 flex items-center pr-3">{getStatusIcon()}</div>
+        <MessageCircle
+          className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
+            value && !isValid ? "text-red-500" : "text-green-600"
+          }`}
+        />
       </div>
-
-      {/* Información del país */}
-      {country && !error && inputValue && inputValue !== "+" && (
-        <div className="flex items-center gap-2 text-xs text-green-600">
-          <CheckCircle className="h-3 w-3" />
-          <span>País detectado: {country}</span>
-        </div>
-      )}
-
-      {/* Mensaje de error */}
-      {error && (
-        <div className="flex items-center gap-2 text-xs text-red-600">
-          <XCircle className="h-3 w-3" />
-          <span>{error}</span>
-        </div>
-      )}
-
-      {/* Descripción */}
-      {description && !error && <p className="text-xs text-muted-foreground">{description}</p>}
-
-      {/* Indicador de validación en tiempo real */}
-      {isValidating && (
-        <div className="flex items-center gap-2 text-xs text-blue-600">
-          <Loader2 className="h-3 w-3 animate-spin" />
-          <span>Validando número...</span>
-        </div>
-      )}
-
-      {/* Ayuda visual para el formato con ejemplos de países importantes */}
-      {!inputValue && (
-        <div className="text-xs text-muted-foreground space-y-1">
-          <div>
-            <strong>Ejemplos por región:</strong>
-          </div>
-          <div>🇨🇺 Cuba: +5351234567</div>
-          <div>🇩🇴 Rep. Dominicana: +18095551234</div>
-          <div>🇪🇸 España: +34612345678</div>
-          <div>🇲🇽 México: +525512345678</div>
-          <div>🇨🇴 Colombia: +5712345678</div>
-          <div>🇦🇷 Argentina: +541123456789</div>
-        </div>
+      {description && <p className="text-xs text-muted-foreground">{description}</p>}
+      {value && !isValid && (
+        <p className="text-xs text-red-500">
+          Formato inválido. Debe incluir código de país (ej: +53 para Cuba) y al menos 10 dígitos
+        </p>
       )}
     </div>
   )

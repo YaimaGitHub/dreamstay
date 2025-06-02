@@ -19,7 +19,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Plus, Edit, Trash2, Save, AlertTriangle, CheckCircle, XCircle } from "lucide-react"
+import { Plus, Edit, Trash2, Save, AlertTriangle } from "lucide-react"
 
 const RoomManagement = () => {
   const { rooms, deleteRoom, hasUnsavedChanges, saveChanges } = useConfig()
@@ -54,26 +54,6 @@ const RoomManagement = () => {
       style: "currency",
       currency: currency || "USD",
     }).format(price)
-  }
-
-  const getWhatsAppStatus = (whatsappNumber?: string) => {
-    if (!whatsappNumber) {
-      return (
-        <div className="flex items-center gap-2">
-          <XCircle className="h-4 w-4 text-red-500" />
-          <Badge variant="destructive" className="text-xs">
-            Sin configurar
-          </Badge>
-        </div>
-      )
-    }
-
-    return (
-      <div className="flex items-center gap-2">
-        <CheckCircle className="h-4 w-4 text-green-500" />
-        <span className="text-sm text-muted-foreground">{whatsappNumber}</span>
-      </div>
-    )
   }
 
   return (
@@ -121,7 +101,6 @@ const RoomManagement = () => {
                   <TableHead>Nombre</TableHead>
                   <TableHead>Precio</TableHead>
                   <TableHead>Capacidad</TableHead>
-                  <TableHead>WhatsApp</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
@@ -132,7 +111,6 @@ const RoomManagement = () => {
                     <TableCell className="font-medium">{room.name}</TableCell>
                     <TableCell>{formatCurrency(room.price, room.currency)}</TableCell>
                     <TableCell>{room.capacity} personas</TableCell>
-                    <TableCell>{getWhatsAppStatus(room.whatsappNumber)}</TableCell>
                     <TableCell>
                       {room.featured ? (
                         <Badge variant="default">Destacada</Badge>
@@ -159,14 +137,7 @@ const RoomManagement = () => {
           )}
         </CardContent>
         <CardFooter className="flex justify-between">
-          <div className="text-sm text-muted-foreground">
-            Total: {rooms.length} habitaciones
-            {rooms.filter((room) => !room.whatsappNumber).length > 0 && (
-              <span className="text-red-600 ml-2">
-                ({rooms.filter((room) => !room.whatsappNumber).length} sin WhatsApp)
-              </span>
-            )}
-          </div>
+          <div className="text-sm text-muted-foreground">Total: {rooms.length} habitaciones</div>
           {hasUnsavedChanges && (
             <Button variant="outline" onClick={saveChanges}>
               <Save className="mr-2 h-4 w-4" />

@@ -1,212 +1,267 @@
 import type { Room } from "@/types/room"
 import type { Service } from "@/types/service"
 
-/**
- * Genera el código fuente para el archivo rooms.ts con TODOS los datos
- */
-export const generateRoomsSourceCode = (rooms: Room[]): string => {
-  console.log("🔧 Generando código para rooms.ts con", rooms.length, "habitaciones")
-
-  if (!rooms || !Array.isArray(rooms) || rooms.length === 0) {
-    console.warn("⚠️ No hay habitaciones para generar")
-    return `import type { Room } from "@/types/room"
-
-export const roomsData: Room[] = []
-
-export default roomsData`
+// Helper function to assign icons based on service category
+export const getIconForCategory = (category: string) => {
+  switch (category.toLowerCase()) {
+    case "gastronomía":
+      return "Utensils"
+    case "transporte":
+      return "Car"
+    case "comodidades":
+      return "Wifi"
+    case "experiencias":
+      return "MapPin"
+    default:
+      return "Wifi"
   }
+}
 
-  const roomsCode = rooms
-    .map((room, index) => {
-      console.log(`  🔧 Procesando habitación ${index + 1}: ${room.title}`)
-      console.log(`    📱 WhatsApp: ${room.whatsappNumber || "No configurado"}`)
-      console.log(`    📅 Fechas reservadas: ${room.reservedDates?.length || 0}`)
+// Function to generate the code source of rooms.ts with the exact required format
+export const generateRoomsSourceCode = (roomsData: Room[]) => {
+  console.log("=== Generating rooms source code ===")
+  console.log("Number of rooms:", roomsData.length)
 
-      // Asegurar que todos los campos estén presentes y sean válidos
-      const safeRoom = {
-        id: room.id || index + 1,
-        title: (room.title || "Habitación sin título").replace(/"/g, '\\"'),
-        description: (room.description || "Habitación cómoda y bien equipada").replace(/"/g, '\\"'),
-        location: (room.location || "Ubicación central").replace(/"/g, '\\"'),
-        province: (room.province || "La Habana").replace(/"/g, '\\"'),
-        price: room.price || 0,
-        rating: room.rating || 4.5,
-        reviews: room.reviews || 0,
-        image: room.image || "/placeholder.svg?height=400&width=600",
-        features: room.features || ["WiFi gratis", "Aire acondicionado"],
-        type: room.type || "Estándar",
-        area: room.area || 25,
-        available: room.available !== undefined ? room.available : true,
-        isAvailable: room.isAvailable !== undefined ? room.isAvailable : true,
-        images: room.images || [],
-        reservedDates: room.reservedDates || [],
-        lastUpdated: room.lastUpdated || new Date().toISOString(),
-        whatsappNumber: room.whatsappNumber || "", // CAMPO CRÍTICO
+  // Convert rooms to a format that preserves the original structure
+  const formattedRooms = roomsData.map((room) => {
+    // Create a copy to avoid modifying the original
+    const formattedRoom = { ...room }
+
+    // Log pricing data for debugging
+    if (formattedRoom.pricing) {
+      console.log(`Room ${formattedRoom.id} - Pricing data for export:`, formattedRoom.pricing)
+    }
+
+    // Log WhatsApp data for debugging
+    if (formattedRoom.hostWhatsApp) {
+      console.log(`Room ${formattedRoom.id} - WhatsApp data for export:`, formattedRoom.hostWhatsApp)
+    }
+
+    // Log reserved dates for debugging
+    if (formattedRoom.reservedDates) {
+      console.log(`Room ${formattedRoom.id} - Reserved dates for export:`, formattedRoom.reservedDates)
+    }
+
+    // Format features as strings with quotes
+    if (formattedRoom.features) {
+      formattedRoom.features = formattedRoom.features.map((feature) => `"${feature}"`)
+    }
+
+    return formattedRoom
+  })
+
+  // Generate the code with the proper format
+  let code = `// Archivo generado automáticamente por el panel de administración
+// Última actualización: ${new Date().toLocaleString()}
+
+export const roomsData = [\n`
+
+  formattedRooms.forEach((room, index) => {
+    code += `  {\n`
+    code += `    id: ${room.id},\n`
+    code += `    title: "${room.title}",\n`
+    code += `    location: "${room.location}",\n`
+
+    // Include province if it exists
+    if (room.province) {
+      code += `    province: "${room.province}",\n`
+    }
+
+    code += `    price: ${room.price},\n`
+    code += `    rating: ${room.rating},\n`
+    code += `    reviews: ${room.reviews},\n`
+    code += `    image: "${room.image}",\n`
+    code += `    features: [${room.features?.join(", ") || ""}],\n`
+    code += `    type: "${room.type}",\n`
+    code += `    area: ${room.area},\n`
+
+    if (room.description !== undefined) {
+      code += `    description: "${room.description.replace(/"/g, '\\"')}",\n`
+    }
+
+    // Always include the available property
+    code += `    available: ${room.available === undefined ? true : room.available},\n`
+
+    // Include lastUpdated if it exists
+    if (room.lastUpdated) {
+      code += `    lastUpdated: "${room.lastUpdated}",\n`
+    }
+
+    // CRÍTICO: Include WhatsApp configuration
+    if (room.hostWhatsApp) {
+      console.log(`Exporting WhatsApp for room ${room.id}:`, room.hostWhatsApp)
+      code += `    hostWhatsApp: {\n`
+      code += `      enabled: ${room.hostWhatsApp.enabled},\n`
+      code += `      primary: "${room.hostWhatsApp.primary}",\n`
+      code += `      secondary: "${room.hostWhatsApp.secondary || ""}",\n`
+      code += `      sendToPrimary: ${room.hostWhatsApp.sendToPrimary},\n`
+      code += `      sendToSecondary: ${room.hostWhatsApp.sendToSecondary}\n`
+      code += `    },\n`
+    }
+
+    // Include pricing configuration - CRITICAL SECTION
+    if (room.pricing && (room.pricing.nationalTourism || room.pricing.internationalTourism)) {
+      console.log(`Exporting pricing for room ${room.id}:`, room.pricing)
+      code += `    pricing: {\n`
+
+      // National Tourism Pricing
+      if (room.pricing.nationalTourism) {
+        code += `      nationalTourism: {\n`
+        code += `        enabled: ${room.pricing.nationalTourism.enabled},\n`
+
+        if (room.pricing.nationalTourism.nightlyRate) {
+          code += `        nightlyRate: {\n`
+          code += `          enabled: ${room.pricing.nationalTourism.nightlyRate.enabled},\n`
+          code += `          price: ${room.pricing.nationalTourism.nightlyRate.price}\n`
+          code += `        },\n`
+        }
+
+        if (room.pricing.nationalTourism.hourlyRate) {
+          code += `        hourlyRate: {\n`
+          code += `          enabled: ${room.pricing.nationalTourism.hourlyRate.enabled},\n`
+          code += `          price: ${room.pricing.nationalTourism.hourlyRate.price}\n`
+          code += `        }\n`
+        }
+
+        code += `      }`
+
+        // Add comma if international tourism follows
+        if (room.pricing.internationalTourism) {
+          code += `,\n`
+        } else {
+          code += `\n`
+        }
       }
 
-      // Generar código para imágenes
-      const imagesCode =
-        safeRoom.images.length > 0
-          ? safeRoom.images
-              .map((img) => {
-                if (typeof img === "string") {
-                  return `"${img}"`
-                } else if (img && typeof img === "object" && img.url) {
-                  return `{
-      id: ${img.id || 1},
-      url: "${img.url}",
-      alt: "${(img.alt || "").replace(/"/g, '\\"')}"
-    }`
-                }
-                return `"${safeRoom.image}"`
-              })
-              .join(",\n      ")
-          : ""
+      // International Tourism Pricing
+      if (room.pricing.internationalTourism) {
+        code += `      internationalTourism: {\n`
+        code += `        enabled: ${room.pricing.internationalTourism.enabled},\n`
 
-      // Generar código para fechas reservadas - CAMPO CRÍTICO
-      const reservedDatesCode =
-        safeRoom.reservedDates.length > 0
-          ? safeRoom.reservedDates
-              .map((date) => {
-                if (typeof date === "string") {
-                  return `"${date}"`
-                } else if (date && typeof date === "object" && date.start && date.end) {
-                  return `{
-      start: "${date.start}",
-      end: "${date.end}"
-    }`
-                }
-                return `"${date}"`
-              })
-              .join(",\n      ")
-          : ""
+        if (room.pricing.internationalTourism.nightlyRate) {
+          code += `        nightlyRate: {\n`
+          code += `          enabled: ${room.pricing.internationalTourism.nightlyRate.enabled},\n`
+          code += `          price: ${room.pricing.internationalTourism.nightlyRate.price}\n`
+          code += `        }\n`
+        }
 
-      return `  {
-    id: ${safeRoom.id},
-    title: "${safeRoom.title}",
-    description: "${safeRoom.description}",
-    location: "${safeRoom.location}",
-    province: "${safeRoom.province}",
-    price: ${safeRoom.price},
-    rating: ${safeRoom.rating},
-    reviews: ${safeRoom.reviews},
-    image: "${safeRoom.image}",
-    features: [${safeRoom.features.map((feature) => `"${feature.replace(/"/g, '\\"')}"`).join(", ")}],
-    type: "${safeRoom.type}",
-    area: ${safeRoom.area},
-    available: ${safeRoom.available},
-    isAvailable: ${safeRoom.isAvailable},
-    images: [${imagesCode}],
-    reservedDates: [${reservedDatesCode}],
-    lastUpdated: "${safeRoom.lastUpdated}",
-    whatsappNumber: "${safeRoom.whatsappNumber}", // CAMPO CRÍTICO: WhatsApp del anfitrión
-  }`
-    })
-    .join(",\n")
-
-  const generatedCode = `import type { Room } from "@/types/room"
-
-export const roomsData: Room[] = [
-${roomsCode}
-]
-
-export default roomsData`
-
-  console.log(`✅ Código generado para rooms.ts: ${generatedCode.length} caracteres`)
-  return generatedCode
-}
-
-/**
- * Genera el código fuente para el archivo services.ts con TODOS los datos
- */
-export const generateServicesSourceCode = (services: Service[]): string => {
-  console.log("🔧 Generando código para services.ts con", services.length, "servicios")
-
-  if (!services || !Array.isArray(services) || services.length === 0) {
-    console.warn("⚠️ No hay servicios para generar")
-    return `import type { Service } from "@/types/service"
-
-export const allServices: Service[] = []
-
-export default allServices`
-  }
-
-  const servicesCode = services
-    .map((service, index) => {
-      console.log(`  🔧 Procesando servicio ${index + 1}: ${service.name}`)
-
-      // Asegurar que todos los campos estén presentes
-      const safeService = {
-        id: service.id || index + 1,
-        name: (service.name || "Servicio sin nombre").replace(/"/g, '\\"'),
-        description: (service.description || "Descripción del servicio").replace(/"/g, '\\"'),
-        price: service.price || 0,
-        category: service.category || "general",
-        duration: service.duration || "1 hora",
-        available: service.available !== undefined ? service.available : true,
-        featured: service.featured || false,
-        image: service.image || "/placeholder.svg?height=300&width=400",
-        features: service.features || [],
-        lastUpdated: service.lastUpdated || new Date().toISOString(),
+        code += `      }\n`
       }
 
-      return `  {
-    id: ${safeService.id},
-    name: "${safeService.name}",
-    description: "${safeService.description}",
-    price: ${safeService.price},
-    category: "${safeService.category}",
-    duration: "${safeService.duration}",
-    available: ${safeService.available},
-    featured: ${safeService.featured},
-    image: "${safeService.image}",
-    features: [${safeService.features.map((feature) => `"${feature.replace(/"/g, '\\"')}"`).join(", ")}],
-    lastUpdated: "${safeService.lastUpdated}",
-  }`
-    })
-    .join(",\n")
+      code += `    },\n`
+    }
 
-  const generatedCode = `import type { Service } from "@/types/service"
+    if (room.images && room.images.length > 0) {
+      code += `    images: [\n`
+      room.images.forEach((image, imgIndex) => {
+        code += `      {\n`
+        code += `        id: ${image.id},\n`
+        code += `        url: "${image.url}",\n`
+        code += `        alt: "${image.alt.replace(/"/g, '\\"')}"\n`
+        code += `      }${imgIndex < room.images!.length - 1 ? "," : ""}\n`
+      })
+      code += `    ],\n`
+    }
 
-export const allServices: Service[] = [
-${servicesCode}
-]
+    if (room.amenities && room.amenities.length > 0) {
+      code += `    amenities: [\n`
+      room.amenities.forEach((amenity, amenityIndex) => {
+        code += `      {\n`
+        code += `        id: ${amenity.id},\n`
+        code += `        name: "${amenity.name}",\n`
+        code += `        description: "${amenity.description.replace(/"/g, '\\"')}"\n`
+        code += `      }${amenityIndex < room.amenities!.length - 1 ? "," : ""}\n`
+      })
+      code += `    ],\n`
+    }
 
-export default allServices`
+    // CRÍTICO: Include reservedDates if they exist
+    if (room.reservedDates && room.reservedDates.length > 0) {
+      console.log(`Exporting reserved dates for room ${room.id}:`, room.reservedDates)
+      code += `    reservedDates: [\n`
+      room.reservedDates.forEach((date, dateIndex) => {
+        code += `      {\n`
+        code += `        start: "${date.start}",\n`
+        code += `        end: "${date.end}"\n`
+        code += `      }${dateIndex < room.reservedDates!.length - 1 ? "," : ""}\n`
+      })
+      code += `    ],\n`
+    }
 
-  console.log(`✅ Código generado para services.ts: ${generatedCode.length} caracteres`)
-  return generatedCode
+    code += `  }${index < formattedRooms.length - 1 ? "," : ""}\n`
+  })
+
+  code += `];\n`
+
+  console.log("Generated rooms.ts code preview:")
+  console.log(code.substring(0, 1500) + "...")
+  console.log("=== End generating rooms source code ===")
+
+  return code
 }
 
-/**
- * Genera el código fuente para el archivo provinces.ts
- */
-export const generateProvincesSourceCode = (provinces: string[]): string => {
-  console.log("🔧 Generando código para provinces.ts con", provinces.length, "provincias")
+// Function to generate the code source of services.ts with the exact required format
+export const generateServicesSourceCode = (servicesData: Service[]) => {
+  // Convert services to a format that preserves the original structure
+  const formattedServices = servicesData.map((service) => {
+    // Create a copy to avoid modifying the original
+    const formattedService = { ...service }
 
-  const provincesCode = provinces.map((province) => `  "${province.replace(/"/g, '\\"')}"`).join(",\n")
+    // Format features as strings with quotes
+    if (formattedService.features) {
+      formattedService.features = formattedService.features.map((feature) => `"${feature}"`)
+    }
 
-  const generatedCode = `export const cubanProvinces: string[] = [
-${provincesCode}
-]
+    return formattedService
+  })
 
-export default cubanProvinces`
+  // Generate the code with the proper format
+  let code = `// Archivo generado automáticamente por el panel de administración
+// Última actualización: ${new Date().toLocaleString()}
 
-  console.log(`✅ Código generado para provinces.ts: ${generatedCode.length} caracteres`)
-  return generatedCode
+import { Utensils, Car, Wifi, MapPin } from 'lucide-react';
+
+export const allServices = [\n`
+
+  formattedServices.forEach((service, index) => {
+    code += `  {\n`
+    code += `    id: ${service.id},\n`
+    code += `    title: "${service.title}",\n`
+    code += `    description: "${service.description.replace(/"/g, '\\"')}",\n`
+
+    if (service.longDescription !== undefined) {
+      code += `    longDescription: "${service.longDescription.replace(/"/g, '\\"')}",\n`
+    }
+
+    code += `    price: ${service.price},\n`
+    code += `    category: "${service.category}",\n`
+
+    // Assign an icon based on the category
+    code += `    icon: ${getIconForCategory(service.category)},\n`
+
+    if (service.features && service.features.length > 0) {
+      code += `    features: [${service.features.join(", ")}],\n`
+    }
+
+    code += `  }${index < formattedServices.length - 1 ? "," : ""}\n`
+  })
+
+  code += `];\n`
+  return code
 }
 
-/**
- * Genera el código fuente completo para todos los archivos
- */
-export const generateAllSourceCode = (
-  rooms: Room[],
-  services: Service[],
-  provinces: string[],
-): { rooms: string; services: string; provinces: string } => {
-  return {
-    rooms: generateRoomsSourceCode(rooms),
-    services: generateServicesSourceCode(services),
-    provinces: generateProvincesSourceCode(provinces),
-  }
+// Function to generate the code source of provinces.ts
+export const generateProvincesSourceCode = (provinces: string[]) => {
+  let code = `// Archivo generado automáticamente por el panel de administración
+// Última actualización: ${new Date().toLocaleString()}
+
+// Lista de provincias de Cuba
+export const cubanProvinces = [\n`
+
+  provinces.forEach((province, index) => {
+    code += `  "${province}"${index < provinces.length - 1 ? "," : ""}\n`
+  })
+
+  code += `];\n`
+  return code
 }

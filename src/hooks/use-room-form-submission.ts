@@ -1,11 +1,9 @@
-"use client"
-
-import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { toast } from "sonner"
+import { useDataStore } from "@/hooks/use-data-store"
+import { toast } from "@/components/ui/sonner"
 import type { Room } from "@/types/room"
 import type { RoomFormValues } from "@/components/admin/RoomFormSchema"
-import { useDataStore } from "@/hooks/use-data-store"
+import type { DateRange } from "react-day-picker"
 
 interface UseRoomFormSubmissionProps {
   mode: "add" | "edit"
@@ -13,130 +11,108 @@ interface UseRoomFormSubmissionProps {
   features: string[]
   roomImages: Array<{ id: number; url: string; alt: string }>
   initialReservedDates: Array<{ start: string; end: string }>
-  reservedDates?: { from?: Date; to?: Date }
+  reservedDates: DateRange | undefined
 }
 
-export function useRoomFormSubmission({
+export const useRoomFormSubmission = ({
   mode,
   currentRoom,
   features,
   roomImages,
   initialReservedDates,
   reservedDates,
-}: UseRoomFormSubmissionProps) {
-  const { addRoom, updateRoom, generateTypeScriptFiles } = useDataStore()
+}: UseRoomFormSubmissionProps) => {
+  const { addRoom, updateRoom } = useDataStore()
   const navigate = useNavigate()
-  const [lastModified, setLastModified] = useState<Date | null>(null)
 
   const handleSubmit = (values: RoomFormValues) => {
-    if (features.length === 0) {
-      toast.error("Agregue al menos una característica")
-      return
-    }
+    try {
+      console.log("=== GUARDANDO HABITACIÓN ===")
+      console.log("Valores del formulario:", values)
+      console.log("Configuración WhatsApp:", values.hostWhatsApp)
+      console.log("Fechas reservadas recibidas:", reservedDates)
 
-    if (roomImages.length === 0) {
-      toast.error("Agregue al menos una imagen")
-      return
-    }
+      // Validar que si WhatsApp está habilitado, al menos el número principal esté configurado
+      if (values.hostWhatsApp.enabled && !values.hostWhatsApp.primary) {
+        toast.error("Si habilita WhatsApp, debe proporcionar al menos el número principal")
+        return
+      }
 
-    // Use the first image as the main image
-    const mainImage = roomImages[0].url
-    const now = new Date()
+      // Obtener todas las fechas reservadas guardadas del componente ReservedDatesManager
+      const savedReservedDates: Array<{ start: string; end: string }> = []
 
-    // Obtener las fechas reservadas del componente ReservedDatesManager
-    // Esto se hace a través del DOM ya que el componente no expone directamente las fechas guardadas
-    const reservedDatesElements = document.querySelectorAll("[data-reserved-date]")
-    const savedReservedDates: Array<{ start: string; end: string }> = []
-
-    // Si hay fechas en el DOM, las procesamos
-    if (reservedDatesElements.length > 0) {
-      reservedDatesElements.forEach((element) => {
-        const start = element.getAttribute("data-start")
-        const end = element.getAttribute("data-end")
-        if (start && end) {
+      // Buscar elementos con data-reserved-date en el DOM
+      const reservedDateElements = document.querySelectorAll('[data-reserved-date="true"]')
+      reservedDateElements.forEach((element) => {
+        const startDate = element.getAttribute("data-start")
+        const endDate = element.getAttribute("data-end")
+        if (startDate && endDate) {
           savedReservedDates.push({
-            start,
-            end,
+            start: startDate,
+            end: endDate,
           })
         }
       })
-    } else {
-      // Si no hay elementos en el DOM, usamos las fechas iniciales
-      // y añadimos la fecha actual si está definida
-      const existingDates = initialReservedDates || []
-      if (reservedDates?.from && reservedDates?.to) {
-        savedReservedDates.push(...existingDates, {
-          start: reservedDates.from.toISOString(),
-          end: reservedDates.to.toISOString(),
-        })
-      } else {
-        savedReservedDates.push(...existingDates)
+
+      console.log("Fechas reservadas encontradas en DOM:", savedReservedDates)
+
+      // Preparar datos de la habitación
+      const roomData: Room = {
+        id: currentRoom?.id || Math.floor(Math.random() * 10000),
+        title: values.title,
+        location: values.location,
+        province: values.province,
+        price: values.price,
+        rating: values.rating,
+        reviews: values.reviews,
+        image: roomImages[0]?.url || currentRoom?.image || "",
+        type: values.type,
+        area: values.area,
+        description: values.description,
+        available: values.isAvailable,
+        features: features,
+        lastUpdated: new Date().toISOString(),
+        pricing: values.pricing,
+        images: roomImages.length > 0 ? roomImages : currentRoom?.images || [],
+        // CRÍTICO: Guardar fechas reservadas
+        reservedDates: savedReservedDates.length > 0 ? savedReservedDates : currentRoom?.reservedDates || [],
+        // CRÍTICO: Guardar configuración de WhatsApp
+        hostWhatsApp: values.hostWhatsApp.enabled
+          ? {
+              enabled: true,
+              primary: values.hostWhatsApp.primary.trim(),
+              secondary: values.hostWhatsApp.secondary?.trim() || "",
+              sendToPrimary: values.hostWhatsApp.sendToPrimary,
+              sendToSecondary: values.hostWhatsApp.sendToSecondary,
+            }
+          : {
+              enabled: false,
+              primary: "",
+              secondary: "",
+              sendToPrimary: false,
+              sendToSecondary: false,
+            },
       }
-    }
 
-    if (mode === "edit" && currentRoom) {
-      updateRoom({
-        ...currentRoom,
-        title: values.title,
-        location: values.location,
-        province: values.province,
-        price: values.price,
-        rating: values.rating,
-        reviews: values.reviews,
-        image: mainImage,
-        type: values.type,
-        area: values.area,
-        description: values.description,
-        available: values.isAvailable,
-        features,
-        images: roomImages,
-        reservedDates: savedReservedDates,
-        lastUpdated: now.toISOString(),
-      })
+      console.log("Datos finales de la habitación:", roomData)
+      console.log("WhatsApp final:", roomData.hostWhatsApp)
+      console.log("Fechas reservadas finales:", roomData.reservedDates)
 
-      toast.success("Habitación actualizada correctamente", {
-        action: {
-          label: "Generar archivos TS",
-          onClick: () => generateTypeScriptFiles(),
-        },
-      })
-
-      // Actualizar la fecha de última modificación
-      setLastModified(now)
-    } else {
-      addRoom({
-        title: values.title,
-        location: values.location,
-        province: values.province,
-        price: values.price,
-        rating: values.rating,
-        reviews: values.reviews,
-        image: mainImage,
-        features,
-        type: values.type,
-        area: values.area,
-        description: values.description,
-        available: values.isAvailable,
-        reservedDates: savedReservedDates,
-        images: roomImages,
-        lastUpdated: now.toISOString(),
-      })
-
-      toast.success("Habitación agregada correctamente", {
-        action: {
-          label: "Generar archivos TS",
-          onClick: () => generateTypeScriptFiles(),
-        },
-      })
-
-      // Si es una nueva habitación, redirigir a la lista de habitaciones
       if (mode === "add") {
-        navigate("/admin/rooms")
+        addRoom(roomData)
+        toast.success("Habitación creada correctamente con configuración de WhatsApp")
+      } else {
+        updateRoom(roomData)
+        toast.success("Habitación actualizada correctamente con configuración de WhatsApp")
       }
-    }
 
-    return lastModified
+      // Redirigir a la lista de habitaciones
+      navigate("/admin/rooms")
+    } catch (error) {
+      console.error("Error al guardar la habitación:", error)
+      toast.error("Error al guardar la habitación")
+    }
   }
 
-  return { handleSubmit, lastModified, setLastModified }
+  return { handleSubmit }
 }

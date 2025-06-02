@@ -11,8 +11,6 @@ import {
 export const generateTypeScriptFiles = (rooms: Room[], services: Service[], provinces: string[]): Promise<boolean> => {
   return new Promise((resolve) => {
     try {
-      console.log("Generando archivos TypeScript con datos actualizados...")
-
       // Generate source code for rooms.ts
       const roomsSourceCode = generateRoomsSourceCode(rooms)
 
@@ -23,13 +21,13 @@ export const generateTypeScriptFiles = (rooms: Room[], services: Service[], prov
       const provincesSourceCode = generateProvincesSourceCode(provinces)
 
       // Create blobs for the files
-      const roomsBlob = new Blob([roomsSourceCode], { type: "text/typescript" })
+      const roomsBlob = new Blob([roomsSourceCode], { type: "text/plain" })
       const roomsUrl = URL.createObjectURL(roomsBlob)
 
-      const servicesBlob = new Blob([servicesSourceCode], { type: "text/typescript" })
+      const servicesBlob = new Blob([servicesSourceCode], { type: "text/plain" })
       const servicesUrl = URL.createObjectURL(servicesBlob)
 
-      const provincesBlob = new Blob([provincesSourceCode], { type: "text/typescript" })
+      const provincesBlob = new Blob([provincesSourceCode], { type: "text/plain" })
       const provincesUrl = URL.createObjectURL(provincesBlob)
 
       // Create links to download the files
@@ -53,7 +51,6 @@ export const generateTypeScriptFiles = (rooms: Room[], services: Service[], prov
       document.body.appendChild(servicesLink)
       document.body.appendChild(provincesLink)
 
-      // Download files with delays to ensure proper download
       roomsLink.click()
 
       setTimeout(() => {
@@ -63,35 +60,19 @@ export const generateTypeScriptFiles = (rooms: Room[], services: Service[], prov
           provincesLink.click()
 
           // Cleanup
-          setTimeout(() => {
-            document.body.removeChild(roomsLink)
-            document.body.removeChild(servicesLink)
-            document.body.removeChild(provincesLink)
-            URL.revokeObjectURL(roomsUrl)
-            URL.revokeObjectURL(servicesUrl)
-            URL.revokeObjectURL(provincesUrl)
+          document.body.removeChild(roomsLink)
+          document.body.removeChild(servicesLink)
+          document.body.removeChild(provincesLink)
+          URL.revokeObjectURL(roomsUrl)
+          URL.revokeObjectURL(servicesUrl)
+          URL.revokeObjectURL(provincesUrl)
 
-            console.log("Archivos TypeScript generados y descargados correctamente")
+          toast.success("Archivos TypeScript generados y descargados correctamente")
+          console.log("Archivos TypeScript generados y descargados")
 
-            toast.success("Archivos TypeScript generados", {
-              description:
-                "Los archivos rooms.ts, services.ts y provinces.ts han sido descargados. Reemplaza los archivos originales en tu proyecto.",
-              duration: 8000,
-            })
-
-            // Show additional instructions
-            setTimeout(() => {
-              toast.info("Importante: Para aplicar los cambios", {
-                description:
-                  "1. Reemplaza los archivos en src/data/ con los descargados\n2. Reinicia la aplicación\n3. Los cambios se reflejarán en toda la plataforma",
-                duration: 10000,
-              })
-            }, 1000)
-
-            resolve(true)
-          }, 1000)
-        }, 800)
-      }, 800)
+          resolve(true)
+        }, 500) // Increased timeout
+      }, 500) // Increased timeout
     } catch (error) {
       console.error("Error al generar archivos TypeScript:", error)
       toast.error("Error al generar los archivos TypeScript")
@@ -109,39 +90,27 @@ export const autoExportSourceFiles = (
 ): Promise<boolean> => {
   return new Promise((resolve) => {
     try {
-      console.log("Preparando actualización automática de archivos TypeScript...")
-
-      // Log the current state
-      console.log(`Habitaciones a guardar: ${rooms.length}`)
-      console.log(`Servicios a guardar: ${services.length}`)
-      console.log(`Provincias a guardar: ${provinces.length}`)
-
-      // Verify WhatsApp numbers are preserved
-      const roomsWithWhatsApp = rooms.filter((room) => room.whatsappNumber && room.whatsappNumber.trim() !== "")
-      console.log(`Habitaciones con WhatsApp configurado: ${roomsWithWhatsApp.length}`)
-
       // Notify the user that they need to download the files
-      toast.info("Cambios guardados temporalmente", {
-        description: "Para hacer los cambios permanentes, descarga los archivos TypeScript actualizados.",
+      toast.info("Los cambios se han guardado temporalmente", {
+        description:
+          "Para hacer los cambios permanentes, descarga los archivos TypeScript y reemplázalos en tu proyecto.",
         action: {
-          label: "Descargar Archivos",
+          label: "Descargar",
           onClick: async () => {
             const result = await generateTypeScriptFiles()
             resolve(result)
           },
         },
-        duration: 8000,
+        duration: 5000,
       })
 
       console.log(
-        "Archivos TypeScript listos para descarga. Los cambios incluyen todas las configuraciones de WhatsApp.",
+        "Cambios guardados temporalmente. Se requiere descargar los archivos TypeScript para hacerlos permanentes.",
       )
 
-      // Auto-resolve after timeout if user doesn't click
-      setTimeout(() => {
-        console.log("Auto-resolviendo después del timeout")
-        resolve(true)
-      }, 8500)
+      // We'll resolve this in the action onClick callback
+      // If the user doesn't click, we should resolve after some time
+      setTimeout(() => resolve(true), 5500)
     } catch (error) {
       console.error("Error al preparar la actualización de archivos:", error)
       toast.error("Error al preparar la actualización de archivos")

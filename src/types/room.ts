@@ -1,11 +1,27 @@
 import type React from "react"
 
+export interface PricingOption {
+  enabled: boolean
+  price: number
+}
+
+export interface TourismPricing {
+  enabled: boolean
+  nightlyRate: PricingOption
+  hourlyRate?: PricingOption
+}
+
+export interface RoomPricing {
+  nationalTourism?: TourismPricing
+  internationalTourism?: TourismPricing
+}
+
 export interface Room {
   id: number
   title: string
   location: string
   province?: string
-  price: number
+  price: number // Precio base (se mantiene para compatibilidad)
   rating: number
   reviews: number
   image: string
@@ -17,7 +33,7 @@ export interface Room {
   isAvailable?: boolean
   lastModified?: string
   lastUpdated?: string
-  whatsappNumber?: string
+  pricing?: RoomPricing
   images?: Array<{
     id: number
     url: string
@@ -33,6 +49,13 @@ export interface Room {
     start: string
     end: string
   }>
+  hostWhatsApp?: {
+    primary: string
+    secondary?: string
+    enabled: boolean
+    sendToPrimary?: boolean
+    sendToSecondary?: boolean
+  }
 }
 
 export interface RoomStore {
@@ -49,9 +72,4 @@ export interface Amenity {
   title: string
   description: string
   icon?: string
-}
-
-export interface ReservedDateRange {
-  start: string
-  end: string
 }

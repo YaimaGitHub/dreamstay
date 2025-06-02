@@ -7,10 +7,11 @@ import Footer from "@/components/Footer"
 import RoomGallery from "@/components/RoomGallery"
 import BookingForm from "@/components/BookingForm"
 import RoomAmenities from "@/components/RoomAmenities"
-import { Star, User, MapPin } from "lucide-react"
+import { Star, User, MapPin, MessageCircle } from "lucide-react"
 import { useDataStore } from "@/hooks/use-data-store"
 import type { Room } from "@/types/room"
 import { Badge } from "@/components/ui/badge"
+import RoomPricing from "@/components/rooms/RoomPricing"
 
 const RoomDetails = () => {
   const { id } = useParams<{ id: string }>()
@@ -64,6 +65,13 @@ const RoomDetails = () => {
               </Badge>
             )}
           </div>
+          {/* Indicador de WhatsApp disponible */}
+          {room.hostWhatsApp?.enabled && (
+            <div className="flex items-center gap-2 text-green-600 bg-green-50 px-3 py-2 rounded-lg">
+              <MessageCircle className="h-4 w-4" />
+              <span className="text-sm font-medium">Reserva instantánea por WhatsApp</span>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -105,6 +113,20 @@ const RoomDetails = () => {
                     </p>
                   </div>
                 )}
+
+                {/* Información de WhatsApp si está habilitado */}
+                {room.hostWhatsApp?.enabled && (
+                  <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <MessageCircle className="h-5 w-5 text-green-600" />
+                      <h3 className="font-medium text-green-800">Reserva Rápida por WhatsApp</h3>
+                    </div>
+                    <p className="text-green-700 text-sm">
+                      Esta habitación ofrece reserva instantánea por WhatsApp. Tu solicitud será enviada directamente a
+                      los anfitriones para una respuesta rápida.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="mb-10">
@@ -114,7 +136,14 @@ const RoomDetails = () => {
           </div>
 
           <div className="lg:col-span-1">
-            <BookingForm roomId={room.id} price={room.price} room={room} />
+            <div className="sticky top-8">
+              <div className="border rounded-lg p-6 bg-white shadow-sm">
+                <div className="mb-4">
+                  <RoomPricing room={room} showLabel={true} />
+                </div>
+                <BookingForm roomId={room.id} price={room.price} room={room} />
+              </div>
+            </div>
           </div>
         </div>
       </main>

@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
@@ -14,6 +13,14 @@ import { es } from "date-fns/locale"
 import type { DateRange } from "react-day-picker"
 import { cubanProvinces } from "@/data/provinces"
 import { useDataStore } from "@/hooks/use-data-store"
+import GuestSelector from "@/components/GuestSelector"
+
+interface GuestCounts {
+  adults: number
+  children: number
+  babies: number
+  pets: number
+}
 
 const SearchForm = () => {
   const navigate = useNavigate()
@@ -22,7 +29,12 @@ const SearchForm = () => {
     from: new Date(),
     to: new Date(new Date().setDate(new Date().getDate() + 7)),
   })
-  const [guests, setGuests] = useState("1")
+  const [guests, setGuests] = useState<GuestCounts>({
+    adults: 1,
+    children: 0,
+    babies: 0,
+    pets: 0,
+  })
   const [province, setProvince] = useState("")
   const [availableRooms, setAvailableRooms] = useState<number[]>([])
 
@@ -82,10 +94,18 @@ const SearchForm = () => {
       params.append("to", dateRange.to.toISOString())
     }
 
-    params.append("guests", guests)
+    // Enviar información detallada de huéspedes
+    params.append("adults", guests.adults.toString())
+    params.append("children", guests.children.toString())
+    params.append("babies", guests.babies.toString())
+    params.append("pets", guests.pets.toString())
 
     // Navegar a la página de resultados con los parámetros
     navigate(`/habitaciones?${params.toString()}`)
+  }
+
+  const getTotalGuests = () => {
+    return guests.adults + guests.children + guests.babies
   }
 
   return (
@@ -95,7 +115,7 @@ const SearchForm = () => {
           Destino
         </label>
         <Select value={province} onValueChange={setProvince}>
-          <SelectTrigger id="location" className="border-muted">
+          <SelectTrigger id="location" className="border-muted h-11">
             <SelectValue placeholder="Seleccione provincia" />
           </SelectTrigger>
           <SelectContent>
@@ -113,7 +133,7 @@ const SearchForm = () => {
         <label className="block text-sm font-medium">Fechas</label>
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" className="justify-start text-left font-normal w-full border-muted">
+            <Button variant="outline" className="justify-start text-left font-normal w-full border-muted h-11">
               <CalendarIcon className="mr-2 h-4 w-4" />
               {dateRange?.from && dateRange?.to ? (
                 <>
@@ -131,7 +151,7 @@ const SearchForm = () => {
               defaultMonth={dateRange?.from}
               selected={dateRange}
               onSelect={setDateRange}
-              numberOfMonths={2}
+              numberOfMonths={window.innerWidth < 768 ? 1 : 2}
               locale={es}
               className="pointer-events-auto"
             />
@@ -143,20 +163,16 @@ const SearchForm = () => {
         <label htmlFor="guests" className="block text-sm font-medium">
           Huéspedes
         </label>
-        <Select value={guests} onValueChange={setGuests}>
-          <SelectTrigger className="w-[120px] border-muted">
-            <SelectValue placeholder="Huéspedes" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="1">1 Huésped</SelectItem>
-            <SelectItem value="2">2 Huéspedes</SelectItem>
-            <SelectItem value="3">3 Huéspedes</SelectItem>
-            <SelectItem value="4">4 Huéspedes</SelectItem>
-          </SelectContent>
-        </Select>
+        <GuestSelector
+          value={guests}
+          onChange={setGuests}
+          maxGuests={10}
+          className="w-full md:w-[200px]"
+          placeholder="¿Cuántos?"
+        />
       </div>
 
-      <Button className="bg-terracotta hover:bg-terracotta/90 mt-4 md:mt-0" size="lg">
+      <Button className="bg-terracotta hover:bg-terracotta/90 mt-4 md:mt-0 h-11" size="lg">
         <Search className="mr-2 h-4 w-4" />
         Buscar
       </Button>

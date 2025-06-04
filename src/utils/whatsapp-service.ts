@@ -76,54 +76,88 @@ export const formatReservationMessage = (data: ReservationData): string => {
     guestInfo += ` (${guestDetails.join(", ")})`
   }
 
-  // Crear mensaje estructurado
-  let message = `🏨 *NUEVA RESERVA - ${room.title}*\n\n`
+  // Crear mensaje estructurado con emojis compatibles
+  let message = `🏨 *NUEVA RESERVA - ${room.title}*
+
+`
 
   // Información del cliente
-  message += `👤 *DATOS DEL CLIENTE:*\n`
-  message += `• Nombre: ${customerInfo.firstName} ${customerInfo.lastName}\n`
-  message += `• Email: ${customerInfo.email}\n`
-  message += `• Teléfono: ${customerInfo.phone}\n`
-  message += `• Carnet ID: ${customerInfo.idNumber}\n\n`
+  message += `👤 *DATOS DEL CLIENTE:*
+`
+  message += `• Nombre: ${customerInfo.firstName} ${customerInfo.lastName}
+`
+  message += `• Email: ${customerInfo.email}
+`
+  message += `• Teléfono: ${customerInfo.phone}
+`
+  message += `• Carnet ID: ${customerInfo.idNumber}
+
+`
 
   // Detalles de la reserva
-  message += `📅 *DETALLES DE LA RESERVA:*\n`
-  message += `• Check-in: ${checkIn}\n`
-  message += `• Check-out: ${checkOut}\n`
-  message += `• Duración: ${pricingMode === "nightly" ? `${duration} noche${duration > 1 ? "s" : ""}` : `${hours} hora${hours > 1 ? "s" : ""}`}\n`
-  message += `• Huéspedes: ${guestInfo}\n`
-  message += `• Tipo de turismo: ${tourismType}\n\n`
+  message += `📅 *DETALLES DE LA RESERVA:*
+`
+  message += `• Check-in: ${checkIn}
+`
+  message += `• Check-out: ${checkOut}
+`
+  message += `• Duración: ${pricingMode === "nightly" ? `${duration} noche${duration > 1 ? "s" : ""}` : `${hours} hora${hours > 1 ? "s" : ""}`}
+`
+  message += `• Huéspedes: ${guestInfo}
+`
+  message += `• Tipo de turismo: ${tourismType}
+
+`
 
   // Desglose de precios
-  message += `💰 *DESGLOSE DE PRECIOS:*\n`
-  message += `• Habitación (${tourismType}): $${totals.roomSubtotal}\n`
+  message += `💰 *DESGLOSE DE PRECIOS:*
+`
+  message += `• Habitación (${tourismType}): $${totals.roomSubtotal}
+`
 
   if (selectedServices.length > 0) {
-    message += `• Servicios adicionales:\n`
+    message += `• Servicios adicionales:
+`
     selectedServices.forEach((service) => {
-      message += `  - ${service.title}: $${service.price}\n`
+      message += `  - ${service.title}: $${service.price}
+`
     })
-    message += `  Subtotal servicios: $${totals.servicesSubtotal}\n`
+    message += `  Subtotal servicios: $${totals.servicesSubtotal}
+`
   }
 
-  message += `• Tarifa de limpieza: $${totals.cleaningFee}\n`
-  message += `• Tarifa de servicio: $${totals.serviceFee}\n`
-  message += `• *TOTAL: $${totals.grandTotal}*\n\n`
+  message += `• Tarifa de limpieza: $${totals.cleaningFee}
+`
+  message += `• Tarifa de servicio: $${totals.serviceFee}
+`
+  message += `• *TOTAL: $${totals.grandTotal}*
+
+`
 
   // Solicitudes especiales
   if (customerInfo.specialRequests.trim()) {
-    message += `📝 *SOLICITUDES ESPECIALES:*\n${customerInfo.specialRequests}\n\n`
+    message += `📝 *SOLICITUDES ESPECIALES:*
+${customerInfo.specialRequests}
+
+`
   }
 
   // Información adicional
-  message += `🏠 *HABITACIÓN:* ${room.title}\n`
-  message += `📍 *UBICACIÓN:* ${room.location}\n`
+  message += `🏠 *HABITACIÓN:* ${room.title}
+`
+  message += `📍 *UBICACIÓN:* ${room.location}
+`
   if (room.province) {
-    message += `🏛️ *PROVINCIA:* ${room.province}\n`
+    message += `🏛️ *PROVINCIA:* ${room.province}
+`
   }
-  message += `⭐ *RATING:* ${room.rating}/5 (${room.reviews} reseñas)\n\n`
+  message += `⭐ *RATING:* ${room.rating}/5 (${room.reviews} reseñas)
 
-  message += `⏰ *Reserva recibida:* ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: es })}\n\n`
+`
+
+  message += `⏰ *Reserva recibida:* ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: es })}
+
+`
   message += `✅ *Por favor confirma la disponibilidad y responde al cliente.*`
 
   return message
@@ -131,10 +165,10 @@ export const formatReservationMessage = (data: ReservationData): string => {
 
 export const sendReservationToHosts = async (
   data: ReservationData,
-): Promise<{ success: boolean; errors: string[] }> => {
+): Promise<{ success: boolean; errors: string[]; sentTo: string[] }> => {
   const { room } = data
   const errors: string[] = []
-  let successCount = 0
+  const sentTo: string[] = []
 
   console.log("🚀 Iniciando envío de reserva por WhatsApp...")
   console.log("📱 Configuración WhatsApp de la habitación:", room.hostWhatsApp)
@@ -143,111 +177,137 @@ export const sendReservationToHosts = async (
     const error = "WhatsApp no está configurado para esta habitación"
     console.error("❌", error)
     errors.push(error)
-    return { success: false, errors }
+    return { success: false, errors, sentTo }
   }
 
+  // Generar el mensaje UNA SOLA VEZ para asegurar consistencia
   const message = formatReservationMessage(data)
+  console.log("📝 Mensaje generado (mismo para todos):", message.substring(0, 150) + "...")
+
+  // Codificar el mensaje UNA SOLA VEZ
   const encodedMessage = encodeURIComponent(message)
 
-  console.log("📝 Mensaje generado:", message.substring(0, 100) + "...")
-
   // Lista de números a enviar
-  const numbersToSend: Array<{ number: string; type: string }> = []
+  const numbersToSend: Array<{ number: string; type: string; enabled: boolean }> = []
 
   // Agregar número principal si está configurado
-  if (room.hostWhatsApp.sendToPrimary && room.hostWhatsApp.primary?.trim()) {
+  if (room.hostWhatsApp.primary?.trim()) {
     numbersToSend.push({
       number: room.hostWhatsApp.primary.trim(),
       type: "Principal",
+      enabled: room.hostWhatsApp.sendToPrimary || false,
     })
   }
 
   // Agregar número secundario si está configurado
-  if (room.hostWhatsApp.sendToSecondary && room.hostWhatsApp.secondary?.trim()) {
+  if (room.hostWhatsApp.secondary?.trim()) {
     numbersToSend.push({
       number: room.hostWhatsApp.secondary.trim(),
       type: "Secundario",
+      enabled: room.hostWhatsApp.sendToSecondary || false,
     })
   }
 
-  console.log("📋 Números a enviar:", numbersToSend)
+  console.log("📋 Números configurados:", numbersToSend)
 
-  if (numbersToSend.length === 0) {
-    const error = "No hay números de WhatsApp configurados para enviar"
+  // Filtrar solo los números habilitados
+  const enabledNumbers = numbersToSend.filter((num) => num.enabled)
+
+  if (enabledNumbers.length === 0) {
+    const error = "No hay números de WhatsApp habilitados para enviar"
     console.error("❌", error)
     errors.push(error)
-    return { success: false, errors }
+    return { success: false, errors, sentTo }
   }
 
+  console.log("📤 Números habilitados para envío:", enabledNumbers)
+
   // Función para enviar a un número específico
-  const sendToNumber = async (phoneData: { number: string; type: string }, delay = 0) => {
-    return new Promise<void>((resolve) => {
+  const sendToNumber = (phoneData: { number: string; type: string }, delay = 0): Promise<boolean> => {
+    return new Promise((resolve) => {
       setTimeout(() => {
         try {
-          // Limpiar el número (remover espacios, guiones, etc.)
+          // Limpiar el número (remover espacios, guiones, paréntesis, etc.)
           const cleanNumber = phoneData.number.replace(/[^\d+]/g, "")
 
-          console.log(`📱 Enviando a anfitrión ${phoneData.type}:`, phoneData.number, "→", cleanNumber)
+          console.log(`📱 Preparando envío a anfitrión ${phoneData.type}:`)
+          console.log(`   Original: ${phoneData.number}`)
+          console.log(`   Limpio: ${cleanNumber}`)
 
-          // Crear URL de WhatsApp
-          const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`
-
-          console.log(`🔗 URL generada para ${phoneData.type}:`, whatsappUrl.substring(0, 50) + "...")
-
-          // Intentar abrir WhatsApp
-          if (typeof window !== "undefined") {
-            // En navegador
-            const newWindow = window.open(whatsappUrl, "_blank", "noopener,noreferrer")
-
-            if (newWindow) {
-              console.log(`✅ WhatsApp abierto exitosamente para anfitrión ${phoneData.type}`)
-              successCount++
-            } else {
-              console.warn(`⚠️ No se pudo abrir ventana para anfitrión ${phoneData.type}`)
-              // Intentar con location.href como fallback
-              setTimeout(() => {
-                window.location.href = whatsappUrl
-              }, 100)
-              successCount++
-            }
-          } else {
-            console.warn("⚠️ Window no disponible (entorno servidor)")
+          // Validar que el número tenga formato correcto
+          if (!cleanNumber.startsWith("+") || cleanNumber.length < 10) {
+            console.error(`❌ Número inválido para ${phoneData.type}: ${cleanNumber}`)
+            errors.push(`Número inválido para anfitrión ${phoneData.type}`)
+            resolve(false)
+            return
           }
 
-          resolve()
+          // Crear URL de WhatsApp usando el MISMO mensaje codificado
+          const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`
+
+          console.log(`🔗 URL generada para ${phoneData.type}:`)
+          console.log(`   ${whatsappUrl.substring(0, 80)}...`)
+
+          // Detectar si estamos en móvil
+          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+
+          console.log(`📱 Dispositivo detectado: ${isMobile ? "Móvil/Tablet" : "Desktop"}`)
+
+          if (isMobile) {
+            // En móviles, usar location.href para mejor compatibilidad
+            console.log(`📲 Abriendo WhatsApp en móvil para ${phoneData.type}...`)
+            window.location.href = whatsappUrl
+          } else {
+            // En desktop, usar window.open
+            console.log(`💻 Abriendo WhatsApp en desktop para ${phoneData.type}...`)
+            const newWindow = window.open(whatsappUrl, "_blank", "noopener,noreferrer")
+
+            if (!newWindow) {
+              console.warn(`⚠️ Popup bloqueado, usando location.href como fallback para ${phoneData.type}`)
+              window.location.href = whatsappUrl
+            }
+          }
+
+          console.log(`✅ Envío iniciado para anfitrión ${phoneData.type}`)
+          sentTo.push(`${phoneData.type}: ${phoneData.number}`)
+          resolve(true)
         } catch (error) {
           console.error(`❌ Error al enviar a anfitrión ${phoneData.type}:`, error)
           errors.push(`Error al enviar a anfitrión ${phoneData.type}: ${error}`)
-          resolve()
+          resolve(false)
         }
       }, delay)
     })
   }
 
-  // Enviar a todos los números configurados
+  // Enviar a todos los números habilitados
   try {
-    for (let i = 0; i < numbersToSend.length; i++) {
-      const phoneData = numbersToSend[i]
-      const delay = i * 3000 // 3 segundos entre cada envío
+    let successCount = 0
+
+    for (let i = 0; i < enabledNumbers.length; i++) {
+      const phoneData = enabledNumbers[i]
+      const delay = i * 4000 // 4 segundos entre cada envío para mejor compatibilidad
 
       console.log(`⏱️ Enviando a ${phoneData.type} con delay de ${delay}ms`)
-      await sendToNumber(phoneData, delay)
+
+      const success = await sendToNumber(phoneData, delay)
+      if (success) {
+        successCount++
+      }
     }
 
-    console.log(`📊 Resultado final: ${successCount} envíos exitosos de ${numbersToSend.length} intentos`)
-
-    if (successCount === 0) {
-      errors.push("No se pudo enviar a ningún anfitrión")
-    }
+    console.log(`📊 Resultado final: ${successCount} envíos exitosos de ${enabledNumbers.length} intentos`)
+    console.log(`📤 Enviado a: ${sentTo.join(", ")}`)
 
     return {
       success: successCount > 0,
       errors,
+      sentTo,
     }
   } catch (error) {
     console.error("❌ Error general en el envío:", error)
     errors.push(`Error general: ${error}`)
-    return { success: false, errors }
+    return { success: false, errors, sentTo }
   }
 }
 

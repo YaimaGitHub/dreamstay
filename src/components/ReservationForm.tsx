@@ -190,14 +190,16 @@ const ReservationForm = ({
       const result = await sendReservationToHosts(reservationData)
 
       if (result.success) {
+        console.log("✅ Reserva enviada exitosamente a:", result.sentTo)
         // Mostrar notificación de WhatsApp
         setShowWhatsAppNotification(true)
-        toast.success("Reserva enviada exitosamente por WhatsApp")
+        toast.success(`Reserva enviada exitosamente a ${result.sentTo.length} anfitrión(es)`)
       } else {
+        console.error("❌ Error al enviar reserva:", result.errors)
         toast.error(`Error al enviar reserva: ${result.errors.join(", ")}`)
       }
     } catch (error) {
-      console.error("Error al enviar reserva:", error)
+      console.error("❌ Error al enviar reserva:", error)
       toast.error("Error al enviar la reserva. Por favor intente nuevamente.")
     } finally {
       setIsSubmitting(false)
@@ -513,9 +515,11 @@ const ReservationForm = ({
 
               <div className="rounded-lg bg-green-50 p-4 border border-green-100">
                 <p className="text-sm text-green-700">
-                  Al hacer clic en "Reservar ahora", se enviará un mensaje de WhatsApp al anfitrión con los detalles de
-                  su reserva. El anfitrión se pondrá en contacto con usted para confirmar la disponibilidad y finalizar
-                  su reserva.
+                  Al hacer clic en "Reservar ahora", se enviará un mensaje de WhatsApp a{" "}
+                  {room.hostWhatsApp?.secondary ? "ambos anfitriones" : "el anfitrión"} con los detalles de su reserva.
+                  {room.hostWhatsApp?.secondary
+                    ? " Recibirá instrucciones para enviar a cada uno."
+                    : " El anfitrión se pondrá en contacto con usted para confirmar la disponibilidad."}
                 </p>
               </div>
             </div>

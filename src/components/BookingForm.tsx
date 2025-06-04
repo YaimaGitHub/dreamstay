@@ -17,6 +17,7 @@ import type { Room } from "@/types/room"
 import PricingBreakdownDetailed from "@/components/PricingBreakdownDetailed"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
+import GuestSelector from "@/components/GuestSelector"
 
 interface BookingFormProps {
   roomId: number
@@ -30,6 +31,13 @@ export interface SelectedService {
   price: number
 }
 
+interface GuestCounts {
+  adults: number
+  children: number
+  babies: number
+  pets: number
+}
+
 type TourismOption = {
   id: string
   label: string
@@ -41,7 +49,12 @@ type TourismOption = {
 
 const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
-  const [guests, setGuests] = useState("2")
+  const [guests, setGuests] = useState<GuestCounts>({
+    adults: 2,
+    children: 0,
+    babies: 0,
+    pets: 0,
+  })
   const [isProcessing, setIsProcessing] = useState(false)
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([])
   const [showReservationForm, setShowReservationForm] = useState(false)
@@ -205,8 +218,8 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
   }
 
   return (
-    <div className="bg-white rounded-lg border border-border p-6 sticky top-24">
-      <div className="mb-6">
+    <div className="bg-white rounded-lg border border-border p-4 sm:p-6 sticky top-24">
+      <div className="mb-4 sm:mb-6">
         <div className="flex items-center">
           <div className="flex items-center text-sm">
             <span className="text-terracotta">★★★★★</span>
@@ -231,8 +244,8 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
                   <SelectItem key={option.id} value={option.id}>
                     <div className="flex items-center gap-2">
                       {option.icon}
-                      <span>{option.label}</span>
-                      <Badge variant="outline" className="ml-auto">
+                      <span className="text-sm">{option.label}</span>
+                      <Badge variant="outline" className="ml-auto text-xs">
                         ${option.price}
                       </Badge>
                     </div>
@@ -248,7 +261,7 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
                     {selectedOption.icon}
                     <span className="text-sm font-medium">{selectedOption.label}</span>
                   </div>
-                  <Badge variant="default">
+                  <Badge variant="default" className="text-xs">
                     ${selectedOption.price} / {selectedOption.mode === "nightly" ? "noche" : "hora"}
                   </Badge>
                 </div>
@@ -261,17 +274,24 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
           <label className="block text-sm font-medium">Fechas</label>
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="w-full justify-between border-border">
+              <Button variant="outline" className="w-full justify-between border-border h-auto py-3">
                 <div className="flex items-center">
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dateRange?.from && dateRange?.to ? (
-                    <>
-                      {format(dateRange.from, "d MMM", { locale: es })} -{" "}
-                      {format(dateRange.to, "d MMM", { locale: es })}
-                    </>
-                  ) : (
-                    <span>Seleccionar fechas</span>
-                  )}
+                  <div className="text-left">
+                    {dateRange?.from && dateRange?.to ? (
+                      <div>
+                        <div className="text-sm font-medium">
+                          {format(dateRange.from, "d MMM", { locale: es })} -{" "}
+                          {format(dateRange.to, "d MMM", { locale: es })}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {duration} noche{duration !== 1 ? "s" : ""}
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-sm">Seleccionar fechas</span>
+                    )}
+                  </div>
                 </div>
                 <ChevronDown className="h-4 w-4 opacity-50" />
               </Button>
@@ -315,19 +335,10 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
           </div>
         )}
 
+        {/* Selector de huéspedes mejorado */}
         <div className="space-y-2">
           <label className="block text-sm font-medium">Huéspedes</label>
-          <Select value={guests} onValueChange={setGuests}>
-            <SelectTrigger className="w-full border-border">
-              <SelectValue placeholder="Número de huéspedes" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1">1 Huésped</SelectItem>
-              <SelectItem value="2">2 Huéspedes</SelectItem>
-              <SelectItem value="3">3 Huéspedes</SelectItem>
-              <SelectItem value="4">4 Huéspedes</SelectItem>
-            </SelectContent>
-          </Select>
+          <GuestSelector value={guests} onChange={setGuests} maxGuests={room.capacity || 10} className="w-full" />
         </div>
 
         <div className="mt-6">
@@ -389,7 +400,7 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
         <Dialog open={showReservationForm} onOpenChange={setShowReservationForm}>
           <DialogTrigger asChild>
             <Button
-              className="w-full bg-terracotta hover:bg-terracotta/90 mt-6"
+              className="w-full bg-terracotta hover:bg-terracotta/90 mt-6 h-12 text-base font-medium"
               onClick={handleBooking}
               disabled={
                 isProcessing ||
@@ -454,11 +465,11 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
               )}
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto p-0">
             <ReservationForm
               room={room}
               dateRange={dateRange}
-              guests={Number.parseInt(guests)}
+              guests={guests}
               selectedServices={selectedServices}
               onClose={closeReservationForm}
               duration={duration}
@@ -466,6 +477,7 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
               pricingMode={selectedOption?.mode || "nightly"}
               hours={selectedOption?.mode === "hourly" ? Number.parseInt(hours) : undefined}
               selectedTourismType={selectedOption?.type}
+              onDateRangeChange={setDateRange}
             />
           </DialogContent>
         </Dialog>
@@ -475,15 +487,17 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
 
       {/* Desglose de precios */}
       {selectedOption && (
-        <PricingBreakdownDetailed
-          room={room}
-          selectedTourismType={selectedOption.type}
-          pricingMode={selectedOption.mode}
-          nights={duration}
-          hours={Number.parseInt(hours)}
-          selectedServices={selectedServices}
-          showAllOptions={false}
-        />
+        <div className="mt-6">
+          <PricingBreakdownDetailed
+            room={room}
+            selectedTourismType={selectedOption.type}
+            pricingMode={selectedOption.mode}
+            nights={duration}
+            hours={Number.parseInt(hours)}
+            selectedServices={selectedServices}
+            showAllOptions={false}
+          />
+        </div>
       )}
     </div>
   )

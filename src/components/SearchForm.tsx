@@ -37,36 +37,38 @@ const SearchForm = () => {
   })
   const [province, setProvince] = useState("")
   const [availableRooms, setAvailableRooms] = useState<number[]>([])
+  const [isMobile, setIsMobile] = useState(false)
 
-  // Verificar disponibilidad de habitaciones cuando cambian las fechas o la provincia
+  // Detectar dispositivo móvil
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+    return () => window.removeEventListener("resize", checkMobile)
+  }, [])
+
+  // Verificar disponibilidad de habitaciones
   useEffect(() => {
     if (dateRange?.from && dateRange?.to) {
-      // Filtrar habitaciones disponibles según fechas y provincia
       const available = rooms
         .filter((room) => {
-          // Verificar si la habitación está disponible (no deshabilitada)
           if (room.available === false) return false
-
-          // Verificar si la habitación está en la provincia seleccionada (si hay una seleccionada)
           if (province && room.province !== province) return false
-
-          // Si la habitación no tiene fechas reservadas, está disponible
           if (!room.reservedDates || room.reservedDates.length === 0) return true
 
-          // Verificar si las fechas seleccionadas se superponen con alguna reserva
           const selectedStart = dateRange.from.getTime()
           const selectedEnd = dateRange.to.getTime()
 
-          // La habitación está disponible si ninguna de sus fechas reservadas se superpone
           return !room.reservedDates.some((reservation) => {
             const reservationStart = new Date(reservation.start).getTime()
             const reservationEnd = new Date(reservation.end).getTime()
 
-            // Verificar superposición de fechas
             return (
-              (selectedStart >= reservationStart && selectedStart <= reservationEnd) || // Inicio dentro de reserva
-              (selectedEnd >= reservationStart && selectedEnd <= reservationEnd) || // Fin dentro de reserva
-              (selectedStart <= reservationStart && selectedEnd >= reservationEnd) // Reserva dentro del rango
+              (selectedStart >= reservationStart && selectedStart <= reservationEnd) ||
+              (selectedEnd >= reservationStart && selectedEnd <= reservationEnd) ||
+              (selectedStart <= reservationStart && selectedEnd >= reservationEnd)
             )
           })
         })
@@ -79,7 +81,6 @@ const SearchForm = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Construir parámetros de búsqueda
     const params = new URLSearchParams()
 
     if (province) {
@@ -94,20 +95,99 @@ const SearchForm = () => {
       params.append("to", dateRange.to.toISOString())
     }
 
-    // Enviar información detallada de huéspedes
     params.append("adults", guests.adults.toString())
     params.append("children", guests.children.toString())
     params.append("babies", guests.babies.toString())
     params.append("pets", guests.pets.toString())
 
-    // Navegar a la página de resultados con los parámetros
     navigate(`/habitaciones?${params.toString()}`)
   }
 
-  const getTotalGuests = () => {
-    return guests.adults + guests.children + guests.babies
+  if (isMobile) {
+    // Layout móvil - vertical
+    return (
+      <form onSubmit={handleSearch} className="bg-white rounded-lg shadow-lg p-4 space-y-4">
+        <div className="space-y-2">
+          <label htmlFor="location" className="block text-sm font-medium">
+            Destino
+          </label>
+          <Select value={province} onValueChange={setProvince}>
+            <SelectTrigger id="location" className="border-muted h-12 text-base">
+              <SelectValue placeholder="Seleccione provincia" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas las provincias</SelectItem>
+              {cubanProvinces.map((prov) => (
+                <SelectItem key={prov} value={prov}>
+                  {prov}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-sm font-medium">Fechas</label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="justify-start text-left font-normal w-full border-muted h-12">
+                <CalendarIcon className="mr-2 h-5 w-5" />
+                <span className="text-base">
+                  {dateRange?.from && dateRange?.to ? (
+                    <>
+                      {format(dateRange.from, "d MMM", { locale: es })} -{" "}
+                      {format(dateRange.to, "d MMM", { locale: es })}
+                    </>
+                  ) : (
+                    "Seleccionar fechas"
+                  )}
+                </span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="center">
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={dateRange?.from}
+                selected={dateRange}
+                onSelect={setDateRange}
+                numberOfMonths={1}
+                locale={es}
+                className="pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="guests" className="block text-sm font-medium">
+            Huéspedes
+          </label>
+          <GuestSelector
+            value={guests}
+            onChange={setGuests}
+            maxGuests={10}
+            className="w-full"
+            placeholder="¿Cuántos?"
+            variant="mobile"
+          />
+        </div>
+
+        <Button className="bg-terracotta hover:bg-terracotta/90 w-full h-12 text-base font-medium" size="lg">
+          <Search className="mr-2 h-5 w-5" />
+          Buscar
+        </Button>
+
+        {availableRooms.length > 0 && (
+          <div className="text-sm text-muted-foreground text-center">
+            {availableRooms.length} habitaciones disponibles
+          </div>
+        )}
+      </form>
+    )
   }
 
+  // Layout desktop/tablet - horizontal
   return (
     <form onSubmit={handleSearch} className="bg-white rounded-lg shadow-lg p-4 md:p-6 grid gap-4 md:flex md:items-end">
       <div className="space-y-2 flex-1">
@@ -151,7 +231,7 @@ const SearchForm = () => {
               defaultMonth={dateRange?.from}
               selected={dateRange}
               onSelect={setDateRange}
-              numberOfMonths={window.innerWidth < 768 ? 1 : 2}
+              numberOfMonths={2}
               locale={es}
               className="pointer-events-auto"
             />
@@ -169,6 +249,7 @@ const SearchForm = () => {
           maxGuests={10}
           className="w-full md:w-[200px]"
           placeholder="¿Cuántos?"
+          variant="default"
         />
       </div>
 

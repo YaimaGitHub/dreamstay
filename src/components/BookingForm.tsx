@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -62,12 +62,22 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
   const [showAvailabilityMessage, setShowAvailabilityMessage] = useState(false)
   const [selectedTourismOption, setSelectedTourismOption] = useState<string>("")
   const [hours, setHours] = useState("24")
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Detectar dispositivo móvil
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+    return () => window.removeEventListener("resize", checkMobile)
+  }, [])
 
   // Obtener opciones de turismo disponibles
   const getTourismOptions = (): TourismOption[] => {
     const options: TourismOption[] = []
 
-    // Turismo Internacional (solo por noche)
     if (
       room.pricing?.internationalTourism?.enabled &&
       room.pricing.internationalTourism.nightlyRate?.enabled &&
@@ -83,7 +93,6 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
       })
     }
 
-    // Turismo Nacional por noche
     if (
       room.pricing?.nationalTourism?.enabled &&
       room.pricing.nationalTourism.nightlyRate?.enabled &&
@@ -99,7 +108,6 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
       })
     }
 
-    // Turismo Nacional por hora
     if (
       room.pricing?.nationalTourism?.enabled &&
       room.pricing.nationalTourism.hourlyRate?.enabled &&
@@ -121,7 +129,6 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
   const tourismOptions = getTourismOptions()
   const selectedOption = tourismOptions.find((opt) => opt.id === selectedTourismOption)
 
-  // Calcular la duración de la estancia en días
   const getStayDuration = () => {
     if (!dateRange?.from || !dateRange?.to) return 0
     const diffTime = dateRange.to.getTime() - dateRange.from.getTime()
@@ -156,7 +163,6 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
     }, 5000)
   }
 
-  // Calcular el precio total de la habitación según la opción seleccionada
   const getRoomTotalPrice = () => {
     if (!selectedOption) return 0
 
@@ -191,13 +197,11 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
   }
 
   const handleBooking = () => {
-    // Verificar si WhatsApp está habilitado para esta habitación
     if (!room.hostWhatsApp?.enabled) {
       toast.error("Esta habitación no tiene WhatsApp configurado para reservas")
       return
     }
 
-    // Verificar que al menos un número esté configurado
     const canSendToPrimary = room.hostWhatsApp.sendToPrimary && room.hostWhatsApp.primary
     const canSendToSecondary = room.hostWhatsApp.sendToSecondary && room.hostWhatsApp.secondary
 
@@ -236,7 +240,7 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
           <div className="space-y-2">
             <label className="block text-sm font-medium">Tipo de Turismo</label>
             <Select value={selectedTourismOption} onValueChange={setSelectedTourismOption}>
-              <SelectTrigger className="w-full border-border">
+              <SelectTrigger className={`w-full border-border ${isMobile ? "h-12" : "h-11"}`}>
                 <SelectValue placeholder="Seleccionar tipo de turismo" />
               </SelectTrigger>
               <SelectContent>
@@ -244,7 +248,7 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
                   <SelectItem key={option.id} value={option.id}>
                     <div className="flex items-center gap-2">
                       {option.icon}
-                      <span className="text-sm">{option.label}</span>
+                      <span className={isMobile ? "text-base" : "text-sm"}>{option.label}</span>
                       <Badge variant="outline" className="ml-auto text-xs">
                         ${option.price}
                       </Badge>
@@ -259,7 +263,7 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     {selectedOption.icon}
-                    <span className="text-sm font-medium">{selectedOption.label}</span>
+                    <span className={`font-medium ${isMobile ? "text-base" : "text-sm"}`}>{selectedOption.label}</span>
                   </div>
                   <Badge variant="default" className="text-xs">
                     ${selectedOption.price} / {selectedOption.mode === "nightly" ? "noche" : "hora"}
@@ -274,13 +278,16 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
           <label className="block text-sm font-medium">Fechas</label>
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="w-full justify-between border-border h-auto py-3">
+              <Button
+                variant="outline"
+                className={`w-full justify-between border-border ${isMobile ? "h-12" : "h-11"} py-3`}
+              >
                 <div className="flex items-center">
-                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <CalendarIcon className={`mr-2 ${isMobile ? "h-5 w-5" : "h-4 w-4"}`} />
                   <div className="text-left">
                     {dateRange?.from && dateRange?.to ? (
                       <div>
-                        <div className="text-sm font-medium">
+                        <div className={`font-medium ${isMobile ? "text-base" : "text-sm"}`}>
                           {format(dateRange.from, "d MMM", { locale: es })} -{" "}
                           {format(dateRange.to, "d MMM", { locale: es })}
                         </div>
@@ -289,14 +296,14 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
                         </div>
                       </div>
                     ) : (
-                      <span className="text-sm">Seleccionar fechas</span>
+                      <span className={isMobile ? "text-base" : "text-sm"}>Seleccionar fechas</span>
                     )}
                   </div>
                 </div>
-                <ChevronDown className="h-4 w-4 opacity-50" />
+                <ChevronDown className={`opacity-50 ${isMobile ? "h-5 w-5" : "h-4 w-4"}`} />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
+            <PopoverContent className="w-auto p-0" align={isMobile ? "center" : "start"}>
               <Calendar
                 initialFocus
                 mode="range"
@@ -308,7 +315,7 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
                     checkDateAvailability(range)
                   }
                 }}
-                numberOfMonths={2}
+                numberOfMonths={isMobile ? 1 : 2}
                 locale={es}
                 className="pointer-events-auto"
               />
@@ -321,7 +328,7 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
           <div className="space-y-2">
             <label className="block text-sm font-medium">Número de horas</label>
             <Select value={hours} onValueChange={setHours}>
-              <SelectTrigger className="w-full border-border">
+              <SelectTrigger className={`w-full border-border ${isMobile ? "h-12" : "h-11"}`}>
                 <SelectValue placeholder="Seleccionar horas" />
               </SelectTrigger>
               <SelectContent>
@@ -338,7 +345,13 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
         {/* Selector de huéspedes mejorado */}
         <div className="space-y-2">
           <label className="block text-sm font-medium">Huéspedes</label>
-          <GuestSelector value={guests} onChange={setGuests} maxGuests={room.capacity || 10} className="w-full" />
+          <GuestSelector
+            value={guests}
+            onChange={setGuests}
+            maxGuests={room.capacity || 10}
+            className="w-full"
+            variant={isMobile ? "mobile" : "default"}
+          />
         </div>
 
         <div className="mt-6">
@@ -370,7 +383,9 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
                       />
                     </svg>
                   </div>
-                  <p className="text-sm font-medium">¡Habitación disponible para las fechas seleccionadas!</p>
+                  <p className={`font-medium ${isMobile ? "text-base" : "text-sm"}`}>
+                    ¡Habitación disponible para las fechas seleccionadas!
+                  </p>
                 </>
               ) : (
                 <>
@@ -388,7 +403,7 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
                       />
                     </svg>
                   </div>
-                  <p className="text-sm font-medium">
+                  <p className={`font-medium ${isMobile ? "text-base" : "text-sm"}`}>
                     Lo sentimos, la habitación no está disponible para las fechas seleccionadas.
                   </p>
                 </>
@@ -400,7 +415,9 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
         <Dialog open={showReservationForm} onOpenChange={setShowReservationForm}>
           <DialogTrigger asChild>
             <Button
-              className="w-full bg-terracotta hover:bg-terracotta/90 mt-6 h-12 text-base font-medium"
+              className={`w-full bg-terracotta hover:bg-terracotta/90 mt-6 font-medium ${
+                isMobile ? "h-12 text-base" : "h-12 text-base"
+              }`}
               onClick={handleBooking}
               disabled={
                 isProcessing ||

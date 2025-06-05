@@ -1,16 +1,17 @@
 "use client"
 
-import { useParams, useNavigate } from "react-router-dom"
+import { useParams, useNavigate, Link } from "react-router-dom"
 import { useEffect, useState } from "react"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import RoomGallery from "@/components/RoomGallery"
 import BookingForm from "@/components/BookingForm"
 import RoomAmenities from "@/components/RoomAmenities"
-import { Star, User, MapPin, MessageCircle } from "lucide-react"
+import { Star, User, MapPin, MessageCircle, ArrowLeft, Home } from "lucide-react"
 import { useDataStore } from "@/hooks/use-data-store"
 import type { Room } from "@/types/room"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import RoomPricing from "@/components/rooms/RoomPricing"
 
 const RoomDetails = () => {
@@ -38,7 +39,11 @@ const RoomDetails = () => {
       <div className="flex flex-col min-h-screen">
         <Navbar />
         <main className="flex-grow container mx-auto py-8 px-4">
-          <p>Cargando información de la habitación...</p>
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-muted rounded w-1/3"></div>
+            <div className="h-4 bg-muted rounded w-1/2"></div>
+            <div className="h-64 bg-muted rounded"></div>
+          </div>
         </main>
         <Footer />
       </div>
@@ -49,38 +54,73 @@ const RoomDetails = () => {
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <main className="flex-grow container mx-auto py-8 px-4">
-        <h1 className="text-3xl font-bold mb-2">{room.title}</h1>
-        <div className="flex flex-wrap items-center gap-4 mb-6">
-          <div className="flex items-center">
-            <Star className="h-4 w-4 fill-terracotta text-terracotta mr-1" />
-            <span className="font-medium mr-1">{room.rating}</span>
-            <span className="text-muted-foreground">({room.reviews} reseñas)</span>
+        {/* Navegación de regreso */}
+        <div className="mb-6 animate-in slide-in-from-left-4 duration-500">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" size="sm" asChild className="hover:bg-orange-50 hover:border-orange-200">
+              <Link to="/habitaciones" className="flex items-center gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                <span className="hidden sm:inline">Regresar a habitaciones</span>
+                <span className="sm:hidden">Regresar</span>
+              </Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild className="hover:bg-orange-50">
+              <Link to="/" className="flex items-center gap-2">
+                <Home className="h-4 w-4" />
+                <span className="hidden sm:inline">Inicio</span>
+              </Link>
+            </Button>
+            <div className="text-sm text-muted-foreground">
+              <Link to="/" className="hover:text-orange-600">
+                Inicio
+              </Link>{" "}
+              /{" "}
+              <Link to="/habitaciones" className="hover:text-orange-600">
+                Habitaciones
+              </Link>{" "}
+              / <span className="font-medium">{room.title}</span>
+            </div>
           </div>
-          <div className="flex items-center text-muted-foreground">
-            <MapPin className="h-4 w-4 mr-1" />
-            <span>{room.location}</span>
-            {room.province && (
-              <Badge variant="outline" className="ml-2">
-                {room.province}
-              </Badge>
+        </div>
+
+        <div className="animate-in slide-in-from-top-4 duration-700">
+          <h1 className="text-3xl font-bold mb-2">{room.title}</h1>
+          <div className="flex flex-wrap items-center gap-4 mb-6">
+            <div className="flex items-center">
+              <Star className="h-4 w-4 fill-orange-400 text-orange-400 mr-1" />
+              <span className="font-medium mr-1">{room.rating}</span>
+              <span className="text-muted-foreground">({room.reviews} reseñas)</span>
+            </div>
+            <div className="flex items-center text-muted-foreground">
+              <MapPin className="h-4 w-4 mr-1" />
+              <span>{room.location}</span>
+              {room.province && (
+                <Badge variant="outline" className="ml-2">
+                  {room.province}
+                </Badge>
+              )}
+            </div>
+            {/* Indicador de WhatsApp disponible */}
+            {room.hostWhatsApp?.enabled && (
+              <div className="flex items-center gap-2 text-green-600 bg-green-50 px-3 py-2 rounded-lg">
+                <MessageCircle className="h-4 w-4" />
+                <span className="text-sm font-medium">Reserva instantánea por WhatsApp</span>
+              </div>
             )}
           </div>
-          {/* Indicador de WhatsApp disponible */}
-          {room.hostWhatsApp?.enabled && (
-            <div className="flex items-center gap-2 text-green-600 bg-green-50 px-3 py-2 rounded-lg">
-              <MessageCircle className="h-4 w-4" />
-              <span className="text-sm font-medium">Reserva instantánea por WhatsApp</span>
-            </div>
-          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 animate-in slide-in-from-left-4 duration-700 delay-200">
             {room.images && room.images.length > 0 ? (
               <RoomGallery images={room.images} />
             ) : (
               <div className="aspect-[16/9] rounded-lg overflow-hidden mb-4">
-                <img src={room.image || "/placeholder.svg"} alt={room.title} className="w-full h-full object-cover" />
+                <img
+                  src={room.image || "/placeholder.svg?height=400&width=600"}
+                  alt={room.title}
+                  className="w-full h-full object-cover"
+                />
               </div>
             )}
 
@@ -88,10 +128,10 @@ const RoomDetails = () => {
               <div className="flex items-center justify-between pb-4 border-b mb-6">
                 <div>
                   <h2 className="text-xl font-semibold">Habitación en alojamiento entero</h2>
-                  <p className="text-muted-foreground">Máximo 2 huéspedes • 1 cama • 1 baño</p>
+                  <p className="text-muted-foreground">Máximo {room.capacity || 4} huéspedes • 1 cama • 1 baño</p>
                 </div>
                 <div className="flex items-center">
-                  <div className="w-12 h-12 rounded-full bg-deepblue flex items-center justify-center text-white">
+                  <div className="w-12 h-12 rounded-full bg-orange-600 flex items-center justify-center text-white">
                     <User className="h-6 w-6" />
                   </div>
                   <div className="ml-2">
@@ -135,7 +175,7 @@ const RoomDetails = () => {
             </div>
           </div>
 
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 animate-in slide-in-from-right-4 duration-700 delay-300">
             <div className="sticky top-8">
               <div className="border rounded-lg p-6 bg-white shadow-sm">
                 <div className="mb-4">

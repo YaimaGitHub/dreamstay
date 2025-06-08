@@ -7,7 +7,19 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card } from "@/components/ui/card"
-import { MapPin, Phone, Mail, Clock, Send, CheckCircle2, Loader2, Navigation, AlertCircle } from "lucide-react"
+import {
+  MapPin,
+  Phone,
+  Mail,
+  Clock,
+  Send,
+  CheckCircle2,
+  Loader2,
+  Navigation,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react"
 import { useState, useEffect } from "react"
 import { useToast } from "@/components/ui/use-toast"
 
@@ -31,6 +43,7 @@ const ContactPage = () => {
   const [userLocation, setUserLocation] = useState<LocationData | null>(null)
   const [locationError, setLocationError] = useState<string>("")
   const [isLoadingLocation, setIsLoadingLocation] = useState(false)
+  const [showAllFaqs, setShowAllFaqs] = useState(false)
 
   // Número de WhatsApp del administrador
   const ADMIN_WHATSAPP = "54690878"
@@ -57,17 +70,23 @@ const ContactPage = () => {
         const { latitude, longitude, accuracy } = position.coords
 
         try {
-          // Obtener dirección usando reverse geocoding
+          // Obtener dirección usando Nominatim (OpenStreetMap) - no requiere API key
           const response = await fetch(
-            `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=YOUR_API_KEY&language=es&pretty=1`,
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+            {
+              headers: {
+                "Accept-Language": "es",
+                "User-Agent": "EstanciaPlus/1.0",
+              },
+            },
           )
 
           let address = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
 
           if (response.ok) {
             const data = await response.json()
-            if (data.results && data.results[0]) {
-              address = data.results[0].formatted || address
+            if (data && data.display_name) {
+              address = data.display_name || address
             }
           }
 
@@ -123,7 +142,12 @@ const ContactPage = () => {
 
   // Cargar ubicación al montar el componente
   useEffect(() => {
-    getUserLocation()
+    // Pequeño retraso para asegurar que la página se ha cargado completamente
+    const timer = setTimeout(() => {
+      getUserLocation()
+    }, 1000)
+
+    return () => clearTimeout(timer)
   }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -162,7 +186,7 @@ ${currentDate}
 • Coordenadas: ${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}
 • Precisión: ${Math.round(location.accuracy)}m
 ${location.address ? `• Dirección: ${location.address}` : ""}
-• Ver en mapa: https://maps.google.com/?q=${location.latitude},${location.longitude}
+• Ver en mapa: https://www.openstreetmap.org/?mlat=${location.latitude}&mlon=${location.longitude}&zoom=16
 `
     }
 
@@ -224,15 +248,60 @@ ${location.address ? `• Dirección: ${location.address}` : ""}
     }, 1500)
   }
 
-  // Generar URL del mapa con la ubicación del usuario
-  const getMapUrl = () => {
-    if (userLocation) {
-      return `https://www.google.com/maps/embed/v1/view?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dw901SwHSR3g&center=${userLocation.latitude},${userLocation.longitude}&zoom=15&maptype=roadmap`
-    }
+  // Lista completa de preguntas frecuentes
+  const faqs = [
+    {
+      id: 1,
+      question: "¿Cómo funciona el envío por WhatsApp?",
+      answer:
+        "Al enviar el formulario, se abrirá WhatsApp automáticamente con tu mensaje ya formateado y listo para enviar al administrador. Tu ubicación también será incluida para un mejor servicio.",
+    },
+    {
+      id: 2,
+      question: "¿Por qué necesitan mi ubicación?",
+      answer:
+        "Tu ubicación nos ayuda a brindarte un servicio más personalizado y eficiente. También nos permite mostrarte el mapa centrado en tu posición actual para tu comodidad.",
+    },
+    {
+      id: 3,
+      question: "¿Qué tan rápido responden?",
+      answer:
+        "Nuestro equipo está disponible 24/7 por WhatsApp. Generalmente respondemos en menos de 30 minutos durante horario comercial y dentro de 2 horas fuera del horario comercial.",
+    },
+    {
+      id: 4,
+      question: "¿Puedo reservar directamente por WhatsApp?",
+      answer:
+        "Sí, puedes realizar consultas y reservas directamente por WhatsApp. Nuestro equipo te guiará en el proceso y te proporcionará toda la información necesaria.",
+    },
+    {
+      id: 5,
+      question: "¿Qué información debo proporcionar para una reserva?",
+      answer:
+        "Para una reserva necesitamos: fechas de entrada y salida, número de huéspedes, tipo de habitación preferida, y cualquier solicitud especial que puedas tener.",
+    },
+    {
+      id: 6,
+      question: "¿Ofrecen descuentos para estancias largas?",
+      answer:
+        "Sí, ofrecemos descuentos especiales para estancias de más de 7 noches. El porcentaje varía según la temporada y disponibilidad. Consúltanos para más detalles.",
+    },
+    {
+      id: 7,
+      question: "¿Cuál es la política de cancelación?",
+      answer:
+        "Nuestra política estándar permite cancelaciones gratuitas hasta 48 horas antes de la fecha de llegada. Para cancelaciones posteriores, se aplica un cargo del 50% de la primera noche.",
+    },
+    {
+      id: 8,
+      question: "¿Tienen servicio de traslado desde el aeropuerto?",
+      answer:
+        "Sí, ofrecemos servicio de traslado desde y hacia el aeropuerto con costo adicional. Debe reservarse con al menos 24 horas de anticipación.",
+    },
+  ]
 
-    // Mapa por defecto (ubicación genérica)
-    return "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3963.952912260219!2d3.375295414770757!3d6.5276316248171345!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x103b8b2ae68280c1%3A0xdc9e87a367c3d9cb!2sLagos%2C%20Nigeria!5e0!3m2!1sen!2sng!4v1623245249513!5m2!1sen!2sng"
-  }
+  // Mostrar solo las primeras 3 preguntas inicialmente
+  const visibleFaqs = showAllFaqs ? faqs : faqs.slice(0, 3)
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -493,15 +562,43 @@ ${location.address ? `• Dirección: ${location.address}` : ""}
                 )}
 
                 <div className="aspect-video bg-muted rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
-                  <iframe
-                    src={getMapUrl()}
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    allowFullScreen
-                    loading="lazy"
-                    title="Tu ubicación actual"
-                  ></iframe>
+                  {userLocation ? (
+                    <iframe
+                      src={`https://www.openstreetmap.org/export/embed.html?bbox=${userLocation.longitude - 0.01}%2C${
+                        userLocation.latitude - 0.01
+                      }%2C${userLocation.longitude + 0.01}%2C${
+                        userLocation.latitude + 0.01
+                      }&layer=mapnik&marker=${userLocation.latitude}%2C${userLocation.longitude}`}
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      allowFullScreen
+                      loading="lazy"
+                      title="Tu ubicación actual"
+                    ></iframe>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-muted">
+                      {isLoadingLocation ? (
+                        <div className="flex flex-col items-center">
+                          <Loader2 className="h-8 w-8 text-terracotta animate-spin mb-2" />
+                          <p className="text-sm text-muted-foreground">Obteniendo tu ubicación...</p>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center">
+                          <MapPin className="h-8 w-8 text-muted-foreground mb-2" />
+                          <p className="text-sm text-muted-foreground">Mapa no disponible</p>
+                          <Button
+                            onClick={getUserLocation}
+                            variant="ghost"
+                            size="sm"
+                            className="mt-2 text-terracotta hover:text-terracotta/80"
+                          >
+                            Permitir acceso a ubicación
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -516,46 +613,39 @@ ${location.address ? `• Dirección: ${location.address}` : ""}
             </h2>
 
             <div className="max-w-3xl mx-auto text-left grid gap-4">
-              <div className="bg-card rounded-lg p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:border-terracotta/30 hover:-translate-y-2 animate-slide-up-stagger-1">
-                <h3 className="font-semibold text-lg flex items-center">
-                  <span className="text-terracotta mr-2 animate-pulse-soft">01.</span>
-                  ¿Cómo funciona el envío por WhatsApp?
-                </h3>
-                <p className="text-muted-foreground mt-2 pl-6">
-                  Al enviar el formulario, se abrirá WhatsApp automáticamente con tu mensaje ya formateado y listo para
-                  enviar al administrador. Tu ubicación también será incluida para un mejor servicio.
-                </p>
-              </div>
-
-              <div className="bg-card rounded-lg p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:border-terracotta/30 hover:-translate-y-2 animate-slide-up-stagger-2">
-                <h3 className="font-semibold text-lg flex items-center">
-                  <span className="text-terracotta mr-2 animate-pulse-soft">02.</span>
-                  ¿Por qué necesitan mi ubicación?
-                </h3>
-                <p className="text-muted-foreground mt-2 pl-6">
-                  Tu ubicación nos ayuda a brindarte un servicio más personalizado y eficiente. También nos permite
-                  mostrarte el mapa centrado en tu posición actual para tu comodidad.
-                </p>
-              </div>
-
-              <div className="bg-card rounded-lg p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:border-terracotta/30 hover:-translate-y-2 animate-slide-up-stagger-3">
-                <h3 className="font-semibold text-lg flex items-center">
-                  <span className="text-terracotta mr-2 animate-pulse-soft">03.</span>
-                  ¿Qué tan rápido responden?
-                </h3>
-                <p className="text-muted-foreground mt-2 pl-6">
-                  Nuestro equipo está disponible 24/7 por WhatsApp. Generalmente respondemos en menos de 30 minutos
-                  durante horario comercial y dentro de 2 horas fuera del horario comercial.
-                </p>
-              </div>
+              {visibleFaqs.map((faq, index) => (
+                <div
+                  key={faq.id}
+                  className={`bg-card rounded-lg p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:border-terracotta/30 hover:-translate-y-2 ${
+                    index < 3 ? `animate-slide-up-stagger-${index + 1}` : "animate-slide-up-delay"
+                  }`}
+                >
+                  <h3 className="font-semibold text-lg flex items-center">
+                    <span className="text-terracotta mr-2 animate-pulse-soft">{String(faq.id).padStart(2, "0")}.</span>
+                    {faq.question}
+                  </h3>
+                  <p className="text-muted-foreground mt-2 pl-6">{faq.answer}</p>
+                </div>
+              ))}
             </div>
 
             <div className="mt-10 animate-slide-up-delay">
               <Button
                 variant="outline"
                 className="border-terracotta text-terracotta hover:bg-terracotta hover:text-white transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                onClick={() => setShowAllFaqs(!showAllFaqs)}
               >
-                Ver todas las preguntas frecuentes
+                {showAllFaqs ? (
+                  <span className="flex items-center">
+                    <ChevronUp className="mr-2 h-4 w-4" />
+                    Mostrar menos preguntas
+                  </span>
+                ) : (
+                  <span className="flex items-center">
+                    <ChevronDown className="mr-2 h-4 w-4" />
+                    Ver todas las preguntas frecuentes
+                  </span>
+                )}
               </Button>
             </div>
           </div>

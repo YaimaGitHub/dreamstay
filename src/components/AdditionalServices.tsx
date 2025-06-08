@@ -16,9 +16,14 @@ interface Service {
 interface AdditionalServicesProps {
   services: Service[]
   onServiceToggle?: (serviceId: number, isSelected: boolean) => void
+  showAddButtons?: boolean // Nueva prop para controlar la visibilidad de los botones
 }
 
-const AdditionalServices = ({ services, onServiceToggle }: AdditionalServicesProps) => {
+const AdditionalServices = ({
+  services,
+  onServiceToggle,
+  showAddButtons = true, // Por defecto, mostrar los botones
+}: AdditionalServicesProps) => {
   const [selectedServices, setSelectedServices] = useState<number[]>([])
 
   const toggleService = (serviceId: number) => {
@@ -46,11 +51,13 @@ const AdditionalServices = ({ services, onServiceToggle }: AdditionalServicesPro
           return (
             <Card
               key={service.id}
-              className={`p-4 border ${isSelected ? "border-terracotta bg-terracotta/5" : "border-border"}`}
+              className={`p-4 border ${isSelected && showAddButtons ? "border-terracotta bg-terracotta/5" : "border-border"}`}
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-start">
-                  <div className="mr-3 text-terracotta">{service.icon}</div>
+                  <div className="mr-3 text-terracotta">
+                    <div className="p-2 bg-terracotta/10 rounded-md">{service.icon}</div>
+                  </div>
                   <div>
                     <h4 className="font-medium">{service.title}</h4>
                     <p className="text-sm text-muted-foreground">{service.description}</p>
@@ -58,14 +65,18 @@ const AdditionalServices = ({ services, onServiceToggle }: AdditionalServicesPro
                   </div>
                 </div>
 
-                <Button
-                  variant={isSelected ? "default" : "outline"}
-                  size="icon"
-                  className={isSelected ? "bg-terracotta hover:bg-terracotta/90" : "border-terracotta text-terracotta"}
-                  onClick={() => toggleService(service.id)}
-                >
-                  {isSelected ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                </Button>
+                {showAddButtons && (
+                  <Button
+                    variant={isSelected ? "default" : "outline"}
+                    size="icon"
+                    className={
+                      isSelected ? "bg-terracotta hover:bg-terracotta/90" : "border-terracotta text-terracotta"
+                    }
+                    onClick={() => toggleService(service.id)}
+                  >
+                    {isSelected ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                  </Button>
+                )}
               </div>
             </Card>
           )

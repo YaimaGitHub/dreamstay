@@ -235,21 +235,64 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
       </div>
 
       <div className="space-y-4">
-        {/* Selector de tipo de turismo */}
+        {/* Selector de tipo de turismo mejorado y responsivo */}
         {tourismOptions.length > 0 && (
-          <div className="space-y-2">
-            <label className="block text-sm font-medium">Tipo de Turismo</label>
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-foreground">Tipo de Turismo</label>
             <Select value={selectedTourismOption} onValueChange={setSelectedTourismOption}>
-              <SelectTrigger className={`w-full border-border ${isMobile ? "h-12" : "h-11"}`}>
-                <SelectValue placeholder="Seleccionar tipo de turismo" />
+              <SelectTrigger
+                className={`w-full border-border transition-all duration-200 hover:border-terracotta/50 focus:border-terracotta ${isMobile ? "h-14 text-base" : "h-12 text-sm"}`}
+              >
+                <SelectValue placeholder={isMobile ? "Seleccionar turismo" : "Seleccionar tipo de turismo"} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent
+                className={`
+                  ${isMobile ? "w-[calc(100vw-2rem)] max-w-none" : "w-full min-w-[400px]"}
+                  max-h-[60vh] overflow-y-auto
+                `}
+                side={isMobile ? "bottom" : "bottom"}
+                align={isMobile ? "center" : "start"}
+                sideOffset={isMobile ? 8 : 4}
+                avoidCollisions={true}
+                collisionPadding={isMobile ? 16 : 8}
+              >
                 {tourismOptions.map((option) => (
-                  <SelectItem key={option.id} value={option.id}>
-                    <div className="flex items-center gap-2">
-                      {option.icon}
-                      <span className={isMobile ? "text-base" : "text-sm"}>{option.label}</span>
-                      <Badge variant="outline" className="ml-auto text-xs">
+                  <SelectItem
+                    key={option.id}
+                    value={option.id}
+                    className={`
+                      ${isMobile ? "py-4 px-3" : "py-3 px-2"} 
+                      cursor-pointer hover:bg-terracotta/5 focus:bg-terracotta/10
+                      transition-colors duration-200
+                    `}
+                  >
+                    <div className={`flex items-center justify-between w-full ${isMobile ? "gap-3" : "gap-2"}`}>
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <div className={`flex-shrink-0 ${isMobile ? "p-2" : "p-1.5"} rounded-full bg-terracotta/10`}>
+                          {option.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className={`font-medium text-foreground ${isMobile ? "text-base" : "text-sm"} truncate`}>
+                            {isMobile
+                              ? // Versión móvil más compacta
+                                option.type === "international"
+                                ? "Internacional"
+                                : "Nacional"
+                              : option.label}
+                          </div>
+                          <div className={`text-muted-foreground ${isMobile ? "text-sm" : "text-xs"} truncate`}>
+                            {option.mode === "nightly" ? "Por noche" : "Por hora"}
+                          </div>
+                        </div>
+                      </div>
+                      <Badge
+                        variant="secondary"
+                        className={`
+                          flex-shrink-0 font-semibold
+                          ${isMobile ? "text-sm px-3 py-1" : "text-xs px-2 py-0.5"}
+                          bg-terracotta/10 text-terracotta border-terracotta/20
+                        `}
+                      >
                         ${option.price}
                       </Badge>
                     </div>
@@ -258,17 +301,55 @@ const BookingForm = ({ roomId, price, room }: BookingFormProps) => {
               </SelectContent>
             </Select>
 
+            {/* Información del tipo seleccionado mejorada */}
             {selectedOption && (
-              <div className="p-3 bg-muted/50 rounded-lg">
+              <div
+                className={`p-4 bg-gradient-to-r from-terracotta/5 to-orange/5 rounded-lg border border-terracotta/20 transition-all duration-300 ${isMobile ? "space-y-3" : "space-y-2"}`}
+              >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {selectedOption.icon}
-                    <span className={`font-medium ${isMobile ? "text-base" : "text-sm"}`}>{selectedOption.label}</span>
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className={`flex-shrink-0 ${isMobile ? "p-2.5" : "p-2"} rounded-full bg-terracotta/15`}>
+                      {selectedOption.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className={`font-semibold text-foreground ${isMobile ? "text-lg" : "text-base"} truncate`}>
+                        {isMobile
+                          ? selectedOption.type === "international"
+                            ? "Turismo Internacional"
+                            : "Turismo Nacional"
+                          : selectedOption.label}
+                      </div>
+                      <div className={`text-muted-foreground ${isMobile ? "text-base" : "text-sm"}`}>
+                        {selectedOption.mode === "nightly" ? "Tarifa por noche" : "Tarifa por hora"}
+                      </div>
+                    </div>
                   </div>
-                  <Badge variant="default" className="text-xs">
-                    ${selectedOption.price} / {selectedOption.mode === "nightly" ? "noche" : "hora"}
-                  </Badge>
+                  <div className="flex-shrink-0 text-right">
+                    <Badge
+                      variant="default"
+                      className={`
+                        font-bold bg-terracotta hover:bg-terracotta/90
+                        ${isMobile ? "text-base px-4 py-2" : "text-sm px-3 py-1"}
+                      `}
+                    >
+                      ${selectedOption.price}
+                    </Badge>
+                    <div className={`text-muted-foreground mt-1 ${isMobile ? "text-sm" : "text-xs"}`}>
+                      / {selectedOption.mode === "nightly" ? "noche" : "hora"}
+                    </div>
+                  </div>
                 </div>
+
+                {/* Información adicional en móviles */}
+                {isMobile && (
+                  <div className="pt-2 border-t border-terracotta/10">
+                    <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                      <div className="h-1.5 w-1.5 bg-terracotta rounded-full"></div>
+                      <span>Precio seleccionado para tu reserva</span>
+                      <div className="h-1.5 w-1.5 bg-terracotta rounded-full"></div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

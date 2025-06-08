@@ -31,19 +31,27 @@ const GuestSelector = ({
   variant = "default",
 }: GuestSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
+  const [screenSize, setScreenSize] = useState<"mobile" | "tablet" | "desktop">("desktop")
 
-  // Detectar si es móvil o tablet
+  // Detectar tamaño de pantalla más preciso
   useEffect(() => {
-    const checkMobile = () => {
+    const checkScreenSize = () => {
       const width = window.innerWidth
+      const height = window.innerHeight
       const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0
-      setIsMobile(width <= 768 || isTouchDevice)
+
+      if (width <= 640 || (isTouchDevice && width <= 768)) {
+        setScreenSize("mobile")
+      } else if (width <= 1024 || (isTouchDevice && width <= 1200)) {
+        setScreenSize("tablet")
+      } else {
+        setScreenSize("desktop")
+      }
     }
 
-    checkMobile()
-    window.addEventListener("resize", checkMobile)
-    return () => window.removeEventListener("resize", checkMobile)
+    checkScreenSize()
+    window.addEventListener("resize", checkScreenSize)
+    return () => window.removeEventListener("resize", checkScreenSize)
   }, [])
 
   const getTotalGuests = () => {
@@ -90,14 +98,37 @@ const GuestSelector = ({
 
   const getButtonHeight = () => {
     if (variant === "compact") return "h-10"
-    if (isMobile) return "h-12"
+    if (screenSize === "mobile") return "h-12"
     return "h-11"
   }
 
-  const getPopoverWidth = () => {
-    if (isMobile) return "w-[95vw] max-w-sm"
-    return "w-80"
+  const getPopoverProps = () => {
+    switch (screenSize) {
+      case "mobile":
+        return {
+          width: "w-[90vw] max-w-sm",
+          align: "center" as const,
+          side: "bottom" as const,
+          sideOffset: 12,
+        }
+      case "tablet":
+        return {
+          width: "w-[70vw] max-w-md",
+          align: "center" as const,
+          side: "bottom" as const,
+          sideOffset: 8,
+        }
+      default:
+        return {
+          width: "w-80",
+          align: "start" as const,
+          side: "bottom" as const,
+          sideOffset: 4,
+        }
+    }
   }
+
+  const popoverProps = getPopoverProps()
 
   const CounterButton = ({
     type,
@@ -116,28 +147,38 @@ const GuestSelector = ({
   }) => (
     <div className="flex items-center justify-between py-3 px-1">
       <div className="flex-1 pr-3">
-        <div className={cn("font-medium", isMobile ? "text-base" : "text-sm")}>{title}</div>
-        <div className={cn("text-muted-foreground", isMobile ? "text-sm" : "text-xs")}>{description}</div>
+        <div className={cn("font-medium", screenSize === "mobile" ? "text-base" : "text-sm")}>{title}</div>
+        <div className={cn("text-muted-foreground", screenSize === "mobile" ? "text-sm" : "text-xs")}>
+          {description}
+        </div>
       </div>
       <div className="flex items-center gap-3">
         <Button
           variant="outline"
           size="sm"
-          className={cn("p-0 rounded-full border-2", isMobile ? "h-10 w-10" : "h-8 w-8")}
+          className={cn(
+            "p-0 rounded-full border-2 hover:bg-muted/50 transition-colors",
+            screenSize === "mobile" ? "h-10 w-10" : "h-8 w-8",
+          )}
           onClick={() => updateCount(type, false)}
           disabled={!canDecrease}
         >
-          <Minus className={cn(isMobile ? "h-5 w-5" : "h-4 w-4")} />
+          <Minus className={cn(screenSize === "mobile" ? "h-5 w-5" : "h-4 w-4")} />
         </Button>
-        <span className={cn("text-center font-medium min-w-[2rem]", isMobile ? "text-lg" : "text-sm")}>{count}</span>
+        <span className={cn("text-center font-medium min-w-[2rem]", screenSize === "mobile" ? "text-lg" : "text-sm")}>
+          {count}
+        </span>
         <Button
           variant="outline"
           size="sm"
-          className={cn("p-0 rounded-full border-2", isMobile ? "h-10 w-10" : "h-8 w-8")}
+          className={cn(
+            "p-0 rounded-full border-2 hover:bg-muted/50 transition-colors",
+            screenSize === "mobile" ? "h-10 w-10" : "h-8 w-8",
+          )}
           onClick={() => updateCount(type, true)}
           disabled={!canIncrease}
         >
-          <Plus className={cn(isMobile ? "h-5 w-5" : "h-4 w-4")} />
+          <Plus className={cn(screenSize === "mobile" ? "h-5 w-5" : "h-4 w-4")} />
         </Button>
       </div>
     </div>
@@ -149,7 +190,7 @@ const GuestSelector = ({
         <Button
           variant="outline"
           className={cn(
-            "justify-between text-left font-normal",
+            "justify-between text-left font-normal hover:bg-muted/50 transition-colors",
             getButtonHeight(),
             getTotalGuests() === 0 && "text-muted-foreground",
             variant === "compact" && "px-3",
@@ -157,34 +198,43 @@ const GuestSelector = ({
           )}
         >
           <div className="flex items-center gap-2">
-            <Users className={cn(isMobile ? "h-5 w-5" : "h-4 w-4")} />
-            <span className={cn(variant === "compact" && "text-sm", isMobile && variant !== "compact" && "text-base")}>
+            <Users className={cn(screenSize === "mobile" ? "h-5 w-5" : "h-4 w-4")} />
+            <span
+              className={cn(
+                variant === "compact" && "text-sm",
+                screenSize === "mobile" && variant !== "compact" && "text-base",
+              )}
+            >
               {formatGuestText()}
             </span>
           </div>
-          <ChevronDown className={cn("opacity-50", isMobile ? "h-5 w-5" : "h-4 w-4")} />
+          <ChevronDown className={cn("opacity-50", screenSize === "mobile" ? "h-5 w-5" : "h-4 w-4")} />
         </Button>
       </PopoverTrigger>
 
       <PopoverContent
-        className={cn("p-0 border-2", getPopoverWidth())}
-        align={isMobile ? "center" : "start"}
-        side={isMobile ? "bottom" : "bottom"}
-        sideOffset={isMobile ? 8 : 4}
+        className={cn("p-0 border-2 shadow-lg", popoverProps.width)}
+        align={popoverProps.align}
+        side={popoverProps.side}
+        sideOffset={popoverProps.sideOffset}
+        avoidCollisions={true}
+        collisionPadding={screenSize === "mobile" ? 16 : 8}
       >
-        <div className="bg-white rounded-lg shadow-lg">
+        <div className="bg-white rounded-lg">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b">
-            <h3 className={cn("font-semibold", isMobile ? "text-lg" : "text-base")}>¿Cuántos?</h3>
-            {isMobile && (
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setIsOpen(false)}>
+          <div className="flex items-center justify-between p-4 border-b bg-muted/30">
+            <h3 className={cn("font-semibold", screenSize === "mobile" ? "text-lg" : "text-base")}>
+              ¿Cuántos huéspedes?
+            </h3>
+            {screenSize === "mobile" && (
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-muted" onClick={() => setIsOpen(false)}>
                 <X className="h-4 w-4" />
               </Button>
             )}
           </div>
 
           {/* Content */}
-          <div className="p-4 space-y-1">
+          <div className="p-4 space-y-1 max-h-[60vh] overflow-y-auto">
             <CounterButton
               type="adults"
               title="Adultos"
@@ -229,20 +279,33 @@ const GuestSelector = ({
           </div>
 
           {/* Footer */}
-          <div className="p-4 border-t bg-muted/30">
-            <div className={cn("text-muted-foreground text-center mb-3", isMobile ? "text-sm" : "text-xs")}>
+          <div className="p-4 border-t bg-muted/20">
+            <div
+              className={cn("text-muted-foreground text-center mb-3", screenSize === "mobile" ? "text-sm" : "text-xs")}
+            >
               Total: {getTotalGuests()} huésped{getTotalGuests() !== 1 ? "es" : ""}
               {value.pets > 0 && ` + ${value.pets} mascota${value.pets !== 1 ? "s" : ""}`}
             </div>
 
             {getTotalGuests() >= maxGuests && (
-              <div className={cn("text-amber-600 text-center mb-3", isMobile ? "text-sm" : "text-xs")}>
+              <div
+                className={cn(
+                  "text-amber-600 text-center mb-3 font-medium",
+                  screenSize === "mobile" ? "text-sm" : "text-xs",
+                )}
+              >
                 Máximo {maxGuests} huéspedes permitidos
               </div>
             )}
 
-            <Button className={cn("w-full", isMobile ? "h-12 text-base" : "h-10")} onClick={() => setIsOpen(false)}>
-              Confirmar
+            <Button
+              className={cn(
+                "w-full bg-terracotta hover:bg-terracotta/90 transition-colors",
+                screenSize === "mobile" ? "h-12 text-base" : "h-10",
+              )}
+              onClick={() => setIsOpen(false)}
+            >
+              Confirmar selección
             </Button>
           </div>
         </div>

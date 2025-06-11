@@ -10,6 +10,11 @@ interface HostInfoDisplayProps {
     name?: string
     since?: number
     photo?: string
+    hostSince?: string
+    avatar?: string
+    bio?: string
+    isPrimary?: boolean
+    id?: number
   }
   variant?: "compact" | "full"
 }
@@ -18,10 +23,16 @@ const HostInfoDisplay = ({ host, variant = "full" }: HostInfoDisplayProps) => {
   // Validar y completar información del anfitrión
   const validatedHost = validateHostInfo(host)
   const currentYear = new Date().getFullYear()
-  const yearsAsHost = currentYear - validatedHost.since
+
+  // Calcular años como anfitrión
+  const hostSinceYear = validatedHost.hostSince
+    ? Number.parseInt(validatedHost.hostSince)
+    : validatedHost.since || currentYear
+
+  const yearsAsHost = currentYear - hostSinceYear
 
   // Sanitizar URL de la foto
-  const photoUrl = sanitizeImageUrl(validatedHost.photo)
+  const photoUrl = sanitizeImageUrl(validatedHost.photo || validatedHost.avatar)
 
   if (variant === "compact") {
     return (
@@ -32,7 +43,9 @@ const HostInfoDisplay = ({ host, variant = "full" }: HostInfoDisplayProps) => {
         </Avatar>
         <div>
           <p className="text-sm font-medium">{validatedHost.name}</p>
-          <p className="text-xs text-muted-foreground">Anfitrión desde {validatedHost.since}</p>
+          <p className="text-xs text-muted-foreground">
+            Anfitrión desde {validatedHost.hostSince || validatedHost.since}
+          </p>
         </div>
       </div>
     )
@@ -51,9 +64,11 @@ const HostInfoDisplay = ({ host, variant = "full" }: HostInfoDisplayProps) => {
             <div className="flex items-center text-sm text-muted-foreground">
               <CalendarDays className="mr-1 h-4 w-4" />
               <span>
-                Anfitrión desde {validatedHost.since} ({yearsAsHost} {yearsAsHost === 1 ? "año" : "años"})
+                Anfitrión desde {validatedHost.hostSince || validatedHost.since} ({yearsAsHost}{" "}
+                {yearsAsHost === 1 ? "año" : "años"})
               </span>
             </div>
+            {validatedHost.bio && <p className="text-sm text-muted-foreground mt-2">{validatedHost.bio}</p>}
           </div>
         </div>
       </CardContent>

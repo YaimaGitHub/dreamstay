@@ -7,12 +7,14 @@ import Footer from "@/components/Footer"
 import RoomGallery from "@/components/RoomGallery"
 import BookingForm from "@/components/BookingForm"
 import RoomAmenities from "@/components/RoomAmenities"
-import { Star, User, MapPin, MessageCircle, ArrowLeft, Home } from "lucide-react"
+import { Star, MapPin, MessageCircle, ArrowLeft, Home, Users, Bed, Bath, Calendar } from "lucide-react"
 import { useDataStore } from "@/hooks/use-data-store"
-import type { Room } from "@/types/room"
+import type { Room, HostInfo } from "@/types/room"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import RoomPricing from "@/components/rooms/RoomPricing"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { getInitials } from "@/utils/host-manager"
+import { Card, CardContent } from "@/components/ui/card"
 
 const RoomDetails = () => {
   const { id } = useParams<{ id: string }>()
@@ -26,6 +28,7 @@ const RoomDetails = () => {
       const foundRoom = rooms.find((r) => r.id === roomId)
 
       if (foundRoom) {
+        console.log("Room details loaded:", foundRoom)
         setRoom(foundRoom)
       } else {
         // Redirigir a página 404 o a la lista de habitaciones si no se encuentra
@@ -49,6 +52,53 @@ const RoomDetails = () => {
       </div>
     )
   }
+
+  // Función para formatear la información de capacidad
+  const formatCapacityInfo = () => {
+    // Asegurarse de que capacity existe y tiene valores por defecto si no
+    const capacity = room.capacity || { maxGuests: 4, beds: 1, bedrooms: 1, bathrooms: 1 }
+    const accommodationType = room.accommodationType || "Habitación en alojamiento entero"
+
+    const parts = [
+      `Máximo ${capacity.maxGuests} huéspedes`,
+      `${capacity.beds} cama${capacity.beds > 1 ? "s" : ""}`,
+      `${capacity.bedrooms} habitación${capacity.bedrooms > 1 ? "es" : ""}`,
+      `${capacity.bathrooms} baño${capacity.bathrooms > 1 ? "s" : ""}`,
+    ]
+
+    return {
+      accommodationType,
+      details: parts.join(" • "),
+    }
+  }
+
+  // Obtener el anfitrión principal
+  const getPrimaryHost = (): HostInfo | undefined => {
+    if (!room.hosts || room.hosts.length === 0) {
+      return {
+        id: 0,
+        name: "Anfitrión",
+        hostSince: new Date().getFullYear().toString(),
+        bio: "Anfitrión experimentado con años de experiencia en hospitalidad",
+        isPrimary: true,
+      }
+    }
+
+    return room.hosts.find((host) => host.isPrimary) || room.hosts[0]
+  }
+
+  // Obtener anfitriones secundarios
+  const getCoHosts = (): HostInfo[] => {
+    if (!room.hosts || room.hosts.length <= 1) {
+      return []
+    }
+
+    return room.hosts.filter((host) => !host.isPrimary)
+  }
+
+  const capacityInfo = formatCapacityInfo()
+  const primaryHost = getPrimaryHost()
+  const coHosts = getCoHosts()
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -125,64 +175,213 @@ const RoomDetails = () => {
             )}
 
             <div className="mt-8">
-              <div className="flex items-center justify-between pb-4 border-b mb-6">
-                <div>
-                  <h2 className="text-xl font-semibold">Habitación en alojamiento entero</h2>
-                  <p className="text-muted-foreground">Máximo {room.capacity || 4} huéspedes • 1 cama • 1 baño</p>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-12 h-12 rounded-full bg-orange-600 flex items-center justify-center text-white">
-                    <User className="h-6 w-6" />
-                  </div>
-                  <div className="ml-2">
-                    <p className="font-medium">Eliezer</p>
-                    <p className="text-sm text-muted-foreground">Anfitrión desde 2017</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mb-8">
-                <p className="text-lg mb-4">{room.description || "Sin descripción disponible"}</p>
-
-                {room.province && (
-                  <div className="mt-4 p-4 bg-muted rounded-lg">
-                    <h3 className="font-medium mb-2">Ubicación</h3>
-                    <p>
-                      Esta habitación se encuentra en la provincia de <strong>{room.province}</strong>, en{" "}
-                      {room.location}.
-                    </p>
-                  </div>
-                )}
-
-                {/* Información de WhatsApp si está habilitado */}
-                {room.hostWhatsApp?.enabled && (
-                  <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <MessageCircle className="h-5 w-5 text-green-600" />
-                      <h3 className="font-medium text-green-800">Reserva Rápida por WhatsApp</h3>
+              <Card className="border-0 shadow-lg bg-gradient-to-r from-orange-50 via-white to-orange-50 mb-8">
+                <CardContent className="p-8">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-full p-2">
+                          <Home className="h-5 w-5 text-white" />
+                        </div>
+                        <h2 className="text-xl font-bold text-gray-900">{capacityInfo.accommodationType}</h2>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-4 text-gray-600">
+                        <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-full shadow-sm">
+                          <Users className="h-4 w-4 text-orange-600" />
+                          <span className="text-sm font-medium">{room.capacity?.maxGuests || 4} huéspedes</span>
+                        </div>
+                        <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-full shadow-sm">
+                          <Bed className="h-4 w-4 text-blue-600" />
+                          <span className="text-sm font-medium">
+                            {room.capacity?.beds || 1} cama{(room.capacity?.beds || 1) > 1 ? "s" : ""}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-full shadow-sm">
+                          <Bath className="h-4 w-4 text-purple-600" />
+                          <span className="text-sm font-medium">
+                            {room.capacity?.bathrooms || 1} baño{(room.capacity?.bathrooms || 1) > 1 ? "s" : ""}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-green-700 text-sm">
-                      Esta habitación ofrece reserva instantánea por WhatsApp. Tu solicitud será enviada directamente a
-                      los anfitriones para una respuesta rápida.
-                    </p>
+                    <div className="hidden sm:block ml-6">
+                      <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-2 rounded-full shadow-lg">
+                        <span className="font-bold text-lg">{room.area} m²</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Información del anfitrión */}
+              <div className="mb-12">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="h-8 w-1 bg-gradient-to-b from-orange-500 to-orange-600 rounded-full"></div>
+                  <h2 className="text-2xl font-bold text-gray-900">Conoce a tu anfitrión</h2>
+                </div>
+                <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-50 to-amber-50 overflow-hidden">
+                  <CardContent className="p-8">
+                    <div className="flex items-start space-x-6">
+                      <div className="relative">
+                        <Avatar className="h-20 w-20 border-4 border-white shadow-lg">
+                          <AvatarImage src={primaryHost?.avatar || "/placeholder.svg"} alt={primaryHost?.name} />
+                          <AvatarFallback className="bg-gradient-to-br from-orange-400 to-orange-600 text-white text-xl font-bold">
+                            {getInitials(primaryHost?.name || "Anfitrión")}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-1">
+                          <div className="w-3 h-3 bg-white rounded-full"></div>
+                        </div>
+                      </div>
+                      <div className="flex-1 space-y-3">
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-900">{primaryHost?.name || "Anfitrión"}</h3>
+                          <div className="flex items-center text-orange-700 font-medium">
+                            <Calendar className="mr-2 h-4 w-4" />
+                            <span>
+                              Anfitrión desde {primaryHost?.hostSince || new Date().getFullYear()}
+                              {primaryHost?.hostSince &&
+                              new Date().getFullYear() - Number.parseInt(primaryHost.hostSince) > 0
+                                ? ` • ${new Date().getFullYear() - Number.parseInt(primaryHost.hostSince)} años de experiencia`
+                                : " • Nuevo anfitrión"}
+                            </span>
+                          </div>
+                        </div>
+                        {primaryHost?.bio && (
+                          <div className="bg-white/80 backdrop-blur-sm border border-orange-200 rounded-xl p-4">
+                            <p className="text-gray-700 leading-relaxed">{primaryHost.bio}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Mostrar anfitriones adicionales si existen */}
+                {coHosts.length > 0 && (
+                  <div className="mt-8">
+                    <h3 className="text-lg font-semibold mb-4 text-gray-800">Equipo de anfitriones</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {coHosts.map((host) => (
+                        <Card
+                          key={host.id}
+                          className="border-0 shadow-md hover:shadow-lg transition-shadow duration-300"
+                        >
+                          <CardContent className="p-5">
+                            <div className="flex items-center gap-4">
+                              <Avatar className="h-12 w-12 border-2 border-orange-200">
+                                <AvatarImage src={host.avatar || "/placeholder.svg"} alt={host.name} />
+                                <AvatarFallback className="bg-gradient-to-br from-orange-300 to-orange-500 text-white font-semibold">
+                                  {getInitials(host.name || "Anfitrión")}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1">
+                                <p className="font-semibold text-gray-900">{host.name}</p>
+                                <p className="text-sm text-orange-600 font-medium">
+                                  Desde {host.hostSince || new Date().getFullYear()}
+                                </p>
+                              </div>
+                            </div>
+                            {host.bio && (
+                              <p className="text-sm text-gray-600 mt-3 line-clamp-2 leading-relaxed">{host.bio}</p>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
 
-              <div className="mb-10">
-                <RoomAmenities amenities={room.features} />
+              {/* Acerca de este alojamiento */}
+              <div className="mb-12">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="h-8 w-1 bg-gradient-to-b from-orange-500 to-orange-600 rounded-full"></div>
+                  <h2 className="text-2xl font-bold text-gray-900">Acerca de este alojamiento</h2>
+                </div>
+                <Card className="border-0 shadow-lg bg-gradient-to-br from-gray-50 to-white">
+                  <CardContent className="p-8">
+                    <div className="prose prose-gray max-w-none">
+                      <p className="text-gray-700 leading-relaxed text-lg whitespace-pre-line font-light">
+                        {room.description}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
+
+              {/* Detalles del alojamiento */}
+              <div className="mb-12">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="h-8 w-1 bg-gradient-to-b from-orange-500 to-orange-600 rounded-full"></div>
+                  <h2 className="text-2xl font-bold text-gray-900">Detalles del alojamiento</h2>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer bg-gradient-to-br from-orange-50 to-orange-100">
+                    <CardContent className="p-6 text-center">
+                      <div className="bg-white rounded-full p-4 w-16 h-16 mx-auto mb-4 shadow-md group-hover:shadow-lg transition-shadow duration-300">
+                        <Users className="h-8 w-8 text-orange-600 mx-auto" />
+                      </div>
+                      <p className="text-2xl font-bold text-gray-900 mb-1">{room.capacity?.maxGuests || 4}</p>
+                      <p className="text-sm font-medium text-orange-700">Huéspedes máximo</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer bg-gradient-to-br from-blue-50 to-blue-100">
+                    <CardContent className="p-6 text-center">
+                      <div className="bg-white rounded-full p-4 w-16 h-16 mx-auto mb-4 shadow-md group-hover:shadow-lg transition-shadow duration-300">
+                        <Bed className="h-8 w-8 text-blue-600 mx-auto" />
+                      </div>
+                      <p className="text-2xl font-bold text-gray-900 mb-1">{room.capacity?.beds || 1}</p>
+                      <p className="text-sm font-medium text-blue-700">
+                        Cama{(room.capacity?.beds || 1) > 1 ? "s" : ""}
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer bg-gradient-to-br from-green-50 to-green-100">
+                    <CardContent className="p-6 text-center">
+                      <div className="bg-white rounded-full p-4 w-16 h-16 mx-auto mb-4 shadow-md group-hover:shadow-lg transition-shadow duration-300">
+                        <Home className="h-8 w-8 text-green-600 mx-auto" />
+                      </div>
+                      <p className="text-2xl font-bold text-gray-900 mb-1">{room.capacity?.bedrooms || 1}</p>
+                      <p className="text-sm font-medium text-green-700">
+                        Habitación{(room.capacity?.bedrooms || 1) > 1 ? "es" : ""}
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer bg-gradient-to-br from-purple-50 to-purple-100">
+                    <CardContent className="p-6 text-center">
+                      <div className="bg-white rounded-full p-4 w-16 h-16 mx-auto mb-4 shadow-md group-hover:shadow-lg transition-shadow duration-300">
+                        <Bath className="h-8 w-8 text-purple-600 mx-auto" />
+                      </div>
+                      <p className="text-2xl font-bold text-gray-900 mb-1">{room.capacity?.bathrooms || 1}</p>
+                      <p className="text-sm font-medium text-purple-700">
+                        Baño{(room.capacity?.bathrooms || 1) > 1 ? "s" : ""}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              {/* Servicios/Características */}
+              {room.features && room.features.length > 0 && (
+                <div className="mb-12">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="h-8 w-1 bg-gradient-to-b from-orange-500 to-orange-600 rounded-full"></div>
+                    <h2 className="text-2xl font-bold text-gray-900">Lo que ofrece este lugar</h2>
+                  </div>
+                  <Card className="border-0 shadow-lg bg-gradient-to-br from-gray-50 to-white">
+                    <CardContent className="p-8">
+                      <RoomAmenities features={room.features} />
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
             </div>
           </div>
 
           <div className="lg:col-span-1 animate-in slide-in-from-right-4 duration-700 delay-300">
-            <div className="sticky top-8">
-              <div className="border rounded-lg p-6 bg-white shadow-sm">
-                <div className="mb-4">
-                  <RoomPricing room={room} showLabel={true} />
-                </div>
-                <BookingForm roomId={room.id} price={room.price} room={room} />
-              </div>
+            <div className="sticky top-24">
+              <BookingForm room={room} />
             </div>
           </div>
         </div>

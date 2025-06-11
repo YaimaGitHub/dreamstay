@@ -16,6 +16,22 @@ export interface RoomPricing {
   internationalTourism?: TourismPricing
 }
 
+export interface HostInfo {
+  id: number
+  name: string
+  hostSince: string
+  avatar?: string
+  bio?: string
+  isPrimary?: boolean
+}
+
+export interface RoomCapacity {
+  maxGuests: number
+  beds: number
+  bedrooms: number
+  bathrooms: number
+}
+
 export interface Room {
   id: number
   title: string
@@ -56,6 +72,10 @@ export interface Room {
     sendToPrimary?: boolean
     sendToSecondary?: boolean
   }
+  // Nuevos campos para información detallada
+  hosts?: HostInfo[] // Ahora es un array para múltiples anfitriones
+  capacity?: RoomCapacity
+  accommodationType?: string // "Habitación en alojamiento entero", "Habitación privada", etc.
 }
 
 export interface RoomStore {

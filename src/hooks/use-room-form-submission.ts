@@ -29,8 +29,9 @@ export const useRoomFormSubmission = ({
     try {
       console.log("=== GUARDANDO HABITACIÓN ===")
       console.log("Valores del formulario:", values)
-      console.log("Configuración WhatsApp:", values.hostWhatsApp)
-      console.log("Fechas reservadas recibidas:", reservedDates)
+      console.log("Features:", features)
+      console.log("Hosts:", values.hosts)
+      console.log("Capacity:", values.capacity)
 
       // Validar que si WhatsApp está habilitado, al menos el número principal esté configurado
       if (values.hostWhatsApp.enabled && !values.hostWhatsApp.primary) {
@@ -80,7 +81,7 @@ export const useRoomFormSubmission = ({
         hostWhatsApp: values.hostWhatsApp.enabled
           ? {
               enabled: true,
-              primary: values.hostWhatsApp.primary.trim(),
+              primary: values.hostWhatsApp.primary?.trim() || "",
               secondary: values.hostWhatsApp.secondary?.trim() || "",
               sendToPrimary: values.hostWhatsApp.sendToPrimary,
               sendToSecondary: values.hostWhatsApp.sendToSecondary,
@@ -92,18 +93,27 @@ export const useRoomFormSubmission = ({
               sendToPrimary: false,
               sendToSecondary: false,
             },
+        // CRÍTICO: Guardar información de anfitriones
+        hosts: values.hosts || [],
+        // CRÍTICO: Guardar información de capacidad
+        capacity: values.capacity || {
+          maxGuests: 4,
+          beds: 1,
+          bedrooms: 1,
+          bathrooms: 1,
+        },
+        // CRÍTICO: Guardar tipo de alojamiento
+        accommodationType: values.accommodationType || "Habitación en alojamiento entero",
       }
 
       console.log("Datos finales de la habitación:", roomData)
-      console.log("WhatsApp final:", roomData.hostWhatsApp)
-      console.log("Fechas reservadas finales:", roomData.reservedDates)
 
       if (mode === "add") {
         addRoom(roomData)
-        toast.success("Habitación creada correctamente con configuración de WhatsApp")
+        toast.success("Habitación creada correctamente")
       } else {
         updateRoom(roomData)
-        toast.success("Habitación actualizada correctamente con configuración de WhatsApp")
+        toast.success("Habitación actualizada correctamente")
       }
 
       // Redirigir a la lista de habitaciones

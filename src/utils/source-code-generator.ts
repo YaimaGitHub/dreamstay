@@ -27,19 +27,18 @@ export const generateRoomsSourceCode = (roomsData: Room[]) => {
     // Create a copy to avoid modifying the original
     const formattedRoom = { ...room }
 
-    // Log pricing data for debugging
+    // Log all data for debugging
     if (formattedRoom.pricing) {
       console.log(`Room ${formattedRoom.id} - Pricing data for export:`, formattedRoom.pricing)
     }
-
-    // Log WhatsApp data for debugging
     if (formattedRoom.hostWhatsApp) {
       console.log(`Room ${formattedRoom.id} - WhatsApp data for export:`, formattedRoom.hostWhatsApp)
     }
-
-    // Log reserved dates for debugging
-    if (formattedRoom.reservedDates) {
-      console.log(`Room ${formattedRoom.id} - Reserved dates for export:`, formattedRoom.reservedDates)
+    if (formattedRoom.hosts) {
+      console.log(`Room ${formattedRoom.id} - Hosts data for export:`, formattedRoom.hosts)
+    }
+    if (formattedRoom.capacity) {
+      console.log(`Room ${formattedRoom.id} - Capacity data for export:`, formattedRoom.capacity)
     }
 
     // Format features as strings with quotes
@@ -81,6 +80,70 @@ export const roomsData = [\n`
 
     // Always include the available property
     code += `    available: ${room.available === undefined ? true : room.available},\n`
+
+    // Include accommodation type
+    if (room.accommodationType) {
+      code += `    accommodationType: "${room.accommodationType}",\n`
+    }
+
+    // CRITICAL: Include capacity information - ALWAYS EXPORT THIS
+    if (room.capacity) {
+      console.log(`Exporting capacity for room ${room.id}:`, room.capacity)
+      code += `    capacity: {\n`
+      code += `      maxGuests: ${room.capacity.maxGuests || 4},\n`
+      code += `      beds: ${room.capacity.beds || 1},\n`
+      code += `      bedrooms: ${room.capacity.bedrooms || 1},\n`
+      code += `      bathrooms: ${room.capacity.bathrooms || 1}\n`
+      code += `    },\n`
+    } else {
+      // If capacity is missing, add default values
+      code += `    capacity: {\n`
+      code += `      maxGuests: 4,\n`
+      code += `      beds: 1,\n`
+      code += `      bedrooms: 1,\n`
+      code += `      bathrooms: 1\n`
+      code += `    },\n`
+    }
+
+    // CRITICAL: Include hosts information (multiple hosts) - ALWAYS EXPORT THIS
+    if (room.hosts && room.hosts.length > 0) {
+      console.log(`Exporting hosts for room ${room.id}:`, room.hosts)
+      code += `    hosts: [\n`
+      room.hosts.forEach((host, hostIndex) => {
+        code += `      {\n`
+        code += `        id: ${host.id},\n`
+        code += `        name: "${(host.name || "").replace(/"/g, '\\"')}",\n`
+        code += `        hostSince: "${host.hostSince || ""}",\n`
+        code += `        isPrimary: ${host.isPrimary || false},\n`
+
+        if (host.bio) {
+          code += `        bio: "${host.bio.replace(/"/g, '\\"')}",\n`
+        } else {
+          code += `        bio: "",\n`
+        }
+
+        if (host.avatar) {
+          code += `        avatar: "${host.avatar}"\n`
+        } else {
+          code += `        avatar: ""\n`
+        }
+
+        code += `      }${hostIndex < room.hosts!.length - 1 ? "," : ""}\n`
+      })
+      code += `    ],\n`
+    } else {
+      // If hosts are missing, add a default host
+      code += `    hosts: [\n`
+      code += `      {\n`
+      code += `        id: ${Date.now()},\n`
+      code += `        name: "Anfitrión",\n`
+      code += `        hostSince: "${new Date().getFullYear()}",\n`
+      code += `        isPrimary: true,\n`
+      code += `        bio: "",\n`
+      code += `        avatar: ""\n`
+      code += `      }\n`
+      code += `    ],\n`
+    }
 
     // Include lastUpdated if it exists
     if (room.lastUpdated) {

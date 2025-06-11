@@ -57,6 +57,8 @@ export const DataStoreProvider = ({ children }: { children: ReactNode }) => {
           console.log("Raw pricing data:", room.pricing)
           console.log("Raw WhatsApp data:", room.hostWhatsApp)
           console.log("Raw reserved dates:", room.reservedDates)
+          console.log("Raw hosts data:", room.hosts)
+          console.log("Raw capacity data:", room.capacity)
 
           if (room.pricing) {
             console.log("✅ HAS PRICING CONFIG")
@@ -86,6 +88,23 @@ export const DataStoreProvider = ({ children }: { children: ReactNode }) => {
             console.log("❌ NO WHATSAPP CONFIG")
           }
 
+          if (room.hosts && room.hosts.length > 0) {
+            console.log("✅ HAS HOSTS DATA")
+            console.log("  Hosts:", room.hosts)
+          } else {
+            console.log("❌ NO HOSTS DATA")
+          }
+
+          if (room.capacity) {
+            console.log("✅ HAS CAPACITY DATA")
+            console.log("  Max Guests:", room.capacity.maxGuests)
+            console.log("  Beds:", room.capacity.beds)
+            console.log("  Bedrooms:", room.capacity.bedrooms)
+            console.log("  Bathrooms:", room.capacity.bathrooms)
+          } else {
+            console.log("❌ NO CAPACITY DATA")
+          }
+
           if (room.reservedDates && room.reservedDates.length > 0) {
             console.log("✅ HAS RESERVED DATES")
             console.log("  Dates:", room.reservedDates)
@@ -102,6 +121,33 @@ export const DataStoreProvider = ({ children }: { children: ReactNode }) => {
             lastModified: room.lastUpdated || new Date().toISOString(),
             available: room.available !== undefined ? room.available : true,
             isAvailable: room.available !== undefined ? room.available : true,
+            // CRITICAL: Preserve hosts data EXACTLY as it comes from the file
+            hosts: room.hosts
+              ? [...room.hosts]
+              : [
+                  {
+                    id: Date.now(),
+                    name: "Anfitrión",
+                    hostSince: new Date().getFullYear().toString(),
+                    bio: "",
+                    isPrimary: true,
+                    avatar: "",
+                  },
+                ],
+            // CRITICAL: Preserve capacity data EXACTLY as it comes from the file
+            capacity: room.capacity
+              ? {
+                  maxGuests: room.capacity.maxGuests || 4,
+                  beds: room.capacity.beds || 1,
+                  bedrooms: room.capacity.bedrooms || 1,
+                  bathrooms: room.capacity.bathrooms || 1,
+                }
+              : {
+                  maxGuests: 4,
+                  beds: 1,
+                  bedrooms: 1,
+                  bathrooms: 1,
+                },
             // CRITICAL: Preserve reserved dates EXACTLY as they come from the file
             reservedDates: room.reservedDates ? [...room.reservedDates] : [],
             // CRITICAL: Preserve pricing data EXACTLY as it comes from the file
@@ -121,6 +167,8 @@ export const DataStoreProvider = ({ children }: { children: ReactNode }) => {
           console.log(`\nProcessed room ${room.id}:`)
           console.log("  Final pricing:", processedRoom.pricing)
           console.log("  Final WhatsApp:", processedRoom.hostWhatsApp)
+          console.log("  Final hosts:", processedRoom.hosts)
+          console.log("  Final capacity:", processedRoom.capacity)
           console.log("  Final reserved dates:", processedRoom.reservedDates)
 
           return processedRoom
@@ -138,6 +186,18 @@ export const DataStoreProvider = ({ children }: { children: ReactNode }) => {
             console.log(`Room ${room.id} - HAS WHATSAPP:`, room.hostWhatsApp)
           } else {
             console.log(`Room ${room.id} - NO WHATSAPP`)
+          }
+
+          if (room.hosts && room.hosts.length > 0) {
+            console.log(`Room ${room.id} - HAS HOSTS:`, room.hosts)
+          } else {
+            console.log(`Room ${room.id} - NO HOSTS`)
+          }
+
+          if (room.capacity) {
+            console.log(`Room ${room.id} - HAS CAPACITY:`, room.capacity)
+          } else {
+            console.log(`Room ${room.id} - NO CAPACITY`)
           }
 
           if (room.reservedDates && room.reservedDates.length > 0) {
@@ -169,6 +229,12 @@ export const DataStoreProvider = ({ children }: { children: ReactNode }) => {
             }
             if (room.hostWhatsApp) {
               console.log(`✅ Room ${room.id} - WhatsApp verified:`, room.hostWhatsApp)
+            }
+            if (room.hosts && room.hosts.length > 0) {
+              console.log(`✅ Room ${room.id} - Hosts verified:`, room.hosts)
+            }
+            if (room.capacity) {
+              console.log(`✅ Room ${room.id} - Capacity verified:`, room.capacity)
             }
             if (room.reservedDates && room.reservedDates.length > 0) {
               console.log(`✅ Room ${room.id} - Reserved dates verified:`, room.reservedDates)
@@ -247,26 +313,25 @@ export const DataStoreProvider = ({ children }: { children: ReactNode }) => {
   const handleUpdateRoom = (roomData: Room) => {
     console.log("=== CRITICAL: Updating room ===")
     console.log("Room data received:", roomData)
-    console.log("Room pricing received:", roomData.pricing)
-    console.log("Room WhatsApp received:", roomData.hostWhatsApp)
-    console.log("Room reserved dates received:", roomData.reservedDates)
 
     // Preserve ALL data EXACTLY as received
     const updatedRoom = {
       ...roomData,
       lastUpdated: new Date().toISOString(),
-      // CRITICAL: Preserve pricing EXACTLY as received
+      // Ensure all critical data is preserved
+      hosts: roomData.hosts || [],
+      capacity: roomData.capacity || {
+        maxGuests: 4,
+        beds: 1,
+        bedrooms: 1,
+        bathrooms: 1,
+      },
       pricing: roomData.pricing,
-      // CRITICAL: Preserve WhatsApp EXACTLY as received
       hostWhatsApp: roomData.hostWhatsApp,
-      // CRITICAL: Preserve reserved dates EXACTLY as received
-      reservedDates: roomData.reservedDates,
+      reservedDates: roomData.reservedDates || [],
     }
 
     console.log("Final updated room:", updatedRoom)
-    console.log("Final pricing structure:", updatedRoom.pricing)
-    console.log("Final WhatsApp structure:", updatedRoom.hostWhatsApp)
-    console.log("Final reserved dates structure:", updatedRoom.reservedDates)
 
     updateRoom(updatedRoom, rooms, setRooms, updateLastModified, setPendingChanges, autoExportSourceFilesWrapper)
   }

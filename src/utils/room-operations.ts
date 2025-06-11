@@ -51,6 +51,14 @@ export const updateRoom = (
         // Ensure province and reservedDates are preserved
         province: roomData.province || room.province,
         reservedDates: roomData.reservedDates || room.reservedDates,
+        // CRITICAL: Preserve hosts data
+        hosts: roomData.hosts || room.hosts,
+        // CRITICAL: Preserve capacity data
+        capacity: roomData.capacity || room.capacity,
+        // CRITICAL: Preserve pricing data
+        pricing: roomData.pricing || room.pricing,
+        // CRITICAL: Preserve WhatsApp data
+        hostWhatsApp: roomData.hostWhatsApp || room.hostWhatsApp,
       }
 
       // Save pending changes
